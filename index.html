@@ -21,7 +21,7 @@
     <div class="max-w-6xl mx-auto mb-8 text-center">
         <h1 class="text-3xl font-bold mb-6 text-gray-900">SECRET 기업 가치분석 대시보드</h1>
         <form id="searchForm" class="flex justify-center max-w-2xl mx-auto shadow-lg rounded-full overflow-hidden">
-            <input type="text" id="searchInput" placeholder="기업명 입력 (예: 리노공업, 삼성전자)" 
+            <input type="text" id="searchInput" placeholder="기업명 입력 (예: 리노공업, 삼성전자, 알테오젠)" 
                    class="w-full px-6 py-4 text-lg focus:outline-none" required>
             <button type="submit" class="bg-gray-900 text-white px-8 py-4 font-bold hover:bg-gray-800 transition">검색</button>
         </form>
@@ -29,7 +29,7 @@
 
     <div id="loading" class="text-center hidden my-10">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-        <p class="mt-4 text-gray-600 font-medium">데이터 로딩 중...</p>
+        <p class="mt-4 text-gray-600 font-medium">네이버 금융 데이터 불러오는 중...</p>
     </div>
 
     <div id="dashboard" class="max-w-6xl mx-auto hidden">
@@ -47,7 +47,7 @@
             </div>
         </div>
 
-        <h3 class="text-xl font-bold mb-4 text-gray-800">핵심 가치 지표 (한국거래소 기준)</h3>
+        <h3 class="text-xl font-bold mb-4 text-gray-800">핵심 가치 지표</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             <div class="card bg-white p-5 rounded-xl shadow-sm text-center">
                 <p class="text-sm text-gray-500 font-medium">PER</p>
@@ -62,12 +62,12 @@
                 <p id="valEps" class="text-2xl font-bold mt-1">-</p>
             </div>
             <div class="card bg-white p-5 rounded-xl shadow-sm text-center">
-                <p class="text-sm text-gray-500 font-medium">ROE (추산)</p>
+                <p class="text-sm text-gray-500 font-medium">ROE</p>
                 <p id="valRoe" class="text-2xl font-bold mt-1">-</p>
             </div>
             <div class="card bg-white p-5 rounded-xl shadow-sm text-center">
                 <p class="text-sm text-gray-500 font-medium">PEG</p>
-                <p id="valPeg" class="text-2xl font-bold mt-1">-</p>
+                <p id="valPeg" class="text-2xl font-bold mt-1 text-gray-400">N/A</p>
             </div>
             <div class="card bg-white p-5 rounded-xl shadow-sm text-center">
                 <p class="text-sm text-gray-500 font-medium">부채비율</p>
@@ -75,13 +75,39 @@
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-            <h3 class="text-xl font-bold mb-4 text-gray-800">매출 및 영업이익 안내</h3>
-            <p class="text-gray-600">※ GitHub Pages(정적 웹) 환경의 한계로 인해, 정확한 재무제표(매출, 영업이익) 및 컨센서스 차트를 그려내려면 파이썬 코드(update_data.py) 내부에 네이버 금융 크롤링 코드를 별도로 이식해야 합니다. 현재는 밸류에이션(PER, PBR 등) 중심으로 제공됩니다.</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-xl font-bold mb-6 text-gray-800">최근 연간 실적 (TTM/컨센서스)</h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <span class="text-gray-600 font-medium">매출액</span>
+                        <span id="valRev" class="text-xl font-bold text-gray-900">-</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <span class="text-gray-600 font-medium">영업이익</span>
+                        <span id="valOp" class="text-xl font-bold text-gray-900">-</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <span class="text-gray-600 font-medium">영업이익률</span>
+                        <span id="valOpMargin" class="text-xl font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 font-medium">순이익률</span>
+                        <span id="valNetMargin" class="text-xl font-bold">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">매출 및 영업이익 3년 추이</h3>
+                <canvas id="consensusChart" height="200"></canvas>
+            </div>
         </div>
     </div>
 
     <script>
+        let myChart = null;
+
         document.getElementById('searchForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const query = document.getElementById('searchInput').value.trim();
@@ -94,17 +120,17 @@
                 if (!response.ok) throw new Error("data.json 누락");
                 
                 const db = await response.json();
-                const stockData = db[query] || Object.values(db).find(s => s.name.includes(query));
+                const stockData = db[query] || Object.values(db).find(s => s.name.includes(query) || s.ticker.includes(query));
 
                 if (stockData) {
                     renderDashboard(stockData);
                     document.getElementById('dashboard').classList.remove('hidden');
                 } else {
-                    alert(`'${query}' 기업 데이터가 없습니다. 파이썬 코드의 COMPANIES 리스트에 추가해주세요.`);
+                    alert(`'${query}' 기업 데이터가 없습니다. 파이썬 코드의 COMPANIES 목록을 확인하세요.`);
                 }
             } catch (error) {
                 console.error(error);
-                alert('데이터를 불러올 수 없습니다. GitHub Actions 실행 여부를 확인하세요.');
+                alert('데이터를 불러올 수 없습니다. GitHub Actions가 정상 실행되었는지 확인하세요.');
             } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
@@ -115,15 +141,33 @@
             document.getElementById('currentPrice').innerText = `현재가: ${formatNumber(data.currentPrice)}원`;
             document.getElementById('lastUpdate').innerText = `마지막 업데이트: ${data.last_updated}`;
             
+            const targetEl = document.getElementById('targetPrice');
+            if(data.targetPrice !== "-") {
+                targetEl.innerText = `목표주가: ${formatNumber(data.targetPrice)}원`;
+                targetEl.className = data.targetPrice > data.currentPrice ? "text-lg mt-1 font-bold text-krRed" : "text-lg mt-1 font-bold text-krBlue";
+            } else {
+                targetEl.innerText = "목표주가: N/A";
+                targetEl.className = "text-lg mt-1 font-medium text-gray-500";
+            }
+            
             document.getElementById('valPer').innerText = data.per !== "-" ? data.per + '배' : 'N/A';
             document.getElementById('valPbr').innerText = data.pbr !== "-" ? data.pbr + '배' : 'N/A';
             document.getElementById('valEps').innerText = data.eps !== "-" ? formatNumber(data.eps) + '원' : 'N/A';
             document.getElementById('valRoe').innerText = data.roe !== "-" ? data.roe + '%' : 'N/A';
+            document.getElementById('valDebt').innerText = data.debtRatio !== "-" ? data.debtRatio + '%' : 'N/A';
+
+            // 네이버 금융은 매출과 영업이익 단위가 이미 '억원'이므로 그대로 출력
+            document.getElementById('valRev').innerText = data.revenue !== "-" ? formatNumber(data.revenue) + '억 원' : 'N/A';
+            document.getElementById('valOp').innerText = data.operatingProfit !== "-" ? formatNumber(data.operatingProfit) + '억 원' : 'N/A';
             
-            document.getElementById('valPeg').innerText = "N/A";
-            document.getElementById('valDebt').innerText = "N/A";
+            colorizeMetric('valOpMargin', data.operatingMargin, '%');
+            colorizeMetric('valNetMargin', data.netMargin, '%');
 
             renderMoat(data.roe);
+            
+            if(data.consensus && data.consensus.years) {
+                renderChart(data.consensus);
+            }
         }
 
         function renderMoat(roe) {
@@ -137,7 +181,7 @@
             } else if (roe >= 15) {
                 levelEl.innerText = "넓은 해자 (Wide Moat)";
                 levelEl.className = "text-3xl font-extrabold text-krRed";
-                descEl.innerHTML = "<b class='text-gray-800'>[모닝스타 기준 충족]</b> 강력한 무형자산, 네트워크 효과, 전환비용 등 보유<br><span class='text-xs text-gray-500'>(정량 프록시: 지속적 초과수익 달성 수준 - ROE 15% 이상)</span>";
+                descEl.innerHTML = "<b class='text-gray-800'>[모닝스타 기준 충족]</b> 강력한 무형자산, 네트워크 효과 등 보유<br><span class='text-xs text-gray-500'>(정량 프록시: 지속적 초과수익 달성 수준 - ROE 15% 이상)</span>";
             } else if (roe >= 10) {
                 levelEl.innerText = "좁은 해자 (Narrow Moat)";
                 levelEl.className = "text-3xl font-extrabold text-orange-500";
@@ -149,9 +193,51 @@
             }
         }
 
+        function renderChart(consensus) {
+            const ctx = document.getElementById('consensusChart').getContext('2d');
+            if (myChart) { myChart.destroy(); }
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: consensus.years,
+                    datasets: [
+                        {
+                            label: '매출액 (억 원)',
+                            data: consensus.revenue,
+                            backgroundColor: 'rgba(75, 85, 99, 0.7)',
+                            borderRadius: 4
+                        },
+                        {
+                            label: '영업이익 (억 원)',
+                            data: consensus.opProfit,
+                            type: 'line',
+                            borderColor: '#ff3b30', 
+                            backgroundColor: '#ff3b30',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: false
+                        }
+                    ]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: false } } }
+            });
+        }
+
         function formatNumber(num) {
             if (num === "-" || isNaN(num)) return num;
             return new Intl.NumberFormat('ko-KR').format(num);
+        }
+
+        function colorizeMetric(elementId, value, suffix = '') {
+            const el = document.getElementById(elementId);
+            if (value === "-" || isNaN(value)) {
+                el.innerText = "N/A";
+                el.className = "text-xl font-bold text-gray-500";
+                return;
+            }
+            el.innerText = value + suffix;
+            el.className = value > 0 ? "text-xl font-bold text-krRed" : "text-xl font-bold text-krBlue";
         }
     </script>
 </body>
