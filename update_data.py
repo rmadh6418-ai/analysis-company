@@ -2,7 +2,7 @@ import yfinance as yf
 import json
 from datetime import datetime
 
-# 데이터 수집 대상 종목 리스트 (한국 주식은 코스피 .KS, 코스닥 .KQ 부착)
+# 데이터 수집 대상 종목 리스트
 TICKERS = {
     "삼성전자": "005930.KS",
     "현대로템": "064350.KS",
@@ -14,10 +14,18 @@ TICKERS = {
     "HD현대마린엔진": "071970.KS"
 }
 
-def safe_get(info_dict, key, default="-"):
-    """데이터 누락 방지용 안전 함수"""
-    val = info_dict.get(key)
-    return default if val is None else val
+def format_val(val, multiplier=1, decimals=0):
+    """데이터 누락(None) 방지 및 안전한 숫자 포맷팅 (소수점 제거 등)"""
+    if val is None or val == "":
+        return "-"
+    try:
+        res = float(val) * multiplier
+        if decimals > 0:
+            return round(res, decimals)
+        else:
+            return int(round(res)) # 소수점 제거 (정수 반환)
+    except (ValueError, TypeError):
+        return "-"
 
 def fetch_stock_data():
     results = {}
@@ -28,30 +36,43 @@ def fetch_stock_data():
             stock = yf.Ticker(ticker)
             info = stock.info
             
-            # yfinance 특성상 영업이익이 직접 나오지 않으면 매출액*영업이익률로 추산
-            rev_raw = safe_get(info, "totalRevenue", 0)
-            op_margin_raw = safe_get(info, "operatingMargins", 0)
+            # 1. 주가 정보 (yfinance 누락 대비 다중 체크)
+            current_price = info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose")
+            target_price = info.get("targetMeanPrice")
             
-            if rev_raw != "-" and op_margin_raw != "-":
-                op_profit_est = rev_raw * op_margin_raw
-            else:
-                op_profit_est = 0
+            # 2. PER, PBR, EPS (Yahoo API가 한국주식을 종종 누락하므로 직접 계산 보완)
+            eps = info.get("trailingEps")
+            per = info.get("trailingPE")
+            if not per and current_price and eps and eps > 0:
+                per = current_price / eps
+                
+            book_value = info.get("bookValue")
+            pbr = info.get("priceToBook")
+            if not pbr and current_price and book_value and book_value > 0:
+                pbr = current_price / book_value
+
+            # 3. 실적 및 수익성 지표
+            rev = info.get("totalRevenue")
+            op_margin = info.get("operatingMargins")
             
+            # 영업이익이 직접 나오지 않으면 매출액 * 영업이익률로 추산
+            op_profit = (rev * op_margin) if (rev and op_margin) else None
+
             results[name] = {
                 "name": name,
                 "ticker": ticker,
-                "currentPrice": safe_get(info, "currentPrice", 0),
-                "targetPrice": safe_get(info, "targetMeanPrice", 0),
-                "per": round(safe_get(info, "trailingPE", 0), 2) if safe_get(info, "trailingPE", 0) != "-" else "-",
-                "pbr": round(safe_get(info, "priceToBook", 0), 2) if safe_get(info, "priceToBook", 0) != "-" else "-",
-                "eps": safe_get(info, "trailingEps", 0),
-                "roe": round(safe_get(info, "returnOnEquity", 0) * 100, 2) if safe_get(info, "returnOnEquity", 0) != "-" else "-",
-                "peg": safe_get(info, "pegRatio", "-"),
-                "debtRatio": round(safe_get(info, "debtToEquity", 0), 2) if safe_get(info, "debtToEquity", 0) != "-" else "-",
-                "revenue": round(rev_raw / 100000000, 0) if rev_raw != "-" else "-",
-                "operatingProfit": round(op_profit_est / 100000000, 0) if op_profit_est else "-",
-                "operatingMargin": round(op_margin_raw * 100, 2) if op_margin_raw != "-" else "-",
-                "netMargin": round(safe_get(info, "profitMargins", 0) * 100, 2) if safe_get(info, "profitMargins", 0) != "-" else "-",
+                "currentPrice": format_val(current_price),
+                "targetPrice": format_val(target_price),  # 소수점 절사됨
+                "per": format_val(per, 1, 2),
+                "pbr": format_val(pbr, 1, 2),
+                "eps": format_val(eps),
+                "roe": format_val(info.get("returnOnEquity"), 100, 2),
+                "peg": format_val(info.get("pegRatio"), 1, 2),
+                "debtRatio": format_val(info.get("debtToEquity"), 1, 2),
+                "revenue": format_val(rev, 1/100000000, 0), # 억 원 단위 변환
+                "operatingProfit": format_val(op_profit, 1/100000000, 0),
+                "operatingMargin": format_val(op_margin, 100, 2),
+                "netMargin": format_val(info.get("profitMargins"), 100, 2),
                 "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
         except Exception as e:
