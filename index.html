@@ -3,19 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SECRET 경제연구소 - 기업 가치분석 대시보드</title>
-    <!-- Tailwind CSS (디자인) -->
+    <title>SECRET 기업 가치분석 대시보드</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js (차트) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // 한국 주식시장 색상 커스텀 (빨강: 상승/긍정, 파랑: 하락/부정)
         tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { krRed: '#ff3b30', krBlue: '#007aff' }
-                }
-            }
+            theme: { extend: { colors: { krRed: '#ff3b30', krBlue: '#007aff' } } }
         }
     </script>
     <style>
@@ -31,7 +24,7 @@
     <div class="max-w-6xl mx-auto mb-8 text-center">
         <h1 class="text-3xl font-bold mb-6 text-gray-900">SECRET 기업 가치분석 대시보드</h1>
         <form id="searchForm" class="flex justify-center max-w-2xl mx-auto shadow-lg rounded-full overflow-hidden">
-            <input type="text" id="searchInput" placeholder="기업명 또는 티커(예: 삼성전자, 005930) 입력" 
+            <input type="text" id="searchInput" placeholder="기업명 또는 티커(예: 삼성전자) 입력" 
                    class="w-full px-6 py-4 text-lg focus:outline-none" required>
             <button type="submit" class="bg-gray-900 text-white px-8 py-4 font-bold hover:bg-gray-800 transition">
                 검색
@@ -39,16 +32,15 @@
         </form>
     </div>
 
-    <!-- 로딩 표시기 -->
     <div id="loading" class="text-center hidden my-10">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-        <p class="mt-4 text-gray-600 font-medium">실시간 데이터를 불러오는 중입니다...</p>
+        <p class="mt-4 text-gray-600 font-medium">데이터를 불러오는 중입니다...</p>
     </div>
 
-    <!-- 대시보드 결과 영역 -->
+    <!-- 대시보드 -->
     <div id="dashboard" class="max-w-6xl mx-auto hidden">
         
-        <!-- 기업 헤더 & 경제적 해자 -->
+        <!-- 기업 헤더 & 모닝스타 경제적 해자 -->
         <div class="bg-white rounded-2xl shadow-sm p-8 mb-8 flex justify-between items-center border-l-4 border-gray-900">
             <div>
                 <h2 id="companyName" class="text-4xl font-extrabold text-gray-900">기업명</h2>
@@ -57,13 +49,13 @@
                 <p id="lastUpdate" class="text-xs text-gray-400 mt-2">업데이트: -</p>
             </div>
             <div class="text-right">
-                <p class="text-sm text-gray-500 font-bold mb-1">AI 분석: 경제적 해자 (Economic Moat)</p>
+                <p class="text-sm text-gray-500 font-bold mb-1">Morningstar 기준: 경제적 해자 (Economic Moat)</p>
                 <h3 id="moatLevel" class="text-3xl font-extrabold">-</h3>
-                <p id="moatDesc" class="text-sm mt-1 text-gray-600">-</p>
+                <p id="moatDesc" class="text-sm mt-2 text-gray-600 leading-relaxed">-</p>
             </div>
         </div>
 
-        <!-- 핵심 투자 지표 (6개) -->
+        <!-- 핵심 투자 지표 -->
         <h3 class="text-xl font-bold mb-4 text-gray-800">핵심 가치 지표</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             <div class="card bg-white p-5 rounded-xl shadow-sm text-center">
@@ -92,9 +84,8 @@
             </div>
         </div>
 
-        <!-- 재무 실적 & 컨센서스 차트 -->
+        <!-- 재무 실적 & 컨센서스 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- 최근 실적 요약 -->
             <div class="bg-white p-6 rounded-xl shadow-sm">
                 <h3 class="text-xl font-bold mb-6 text-gray-800">최근 연간 실적 (TTM 기준)</h3>
                 <div class="space-y-4">
@@ -117,15 +108,13 @@
                 </div>
             </div>
 
-            <!-- 3년치 컨센서스 차트 -->
             <div class="bg-white p-6 rounded-xl shadow-sm">
-                <h3 class="text-xl font-bold mb-4 text-gray-800">매출 및 영업이익 3년 컨센서스(추정)</h3>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">매출 및 영업이익 3년 추이(컨센서스 추정)</h3>
                 <canvas id="consensusChart" height="200"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript 로직 -->
     <script>
         let myChart = null;
 
@@ -137,17 +126,13 @@
             document.getElementById('dashboard').classList.add('hidden');
 
             try {
-                // 파이썬이 생성한 data.json 가져오기 (캐시 방지 적용)
                 const response = await fetch(`data.json?t=${new Date().getTime()}`);
-                if (!response.ok) throw new Error("data.json 파일을 찾을 수 없습니다.");
+                if (!response.ok) throw new Error("data.json 누락");
                 
                 const db = await response.json();
-                
-                // 검색어와 일치하는 종목 찾기 (이름 또는 티커)
                 const stockData = db[query] || Object.values(db).find(s => s.ticker.includes(query) || s.name.includes(query));
 
                 if (stockData) {
-                    // API에서 3년치 컨센서스를 직접 주지 않으므로 추세 기반 추정치 생성
                     stockData.consensus = {
                         years: ['2024', '2025(E)', '2026(E)'],
                         revenue: [stockData.revenue * 0.9, stockData.revenue, stockData.revenue * 1.1],
@@ -156,11 +141,11 @@
                     renderDashboard(stockData);
                     document.getElementById('dashboard').classList.remove('hidden');
                 } else {
-                    alert(`'${query}' 기업 데이터가 없습니다. 파이썬 코드(update_data.py)의 TICKERS에 종목을 추가해 주세요.`);
+                    alert(`'${query}' 기업 데이터가 없습니다.`);
                 }
             } catch (error) {
                 console.error(error);
-                alert('데이터 연동 중 오류가 발생했습니다. GitHub Actions가 정상 실행되었는지 확인하세요.');
+                alert('데이터 연동 오류 발생. GitHub Actions 실행 여부를 확인하세요.');
             } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
@@ -172,51 +157,53 @@
             document.getElementById('lastUpdate').innerText = `마지막 업데이트: ${data.last_updated}`;
             
             const targetEl = document.getElementById('targetPrice');
-            const tgtPrice = parseFloat(data.targetPrice);
-            targetEl.innerText = tgtPrice > 0 ? `목표주가: ${formatNumber(tgtPrice)}원` : '목표주가: 데이터 없음';
-            if(tgtPrice > 0) {
-                targetEl.className = tgtPrice > data.currentPrice ? "text-lg mt-1 font-bold text-krRed" : "text-lg mt-1 font-bold text-krBlue";
+            if(data.targetPrice !== "-") {
+                targetEl.innerText = `목표주가: ${formatNumber(data.targetPrice)}원`;
+                targetEl.className = data.targetPrice > data.currentPrice ? "text-lg mt-1 font-bold text-krRed" : "text-lg mt-1 font-bold text-krBlue";
             } else {
+                targetEl.innerText = "목표주가: N/A";
                 targetEl.className = "text-lg mt-1 font-medium text-gray-500";
             }
 
-            document.getElementById('valPer').innerText = data.per !== "-" ? data.per + '배' : '-';
-            document.getElementById('valPbr').innerText = data.pbr !== "-" ? data.pbr + '배' : '-';
-            document.getElementById('valEps').innerText = data.eps !== "-" ? formatNumber(data.eps) + '원' : '-';
-            document.getElementById('valRoe').innerText = data.roe !== "-" ? data.roe + '%' : '-';
-            document.getElementById('valPeg').innerText = data.peg !== "-" ? data.peg : '-';
-            document.getElementById('valDebt').innerText = data.debtRatio !== "-" ? data.debtRatio + '%' : '-';
+            // N/A 방어 코드 적용
+            document.getElementById('valPer').innerText = data.per !== "-" ? data.per + '배' : 'N/A';
+            document.getElementById('valPbr').innerText = data.pbr !== "-" ? data.pbr + '배' : 'N/A';
+            document.getElementById('valEps').innerText = data.eps !== "-" ? formatNumber(data.eps) + '원' : 'N/A';
+            document.getElementById('valRoe').innerText = data.roe !== "-" ? data.roe + '%' : 'N/A';
+            document.getElementById('valPeg').innerText = data.peg !== "-" ? data.peg : 'N/A';
+            document.getElementById('valDebt').innerText = data.debtRatio !== "-" ? data.debtRatio + '%' : 'N/A';
 
-            document.getElementById('valRev').innerText = formatNumber(data.revenue) + '억 원';
-            document.getElementById('valOp').innerText = formatNumber(data.operatingProfit) + '억 원';
+            document.getElementById('valRev').innerText = data.revenue !== "-" ? formatNumber(data.revenue) + '억 원' : 'N/A';
+            document.getElementById('valOp').innerText = data.operatingProfit !== "-" ? formatNumber(data.operatingProfit) + '억 원' : 'N/A';
             
             colorizeMetric('valOpMargin', data.operatingMargin, '%');
             colorizeMetric('valNetMargin', data.netMargin, '%');
 
-            renderMoat(data.roe, data.operatingMargin);
+            renderMoat(data.roe);
             renderChart(data.consensus);
         }
 
-        function renderMoat(roe, margin) {
+        // 모닝스타 정량적 경제적 해자 로직
+        function renderMoat(roe) {
             const levelEl = document.getElementById('moatLevel');
             const descEl = document.getElementById('moatDesc');
             
-            if (roe >= 15 && margin >= 15) {
-                levelEl.innerText = "넓은 해자 (Wide Moat)";
-                levelEl.className = "text-3xl font-extrabold text-krRed";
-                descEl.innerText = "강력한 경쟁 우위 및 독점적 지위 보유";
-            } else if (roe >= 10 && margin >= 8) {
-                levelEl.innerText = "좁은 해자 (Narrow Moat)";
-                levelEl.className = "text-3xl font-extrabold text-orange-500";
-                descEl.innerText = "일정 수준의 경쟁 우위를 갖춘 튼튼한 기업";
-            } else if (roe === "-" || margin === "-") {
+            if (roe === "-" || isNaN(roe)) {
                 levelEl.innerText = "판별 불가";
                 levelEl.className = "text-3xl font-extrabold text-gray-500";
-                descEl.innerText = "재무 데이터가 부족하여 판별할 수 없습니다.";
+                descEl.innerHTML = "재무 데이터가 부족하여 모닝스타 기준을 적용할 수 없습니다.";
+            } else if (roe >= 15) {
+                levelEl.innerText = "넓은 해자 (Wide Moat)";
+                levelEl.className = "text-3xl font-extrabold text-krRed";
+                descEl.innerHTML = "<b class='text-gray-800'>[모닝스타 기준 충족]</b> 강력한 무형자산, 네트워크 효과, 전환비용 등 보유<br><span class='text-xs text-gray-500'>(정량 프록시: 지속적 초과수익 달성 수준 - ROE 15% 이상)</span>";
+            } else if (roe >= 10) {
+                levelEl.innerText = "좁은 해자 (Narrow Moat)";
+                levelEl.className = "text-3xl font-extrabold text-orange-500";
+                descEl.innerHTML = "<b class='text-gray-800'>[모닝스타 기준 충족]</b> 일정 수준의 경쟁 우위 및 효율적 규모 확보<br><span class='text-xs text-gray-500'>(정량 프록시: 양호한 수익 달성 수준 - ROE 10% 이상)</span>";
             } else {
                 levelEl.innerText = "해자 없음 (No Moat)";
                 levelEl.className = "text-3xl font-extrabold text-krBlue";
-                descEl.innerText = "진입장벽이 낮고 경쟁이 치열한 상태";
+                descEl.innerHTML = "<b class='text-gray-800'>[모닝스타 기준 미달]</b> 산업 내 진입장벽이 낮고 구조적 초과수익 달성 어려움<br><span class='text-xs text-gray-500'>(정량 프록시: 기본 수익 달성 미달 - ROE 10% 미만)</span>";
             }
         }
 
@@ -252,13 +239,14 @@
         }
 
         function formatNumber(num) {
-            return isNaN(num) ? num : new Intl.NumberFormat('ko-KR').format(num);
+            if (num === "-" || isNaN(num)) return num;
+            return new Intl.NumberFormat('ko-KR').format(num);
         }
 
         function colorizeMetric(elementId, value, suffix = '') {
             const el = document.getElementById(elementId);
-            if (value === "-") {
-                el.innerText = "-";
+            if (value === "-" || isNaN(value)) {
+                el.innerText = "N/A";
                 el.className = "text-xl font-bold text-gray-500";
                 return;
             }
