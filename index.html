@@ -16,7 +16,6 @@
 </head>
 <body class="bg-gray-50 flex h-screen overflow-hidden text-gray-800">
 
-    <!-- 좌측 사이드바 -->
     <div class="w-72 bg-white border-r flex flex-col h-full shadow-sm z-10">
         <div class="p-5 border-b bg-green-600">
             <h1 class="text-xl font-bold text-white">SECRET 경제연구소</h1>
@@ -25,11 +24,9 @@
         <div class="p-4 overflow-y-auto flex-1" id="sidebar-menu"></div>
     </div>
 
-    <!-- 우측 메인 컨텐츠 영역 -->
     <div class="flex-1 flex flex-col h-full overflow-y-auto">
         <div class="p-6 max-w-6xl mx-auto w-full space-y-6">
             
-            <!-- 상단 검색창 -->
             <div class="bg-white p-5 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-3">
                     <h2 class="text-2xl font-bold" id="current-company">종목을 선택하세요</h2>
@@ -37,21 +34,19 @@
                 </div>
                 
                 <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
-                    <input type="text" id="manual-ticker" placeholder="종목코드(6자리) 입력 (예: 005930)" class="border p-2 rounded-lg text-sm w-56 focus:outline-none focus:border-green-500">
+                    <!-- ★ 완벽한 한글 검색창 적용 완료 ★ -->
+                    <input type="text" id="manual-ticker" placeholder="종목명 검색 (예: 삼성전자)" class="border p-2 rounded-lg text-sm w-56 focus:outline-none focus:border-green-500">
                     <button onclick="searchManualTicker()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-semibold transition-colors mr-2">검색</button>
-                    
                     <input type="password" id="apiKey" placeholder="Gemini API Key 입력" class="border p-2 rounded-lg text-sm w-48 focus:outline-none focus:border-purple-500">
                 </div>
             </div>
 
-            <!-- 주요 지표 카드 -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="metrics-container">
                 <div class="col-span-4 bg-white p-8 rounded-xl shadow-sm text-center text-gray-400">
-                    좌측 메뉴를 클릭하거나 상단에서 6자리 종목코드를 직접 검색해주세요.
+                    좌측 메뉴를 클릭하거나 상단에서 종목명을 직접 검색해주세요.
                 </div>
             </div>
 
-            <!-- 심화 지표 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-green-600">
                     <h3 class="font-bold text-lg mb-4 text-gray-700">네이버 기업 가치 평가 (Valuation)</h3>
@@ -68,23 +63,22 @@
                 </div>
             </div>
 
-            <!-- AI 분석 섹션 -->
             <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-purple-600">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-lg text-gray-700">AI 딥다이브 분석</h3>
                     <button onclick="runAIAnalysis()" class="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 text-sm font-semibold transition-colors">AI 분석 실행</button>
                 </div>
-                <div id="ai-output" class="p-5 bg-gray-50 border rounded-lg min-h-[150px] text-gray-700 whitespace-pre-wrap leading-relaxed">우측 상단에 API 키를 입력하고 버튼을 누르면 Gemini AI가 네이버 데이터를 기반으로 분석합니다.</div>
+                <div id="ai-output" class="p-5 bg-gray-50 border rounded-lg min-h-[150px] text-gray-700 whitespace-pre-wrap leading-relaxed">우측 상단에 API 키를 입력하고 버튼을 누르면 Gemini AI가 분석을 시작합니다.</div>
             </div>
             <div class="h-10"></div> 
         </div>
     </div>
 
     <script>
-        // 🚨 [필수 확인] 반드시 방금 새로 배포한 본인의 구글 스크립트 웹 앱 주소로 변경하세요!
-        const gasProxyUrl = 'https://script.google.com/macros/s/AKfycbyVd8Gb7qXZFYubP1LtX6gWuydIEBlAx94KJUaV_OBiFvzKPhQBpuOysqnZJe3B0v9_/exec';
+        // 🚨 [필수 확인] 반드시 방금 배포한 선생님의 구글 스크립트 주소로 변경하세요!
+        const gasProxyUrl = 'https://script.google.com/macros/s/AKfycbz5KMuTQyj09ft0Xa-TIUoDzu1rn1leX8eC-RvaX551lshshatlP5BHSEXm-KHoz6jS/exec';
 
-        // 프론트엔드 자체 이름<->티커 변환 딕셔너리 (네이버 검색 차단 회피용)
+        // 프론트엔드 자체 이름<->티커 변환 딕셔너리 (네이버 검색 차단 원천 봉쇄)
         const stockPortfolio = {
             "KOSPI 200": {
                 "화학·에너지": { "LG화학": "051910", "S-Oil": "010950", "SK이노베이션": "096770", "롯데케미칼": "011170", "SK가스": "018670", "GS": "078930", "한국가스공사": "036460", "한화솔루션": "009830", "금호석유": "011780", "OCI홀딩스": "010060", "대한유화": "006650" },
@@ -116,6 +110,16 @@
             }
         };
 
+        // 한글 검색을 위한 이름 딕셔너리 생성 ("삼성전자" -> "005930")
+        const nameToCodeMap = {};
+        for (const market in stockPortfolio) {
+            for (const sector in stockPortfolio[market]) {
+                for (const [name, code] of Object.entries(stockPortfolio[market][sector])) {
+                    nameToCodeMap[name] = code;
+                }
+            }
+        }
+
         let currentStockData = {};
 
         function renderSidebar() {
@@ -136,7 +140,9 @@
                             <div class="text-neutral-600 mt-1 mb-2 pl-4 flex flex-col border-l-2 border-green-100 ml-3">
                     `;
                     for (const [name, code] of Object.entries(companies)) {
-                        html += `<button onclick="fetchData('${code}', '${name}')" class="text-left py-1.5 px-3 text-sm hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">${name}</button>`;
+                        if(code) { // 상장된 종목만 렌더링
+                            html += `<button onclick="fetchData('${code}', '${name}')" class="text-left py-1.5 px-3 text-sm hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">${name}</button>`;
+                        }
                     }
                     html += `</div></details>`;
                 }
@@ -145,18 +151,33 @@
             sidebar.innerHTML = html;
         }
 
-        // 수동 검색 (이제 6자리 숫자로 된 종목코드만 입력해야 합니다)
+        // 검색 기능 (종목코드 6자리 OR 한글 종목명 완벽 지원!)
         function searchManualTicker() {
             const query = document.getElementById('manual-ticker').value.trim();
-            if(!query.match(/^\d{6}$/)) return alert('6자리 종목코드 숫자를 정확히 입력하세요. (예: 005930)');
-            fetchData(query, "검색종목");
+            if(!query) return alert('종목명 또는 종목코드를 입력하세요.');
+
+            let targetCode = "";
+            let targetName = "";
+
+            if (query.match(/^\d{6}$/)) {
+                targetCode = query;
+                targetName = "검색종목"; 
+            } else {
+                const foundCode = nameToCodeMap[query] || nameToCodeMap[query.toUpperCase()];
+                if (foundCode) {
+                    targetCode = foundCode;
+                    targetName = query;
+                } else {
+                    return alert(`'${query}' 종목을 찾을 수 없습니다. 정확한 한글 이름이나 6자리 종목코드를 입력해주세요.`);
+                }
+            }
+            fetchData(targetCode, targetName);
         }
 
         document.getElementById('manual-ticker').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') { searchManualTicker(); }
         });
 
-        // 🚨 프론트에서 넘어온 6자리 'code'로 바로 검색!
         async function fetchData(code, displayName) {
             document.getElementById('metrics-container').innerHTML = '<div class="col-span-4 flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div><span class="ml-3 text-green-600 font-medium my-auto">데이터를 가져오는 중...</span></div>';
             
@@ -176,18 +197,23 @@
                 const colorClass = isUp ? 'text-up' : (isDown ? 'text-down' : 'text-gray-800');
                 const sign = isUp ? '+' : '';
 
+                // 숫자 콤마 및 포맷팅 처리 안전화
+                const priceStr = (data.price || "0").toString().replace(/,/g, '');
+                const compareStr = (data.compareToPreviousPrice || "0").toString().replace(/,/g, '');
+                const marketSum = data.marketSum !== "N/A" ? data.marketSum : "N/A";
+
                 document.getElementById('metrics-container').innerHTML = `
                     <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-500 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 mb-1">현재가</p>
-                        <p class="text-2xl font-bold ${colorClass}">${Number(data.price.replace(/,/g, '')).toLocaleString()}원</p>
+                        <p class="text-2xl font-bold ${colorClass}">${Number(priceStr).toLocaleString()}원</p>
                     </div>
                     <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-400 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 mb-1">전일비 (등락률)</p>
-                        <p class="text-xl font-bold ${colorClass}">${sign}${data.compareToPreviousPrice} (${sign}${data.fluctuationsRatio}%)</p>
+                        <p class="text-xl font-bold ${colorClass}">${sign}${Number(compareStr).toLocaleString()} (${sign}${data.fluctuationsRatio}%)</p>
                     </div>
                     <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-400 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 mb-1">시가총액</p>
-                        <p class="text-xl font-bold text-gray-800">${data.marketSum}</p>
+                        <p class="text-xl font-bold text-gray-800">${marketSum}</p>
                     </div>
                     <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-purple-400 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 mb-1">외국인 소진율</p>
