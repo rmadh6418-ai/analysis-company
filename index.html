@@ -110,39 +110,51 @@
 
         document.getElementById('searchForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const query = document.getElementById('searchInput').value.trim();
+            
+            // 입력값에서 공백 및 특수문자(따옴표 등) 완벽히 제거
+            let rawQuery = document.getElementById('searchInput').value;
+            const query = rawQuery.replace(/['"]/g, '').trim(); 
             
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('hidden');
 
             try {
-                const response = await fetch(`data.json?t=${new Date().getTime()}`);
-                if (!response.ok) throw new Error("data.json 누락");
+                // 브라우저 캐시를 무시하고 최신 data.json을 강제로 가져오기
+                const response = await fetch(`data.json?t=${new Date().getTime()}`, { cache: "no-store" });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP 에러: ${response.status}`);
+                }
                 
                 const db = await response.json();
-                const stockData = db[query] || Object.values(db).find(s => s.name.includes(query) || s.ticker.includes(query));
+                
+                // 검색어 매칭 로직 (이름이나 티커에 포함되어 있는지 느슨하게 검사)
+                const stockData = db[query] || Object.values(db).find(s => 
+                    (s.name && s.name.includes(query)) || 
+                    (s.ticker && s.ticker.includes(query))
+                );
 
                 if (stockData) {
                     renderDashboard(stockData);
                     document.getElementById('dashboard').classList.remove('hidden');
                 } else {
-                    alert(`'${query}' 기업 데이터가 없습니다. 파이썬 코드의 COMPANIES 목록을 확인하세요.`);
+                    alert(`[${query}] 기업 데이터가 없습니다.\n파이썬 코드(update_data.py)의 COMPANIES 목록에 있는지 확인해주세요.`);
                 }
             } catch (error) {
-                console.error(error);
-                alert('데이터를 불러올 수 없습니다. GitHub Actions가 정상 실행되었는지 확인하세요.');
+                console.error("데이터 로드 실패:", error);
+                alert(`데이터를 불러올 수 없습니다.\n원인: ${error.message}\n(GitHub Actions에서 data.json이 정상 생성되었는지 확인해주세요.)`);
             } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
         });
 
         function renderDashboard(data) {
-            document.getElementById('companyName').innerText = data.name;
-            document.getElementById('currentPrice').innerText = `현재가: ${formatNumber(data.currentPrice)}원`;
-            document.getElementById('lastUpdate').innerText = `마지막 업데이트: ${data.last_updated}`;
+            document.getElementById('companyName').innerText = data.name || "-";
+            document.getElementById('currentPrice').innerText = data.currentPrice ? `현재가: ${formatNumber(data.currentPrice)}원` : "현재가: -";
+            document.getElementById('lastUpdate').innerText = `마지막 업데이트: ${data.last_updated || "-"}`;
             
             const targetEl = document.getElementById('targetPrice');
-            if(data.targetPrice !== "-") {
+            if(data.targetPrice && data.targetPrice !== "-") {
                 targetEl.innerText = `목표주가: ${formatNumber(data.targetPrice)}원`;
                 targetEl.className = data.targetPrice > data.currentPrice ? "text-lg mt-1 font-bold text-krRed" : "text-lg mt-1 font-bold text-krBlue";
             } else {
@@ -150,31 +162,35 @@
                 targetEl.className = "text-lg mt-1 font-medium text-gray-500";
             }
             
-            document.getElementById('valPer').innerText = data.per !== "-" ? data.per + '배' : 'N/A';
-            document.getElementById('valPbr').innerText = data.pbr !== "-" ? data.pbr + '배' : 'N/A';
-            document.getElementById('valEps').innerText = data.eps !== "-" ? formatNumber(data.eps) + '원' : 'N/A';
-            document.getElementById('valRoe').innerText = data.roe !== "-" ? data.roe + '%' : 'N/A';
-            document.getElementById('valDebt').innerText = data.debtRatio !== "-" ? data.debtRatio + '%' : 'N/A';
+            // 안전한 렌더링 (값이 없으면 N/A 처리)
+            document.getElementById('valPer').innerText = (data.per && data.per !== "-") ? data.per + '배' : 'N/A';
+            document.getElementById('valPbr').innerText = (data.pbr && data.pbr !== "-") ? data.pbr + '배' : 'N/A';
+            document.getElementById('valEps').innerText = (data.eps && data.eps !== "-") ? formatNumber(data.eps) + '원' : 'N/A';
+            document.getElementById('valRoe').innerText = (data.roe && data.roe !== "-") ? data.roe + '%' : 'N/A';
+            document.getElementById('valDebt').innerText = (data.debtRatio && data.debtRatio !== "-") ? data.debtRatio + '%' : 'N/A';
 
-            // 네이버 금융은 매출과 영업이익 단위가 이미 '억원'이므로 그대로 출력
-            document.getElementById('valRev').innerText = data.revenue !== "-" ? formatNumber(data.revenue) + '억 원' : 'N/A';
-            document.getElementById('valOp').innerText = data.operatingProfit !== "-" ? formatNumber(data.operatingProfit) + '억 원' : 'N/A';
+            document.getElementById('valRev').innerText = (data.revenue && data.revenue !== "-") ? formatNumber(data.revenue) + '억 원' : 'N/A';
+            document.getElementById('valOp').innerText = (data.operatingProfit && data.operatingProfit !== "-") ? formatNumber(data.operatingProfit) + '억 원' : 'N/A';
             
             colorizeMetric('valOpMargin', data.operatingMargin, '%');
             colorizeMetric('valNetMargin', data.netMargin, '%');
 
             renderMoat(data.roe);
             
-            if(data.consensus && data.consensus.years) {
+            if(data.consensus && data.consensus.years && data.consensus.years.length > 0) {
                 renderChart(data.consensus);
+            } else {
+                if (myChart) { myChart.destroy(); }
             }
         }
 
+        // ... (나머지 renderMoat, renderChart, formatNumber, colorizeMetric 함수는 기존과 동일하게 유지합니다) ...
+        
         function renderMoat(roe) {
             const levelEl = document.getElementById('moatLevel');
             const descEl = document.getElementById('moatDesc');
             
-            if (roe === "-" || isNaN(roe)) {
+            if (roe === "-" || isNaN(roe) || !roe) {
                 levelEl.innerText = "판별 불가";
                 levelEl.className = "text-3xl font-extrabold text-gray-500";
                 descEl.innerHTML = "재무 데이터가 부족하여 모닝스타 기준을 적용할 수 없습니다.";
@@ -225,13 +241,13 @@
         }
 
         function formatNumber(num) {
-            if (num === "-" || isNaN(num)) return num;
+            if (num === "-" || isNaN(num) || num === null) return num;
             return new Intl.NumberFormat('ko-KR').format(num);
         }
 
         function colorizeMetric(elementId, value, suffix = '') {
             const el = document.getElementById(elementId);
-            if (value === "-" || isNaN(value)) {
+            if (value === "-" || isNaN(value) || value === null) {
                 el.innerText = "N/A";
                 el.className = "text-xl font-bold text-gray-500";
                 return;
