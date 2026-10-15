@@ -34,7 +34,6 @@
                 </div>
                 
                 <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
-                    <!-- ★ 완벽한 한글 검색창 적용 완료 ★ -->
                     <input type="text" id="manual-ticker" placeholder="종목명 검색 (예: 삼성전자)" class="border p-2 rounded-lg text-sm w-56 focus:outline-none focus:border-green-500">
                     <button onclick="searchManualTicker()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-semibold transition-colors mr-2">검색</button>
                     <input type="password" id="apiKey" placeholder="Gemini API Key 입력" class="border p-2 rounded-lg text-sm w-48 focus:outline-none focus:border-purple-500">
@@ -75,10 +74,10 @@
     </div>
 
     <script>
-        // 🚨 [필수 확인] 반드시 방금 배포한 선생님의 구글 스크립트 주소로 변경하세요!
-        const gasProxyUrl = 'https://script.google.com/macros/s/AKfycbz5KMuTQyj09ft0Xa-TIUoDzu1rn1leX8eC-RvaX551lshshatlP5BHSEXm-KHoz6jS/exec';
+        // 🚨 [필수 확인] 반드시 방금 배포한 선생님의 '새 구글 스크립트 주소'로 변경하세요!
+        const gasProxyUrl = 'https://script.google.com/macros/s/AKfycbxJDkeHqxvSn5Cu3Q6yEmgaqW9qN3Kbp4Llj7teA3BYsqgKqO4_IUZFZDensikV_LDM/exec';
 
-        // 프론트엔드 자체 이름<->티커 변환 딕셔너리 (네이버 검색 차단 원천 봉쇄)
+        // 프론트엔드 자체 이름<->티커 변환 딕셔너리
         const stockPortfolio = {
             "KOSPI 200": {
                 "화학·에너지": { "LG화학": "051910", "S-Oil": "010950", "SK이노베이션": "096770", "롯데케미칼": "011170", "SK가스": "018670", "GS": "078930", "한국가스공사": "036460", "한화솔루션": "009830", "금호석유": "011780", "OCI홀딩스": "010060", "대한유화": "006650" },
@@ -110,7 +109,6 @@
             }
         };
 
-        // 한글 검색을 위한 이름 딕셔너리 생성 ("삼성전자" -> "005930")
         const nameToCodeMap = {};
         for (const market in stockPortfolio) {
             for (const sector in stockPortfolio[market]) {
@@ -140,7 +138,7 @@
                             <div class="text-neutral-600 mt-1 mb-2 pl-4 flex flex-col border-l-2 border-green-100 ml-3">
                     `;
                     for (const [name, code] of Object.entries(companies)) {
-                        if(code) { // 상장된 종목만 렌더링
+                        if(code) {
                             html += `<button onclick="fetchData('${code}', '${name}')" class="text-left py-1.5 px-3 text-sm hover:text-green-600 hover:bg-green-50 rounded-md transition-colors">${name}</button>`;
                         }
                     }
@@ -151,7 +149,6 @@
             sidebar.innerHTML = html;
         }
 
-        // 검색 기능 (종목코드 6자리 OR 한글 종목명 완벽 지원!)
         function searchManualTicker() {
             const query = document.getElementById('manual-ticker').value.trim();
             if(!query) return alert('종목명 또는 종목코드를 입력하세요.');
@@ -178,6 +175,15 @@
             if (e.key === 'Enter') { searchManualTicker(); }
         });
 
+        // 숫자 포맷팅 안전 함수 (NaN 에러 방지용)
+        function safeFormatNumber(val) {
+            if (!val || val === "N/A" || val === "0") return val;
+            const strVal = String(val).replace(/,/g, '');
+            const num = Number(strVal);
+            if (isNaN(num)) return strVal;
+            return num.toLocaleString();
+        }
+
         async function fetchData(code, displayName) {
             document.getElementById('metrics-container').innerHTML = '<div class="col-span-4 flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div><span class="ml-3 text-green-600 font-medium my-auto">데이터를 가져오는 중...</span></div>';
             
@@ -192,28 +198,28 @@
                 document.getElementById('current-company').innerText = data.name !== "이름없음" ? data.name : displayName;
                 document.getElementById('current-ticker').innerText = data.code;
                 
-                const isUp = parseFloat(data.fluctuationsRatio) > 0;
-                const isDown = parseFloat(data.fluctuationsRatio) < 0;
+                // 상승/하락 컬러 결정
+                const fluctRaw = String(data.fluctuationsRatio).replace(/,/g, '').replace(/%/g, '');
+                const fluctNum = parseFloat(fluctRaw) || 0;
+                
+                const isUp = fluctNum > 0;
+                const isDown = fluctNum < 0;
                 const colorClass = isUp ? 'text-up' : (isDown ? 'text-down' : 'text-gray-800');
                 const sign = isUp ? '+' : '';
 
-                // 숫자 콤마 및 포맷팅 처리 안전화
-                const priceStr = (data.price || "0").toString().replace(/,/g, '');
-                const compareStr = (data.compareToPreviousPrice || "0").toString().replace(/,/g, '');
-                const marketSum = data.marketSum !== "N/A" ? data.marketSum : "N/A";
-
+                // UI 렌더링 (안전한 숫자 포맷 적용)
                 document.getElementById('metrics-container').innerHTML = `
                     <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-500 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 mb-1">현재가</p>
-                        <p class="text-2xl font-bold ${colorClass}">${Number(priceStr).toLocaleString()}원</p>
+                        <p class="text-2xl font-bold ${colorClass}">${safeFormatNumber(data.price)}원</p>
                     </div>
                     <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-400 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 mb-1">전일비 (등락률)</p>
-                        <p class="text-xl font-bold ${colorClass}">${sign}${Number(compareStr).toLocaleString()} (${sign}${data.fluctuationsRatio}%)</p>
+                        <p class="text-xl font-bold ${colorClass}">${sign}${safeFormatNumber(data.compareToPreviousPrice)} (${sign}${data.fluctuationsRatio}%)</p>
                     </div>
                     <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-400 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 mb-1">시가총액</p>
-                        <p class="text-xl font-bold text-gray-800">${marketSum}</p>
+                        <p class="text-xl font-bold text-gray-800">${data.marketSum}</p>
                     </div>
                     <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-purple-400 flex flex-col justify-center">
                         <p class="text-sm text-gray-500 mb-1">외국인 소진율</p>
