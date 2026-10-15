@@ -6,7 +6,6 @@
     <title>AI 투자 대시보드 (SECRET 경제연구소)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 한국 주식 차트 색상 적용: 상승은 빨강, 하락은 파랑 */
         .text-up { color: #ef4444; } 
         .text-down { color: #3b82f6; }
     </style>
@@ -41,10 +40,9 @@
             <div class="bg-white p-6 rounded-xl shadow-sm">
                 <h2 class="font-bold text-lg mb-4">정성적 분석 및 컨센서스</h2>
                 <ul class="space-y-2 text-sm text-gray-600">
-                    <li><span class="font-semibold text-gray-800">경제적 해자 (Morningstar):</span> <span id="moat-status">데이터 필요 (프리미엄 API/Scraping 요망)</span></li>
-                    <li><span class="font-semibold text-gray-800">3년 컨센서스:</span> <span id="consensus-status">데이터 필요 (네이버 연동 요망)</span></li>
+                    <li><span class="font-semibold text-gray-800">경제적 해자 (Morningstar):</span> <span id="moat-status">데이터 필요</span></li>
+                    <li><span class="font-semibold text-gray-800">3년 컨센서스:</span> <span id="consensus-status">데이터 필요</span></li>
                 </ul>
-                <p class="text-xs text-gray-400 mt-4">* 해자 및 한국주식 컨센서스는 Python 스크래퍼 연동 필요</p>
             </div>
         </div>
 
@@ -54,9 +52,7 @@
                 <h2 class="font-bold text-lg">AI 딥다이브 분석</h2>
                 <button onclick="runAIAnalysis()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm">AI 분석 실행</button>
             </div>
-            <div id="ai-output" class="p-4 bg-gray-50 border rounded-lg min-h-[150px] text-gray-700 whitespace-pre-wrap">
-                API 키를 우측 상단에 입력하고 분석 버튼을 누르면, 위 데이터를 기반으로 AI가 투자 의견을 제시합니다.
-            </div>
+            <div id="ai-output" class="p-4 bg-gray-50 border rounded-lg min-h-[150px] text-gray-700 whitespace-pre-wrap">API 키를 우측 상단에 입력하고 분석 버튼을 누르면, 위 데이터를 기반으로 AI가 투자 의견을 제시합니다.</div>
         </div>
     </div>
 
@@ -64,25 +60,39 @@
         let currentStockData = {};
 
         async function fetchData() {
-            const ticker = document.getElementById('ticker').value.toUpperCase();
+            const ticker = document.getElementById('ticker').value.toUpperCase().trim();
             if(!ticker) return alert('티커를 입력하세요.');
             
-            // ★ 방금 복사한 구글 앱스 스크립트 웹 앱 URL을 아래에 붙여넣으세요! ★
-            const gasProxyUrl = 'https://script.google.com/macros/s/AKfycbxNXhqPGjOPYTm_n9Cxk7DiRMmHqgc9kzRW_5u6lLqQIHzxnjUP6-zKrW0pY5t-nril/exec';
+            // 🚨 [필수 확인] 아래 주소를 본인이 만든 구글 앱스 스크립트 웹 앱 주소로 변경하세요!
+            // 예시: const gasProxyUrl = 'https://script.google.com/macros/s/AKfycbyABCD1234/exec';
+            const gasProxyUrl = 'https://script.google.com/macros/s/여기에_본인의_주소를_넣으세요/exec';
             
+            if(gasProxyUrl.includes('https://script.google.com/macros/s/AKfycbxNXhqPGjOPYTm_n9Cxk7DiRMmHqgc9kzRW_5u6lLqQIHzxnjUP6-zKrW0pY5t-nril/exec')) {
+                return alert('🚨 [에러 원인 1] 소스 코드에서 gasProxyUrl 주소를 본인의 구글 스크립트 주소로 변경하지 않았습니다!');
+            }
+
+            document.getElementById('metrics-container').innerHTML = '<p class="col-span-4 text-center text-blue-600 font-bold p-4">데이터를 불러오는 중입니다...</p>';
+
             try {
-                // 구글 서버로 티커를 보내서 야후 데이터를 대신 받아오게 함
                 const response = await fetch(`${gasProxyUrl}?ticker=${ticker}`);
-                const json = await response.json();
                 
-                if (json.error || !json.quoteSummary) {
-                    throw new Error("API 응답 오류 또는 데이터 없음");
+                if (!response.ok) throw new Error(`HTTP 통신 에러 (상태 코드: ${response.status})`);
+                
+                const text = await response.text();
+                let json;
+                try {
+                    json = JSON.parse(text);
+                } catch(e) {
+                    throw new Error("🚨 [에러 원인 2] 구글 스크립트 배포 시 액세스 권한을 '모든 사용자(Anyone)'로 설정하지 않았습니다. 권한을 수정하고 '새 배포'를 다시 진행하세요.");
                 }
                 
+                if (json.error) throw new Error(`API 내부 에러: ${json.error}`);
+                if (!json.quoteSummary || !json.quoteSummary.result) throw new Error(`야후 파이낸스에서 '${ticker}' 데이터를 찾을 수 없거나 차단되었습니다.`);
+                
                 const data = json.quoteSummary.result[0];
-                const price = data.price;
-                const fin = data.financialData;
-                const stats = data.defaultKeyStatistics;
+                const price = data.price || {};
+                const fin = data.financialData || {};
+                const stats = data.defaultKeyStatistics || {};
 
                 currentStockData = {
                     ticker: ticker,
@@ -99,7 +109,8 @@
                 updateUI();
             } catch (error) {
                 console.error("데이터 로드 실패:", error);
-                alert("데이터를 불러오는데 실패했습니다. 티커를 확인하세요 (예: AAPL 또는 005930.KS).");
+                document.getElementById('metrics-container').innerHTML = `<p class="col-span-4 text-center text-red-600 font-bold p-4">${error.message}</p>`;
+                alert(error.message);
             }
         }
 
@@ -117,11 +128,11 @@
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
                     <p class="text-sm text-gray-500">영업이익률</p>
-                    <p class="text-xl font-bold">${(parseFloat(d.opMargin)*100).toFixed(2)}%</p>
+                    <p class="text-xl font-bold">${d.opMargin !== 'N/A' ? (parseFloat(d.opMargin)*100).toFixed(2) + '%' : 'N/A'}</p>
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
                     <p class="text-sm text-gray-500">순이익률</p>
-                    <p class="text-xl font-bold">${(parseFloat(d.netMargin)*100).toFixed(2)}%</p>
+                    <p class="text-xl font-bold">${d.netMargin !== 'N/A' ? (parseFloat(d.netMargin)*100).toFixed(2) + '%' : 'N/A'}</p>
                 </div>
             `;
 
@@ -129,7 +140,7 @@
                 <li class="flex justify-between border-b pb-2"><span>PER (주가수익비율):</span> <span class="font-bold">${d.per}</span></li>
                 <li class="flex justify-between border-b pb-2"><span>PBR (주가순자산비율):</span> <span class="font-bold">${d.pbr}</span></li>
                 <li class="flex justify-between border-b pb-2"><span>PEG (성장조정 PER):</span> <span class="font-bold">${d.peg}</span></li>
-                <li class="flex justify-between"><span>부채비율 (Debt to Equity):</span> <span class="font-bold">${d.debtRatio}%</span></li>
+                <li class="flex justify-between"><span>부채비율 (Debt to Equity):</span> <span class="font-bold">${d.debtRatio !== 'N/A' ? d.debtRatio + '%' : 'N/A'}</span></li>
             `;
         }
 
@@ -143,7 +154,7 @@
             output.innerHTML = "AI 분석 중... 잠시만 기다려주세요.";
 
             const prompt = `너는 세계 최고의 주식 분석가야. 다음 기업의 데이터를 보고 투자자에게 통찰력 있는 분석을 제공해줘. 
-            기업: ${currentStockData.ticker}, PER: ${currentStockData.per}, PBR: ${currentStockData.pbr}, 영업이익률: ${(parseFloat(currentStockData.opMargin)*100).toFixed(2)}%, 부채비율: ${currentStockData.debtRatio}%, PEG: ${currentStockData.peg}.
+            기업: ${currentStockData.ticker}, PER: ${currentStockData.per}, PBR: ${currentStockData.pbr}, 영업이익률: ${currentStockData.opMargin !== 'N/A' ? (parseFloat(currentStockData.opMargin)*100).toFixed(2)+'%' : 'N/A'}, 부채비율: ${currentStockData.debtRatio}, PEG: ${currentStockData.peg}.
             이 지표들이 의미하는 바와 현재 주가의 고평가/저평가 여부, 재무 건전성을 3문단으로 짧고 굵게 요약해.`;
 
             try {
@@ -153,9 +164,10 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await response.json();
+                if(data.error) throw new Error(data.error.message);
                 output.innerHTML = data.candidates[0].content.parts[0].text;
             } catch(e) {
-                output.innerHTML = "AI 분석 중 오류가 발생했습니다. API Key를 확인하세요.";
+                output.innerHTML = `<span class="text-red-500">AI 분석 중 오류가 발생했습니다: ${e.message}</span>`;
             }
         }
     </script>
