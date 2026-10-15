@@ -2,7 +2,7 @@ name: Update Stock Data
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 매일 아침 9시 (KST)
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -23,8 +23,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # 기존 yfinance 대신 한국 주식 특화 라이브러리 설치
-          pip install finance-datareader pykrx pandas requests
+          # 네이버 금융 스크래핑을 위한 완벽한 라이브러리 세트
+          pip install finance-datareader pandas requests beautifulsoup4 lxml
 
       - name: Run Python Script
         run: python update_data.py
@@ -34,4 +34,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           git add data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update stock data (pykrx)" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update Naver Finance data" && git push)
