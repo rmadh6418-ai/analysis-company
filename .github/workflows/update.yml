@@ -23,8 +23,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # 네이버 금융 스크래핑을 위한 완벽한 라이브러리 세트
-          pip install finance-datareader pandas requests beautifulsoup4 lxml
+          # 한국거래소 공식 라이브러리만 단독 사용
+          pip install pykrx pandas requests
 
       - name: Run Python Script
         run: python update_data.py
@@ -34,4 +34,4 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           git add data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update Naver Finance data" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update stock data (Safe Mode)" && git push)
