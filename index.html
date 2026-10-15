@@ -67,13 +67,16 @@
             const ticker = document.getElementById('ticker').value.toUpperCase();
             if(!ticker) return alert('티커를 입력하세요.');
             
-            // CORS 프록시를 사용하여 Yahoo Finance API 호출
-            const proxyUrl = 'https://corsproxy.io/?';
+            // 기존 corsproxy.io 대신 더 안정적인 AllOrigins 프록시 사용
             const targetUrl = encodeURIComponent(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${ticker}?modules=financialData,defaultKeyStatistics,price`);
+            const proxyUrl = `https://api.allorigins.win/get?url=${targetUrl}`;
             
             try {
-                const response = await fetch(proxyUrl + targetUrl);
-                const json = await response.json();
+                const response = await fetch(proxyUrl);
+                const proxyData = await response.json();
+                
+                // AllOrigins는 데이터를 문자열(contents)로 감싸서 반환하므로 한 번 더 파싱(JSON.parse) 필요
+                const json = JSON.parse(proxyData.contents);
                 
                 const data = json.quoteSummary.result[0];
                 const price = data.price;
@@ -95,7 +98,7 @@
                 updateUI();
             } catch (error) {
                 console.error("데이터 로드 실패:", error);
-                alert("데이터를 불러오는데 실패했습니다. 티커를 확인하세요 (한국 주식은 005930.KS 형태).");
+                alert("데이터를 불러오는데 실패했습니다. 무료 프록시 서버 지연이거나 티커가 잘못되었습니다 (한국 주식은 005930.KS 형태).");
             }
         }
 
