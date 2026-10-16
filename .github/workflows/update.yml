@@ -2,18 +2,16 @@ name: Update Quant Data and Deploy Pages
 
 on:
   schedule:
-    # 매주 월~금, 한국 시간 기준 오전 9시부터 오후 8시까지 1시간 단위로 자동 실행 (UTC 기준 0시~11시)
     - cron: '0 0-11 * * 1-5'
-  workflow_dispatch: # 수동 실행 버튼 활성화
+  workflow_dispatch:
 
-# 저장소에 대한 권한 설정 (Pages 배포에 필수)
 permissions:
   contents: write
   pages: write
   id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 소스코드 가져오기
@@ -24,7 +22,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: 📦 필요 라이브러리 설치 (bs4 추가 완료)
+      - name: 📦 필요 라이브러리 설치
         run: pip install requests beautifulsoup4
 
       - name: 🚀 데이터 수집 봇 실행
@@ -37,14 +35,22 @@ jobs:
           git add quant_data.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update quant data" && git push)
 
-      - name: ⚙️ GitHub Pages 설정 및 업로드
+      - name: ⚙️ GitHub Pages 설정
         uses: actions/configure-pages@v4
       
-      - name: 📦 정적 파일 업로드
+      - name: 📦 정적 파일 빌드(업로드 준비)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.' # 현재 폴더 전체를 배포 대상으로 지정
+          path: '.'
 
+  # 환경 변수 오류를 해결하기 위해 deploy job을 분리하고 environment를 추가했습니다.
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: 🚀 GitHub Pages 배포 실행
         id: deployment
         uses: actions/deploy-pages@v4
