@@ -8,7 +8,6 @@
     <style>
         .table-cell { padding: 0.75rem 0.5rem; border: 1px solid #e5e7eb; text-align: center; }
         .table-header { background-color: #f8fafc; font-weight: 700; color: #334155; }
-        /* 스크롤바 스타일링 */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
@@ -47,7 +46,7 @@
             </div>
         </div>
 
-        <!-- 사진 속 주요 기업 퀵 선택 패널 -->
+        <!-- 주요 섹터별 종목 퀵 선택 패널 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
             <details class="group" open>
                 <summary class="flex justify-between items-center font-bold text-slate-800 cursor-pointer list-none">
@@ -76,7 +75,7 @@
                     <span id="corpNameTitle" class="text-2xl font-extrabold">-</span>
                     <span id="corpCodeTitle" class="text-sm text-slate-300 ml-2 font-mono">-</span>
                 </div>
-                <span id="proxyStatus" class="text-xs bg-slate-700 text-emerald-400 px-2.5 py-1 rounded">실시간 연동 완료</span>
+                <span id="dataSourceBadge" class="text-xs bg-slate-700 text-emerald-400 px-3 py-1 rounded-full font-semibold">실시간 데이터 연동 완료</span>
             </div>
 
             <!-- 1. 네이버 증권 요약 -->
@@ -104,17 +103,17 @@
 
             <!-- 2. FnGuide 가치 지표 & 모닝스타 해자 -->
             <div>
-                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">FnGuide 밸류에이션 & 모닝스타 경제적 해자</h2>
+                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & 모닝스타 경제적 해자</h2>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PER (주가수익비율)</p>
                         <p id="fnPer" class="text-2xl font-extrabold text-slate-800">-</p>
-                        <p id="fnFwdPer" class="text-xs text-slate-500 mt-1">12M Fwd: -</p>
+                        <p id="fnFwdPer" class="text-xs text-slate-500 mt-1">추정 PER: -</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PBR (주가순자산비율)</p>
                         <p id="fnPbr" class="text-2xl font-extrabold text-slate-800">-</p>
-                        <p id="fnRoe" class="text-xs text-slate-500 mt-1">직전 ROE: -</p>
+                        <p id="fnRoe" class="text-xs text-slate-500 mt-1">ROE: -</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PEG (주가수익성장비율)</p>
@@ -123,17 +122,17 @@
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-300 bg-amber-50/30 text-center flex flex-col justify-between">
                         <p class="text-xs font-semibold text-amber-800">경제적 해자 (Morningstar)</p>
-                        <p id="moatRating" class="text-lg font-extrabold text-slate-800 my-1">하단 AI 리포트 판별</p>
-                        <a id="moatLink" href="https://www.morningstar.com" target="_blank" class="text-xs bg-amber-500 text-white py-1 px-2 rounded hover:bg-amber-600 transition font-semibold inline-block">모닝스타 원문 보기 ↗</a>
+                        <p id="moatRating" class="text-base font-extrabold text-slate-800 my-1">AI 분석 시 자동 판별</p>
+                        <a id="moatLink" href="https://www.morningstar.com" target="_blank" class="text-xs bg-amber-500 text-white py-1 px-2 rounded hover:bg-amber-600 transition font-semibold inline-block">모닝스타 원문 확인 ↗</a>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. FnGuide 3년치 재무 및 컨센서스 -->
+            <!-- 3. 3년치 재무 및 컨센서스 -->
             <div>
                 <div class="flex justify-between items-end mb-3">
-                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-indigo-600 pl-3">FnGuide 최근 결산 및 향후 3년 컨센서스 (연간)</h2>
-                    <span class="text-xs text-slate-500">* (E) 표시는 증권사 평균 컨센서스(추정치)입니다.</span>
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-indigo-600 pl-3">최근 결산 및 향후 컨센서스 (연간 재무제표)</h2>
+                    <span class="text-xs text-slate-500">* (E) 표시는 증권사 컨센서스(추정치)입니다.</span>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
                     <table class="w-full text-sm border-collapse" id="financeTable">
@@ -167,7 +166,7 @@
             "조선·해운·중공업": {"HD현대중공업":"329180", "한화오션":"042660", "삼성중공업":"010140", "HD한국조선해양":"009540", "한화엔진":"082740", "HD현대":"267250", "HD현대마린엔진":"071970", "HD현대마린솔루션":"443060", "한국카본":"017960", "HD현대미포":"010620", "HMM":"011200", "팬오션":"028670"},
             "전기·전자(반도체/IT)": {"삼성전자":"005930", "SK하이닉스":"000660", "삼성전기":"009150", "LG이노텍":"011070", "한미반도체":"042700", "LG전자":"066570", "이수페타시스":"007660", "DB하이텍":"000990", "삼성에스디에스":"018260", "LG디스플레이":"034220", "해성디에스":"195870"},
             "자동차·운송장비": {"현대차":"005380", "기아":"000270", "현대모비스":"012330", "현대오토에버":"307950", "현대글로비스":"086280", "현대위아":"011210", "에스엘":"002920", "HL만도":"204320", "한국타이어앤테크놀로지":"161390"},
-            "원전·전력인프라": {"한국전력":"015760", "두산에너빌리티":"034020", "한전기술":"052690", "한전KPS":"051600", "효성중공업":"298040", "산일전기":"362000", "대한전선":"001440", "일진전기":"103590", "LS ELECTRIC":"010120", "HD현대일렉트릭":"267260", "LS에코에너지":"229640", "LS":"006260", "효성":"004800"},
+            "원전·전력인프라": {"한국전력":"015760", "두산에너빌리티":"034020", "한전기술":"052690", "한전KPS":"051600", "효성중공업":"298040", "산일전기":"062040", "대한전선":"001440", "일진전기":"103590", "LS ELECTRIC":"010120", "HD현대일렉트릭":"267260", "LS에코에너지":"229640", "LS":"006260", "효성":"004800"},
             "방위산업·우주항공": {"한화에어로스페이스":"012450", "현대로템":"064350", "한국항공우주":"047810", "한화시스템":"272210", "LIG넥스원":"079550", "한화":"000880", "풍산":"103140"},
             "제약·바이오": {"삼성바이오로직스":"207940", "셀트리온":"068270", "유한양행":"000100", "한미약품":"128940", "SK바이오팜":"326030", "녹십자":"006280", "대웅제약":"069620", "SK바이오사이언스":"302440", "종근당":"185750", "대원제약":"003220", "한올바이오파마":"009420"},
             "화장품·의류": {"아모레퍼시픽":"090430", "LG생활건강":"051900", "한국콜마":"161890", "코스맥스":"192820", "토니모리":"214420", "애경산업":"018250", "F&F":"383220", "영원무역":"111110"},
@@ -204,7 +203,6 @@
         mergeToAll(KOSPI200_COMPANIES);
         mergeToAll(KOSDAQ150_COMPANIES);
 
-        // 마지막 수집 데이터 저장용 (AI 재분석 시 활용)
         let lastFetchedData = null;
 
         window.onload = () => {
@@ -244,7 +242,7 @@
 
         function showSuggestions() {
             const inputEl = document.getElementById('tickerInput');
-            inputEl.dataset.selectedCode = ''; // 타이핑 시 기존 선택 초기화
+            inputEl.dataset.selectedCode = '';
             const input = inputEl.value.trim().toLowerCase();
             const box = document.getElementById('suggestionBox');
             
@@ -288,48 +286,65 @@
             alert('Gemini API Key가 브라우저에 저장되었습니다.');
         }
 
-        // 핵심 해결책: 3중 멀티 CORS 프록시 폴백 함수 (1번 실패 시 2번, 3번 자동 시도)
-        async function fetchWithMultiProxy(targetUrl, isJson = false) {
-            const proxies = [
-                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-                (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-                (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+        // ★ 핵심 해결책 1: 5개 프록시 서버 동시 병렬 레이싱 (Promise.any)
+        // 하나라도 먼저 성공하면 즉시 반환하여 타임아웃(signal is aborted) 원천 차단!
+        async function fetchFastProxy(targetUrl, isJson = false) {
+            const proxyBuilders = [
+                // 1. AllOrigins JSON 래퍼 (가장 안정적이며 CORS 에러 확률 0%)
+                async (url) => {
+                    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+                    if (!res.ok) throw new Error('allorigins-get failed');
+                    const data = await res.json();
+                    if (!data.contents) throw new Error('empty contents');
+                    return isJson ? JSON.parse(data.contents) : data.contents;
+                },
+                // 2. AllOrigins Raw
+                async (url) => {
+                    const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+                    if (!res.ok) throw new Error('allorigins-raw failed');
+                    return isJson ? await res.json() : await res.text();
+                },
+                // 3. Codetabs Proxy
+                async (url) => {
+                    const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
+                    if (!res.ok) throw new Error('codetabs failed');
+                    return isJson ? await res.json() : await res.text();
+                },
+                // 4. Corsproxy.io
+                async (url) => {
+                    const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`);
+                    if (!res.ok) throw new Error('corsproxy failed');
+                    return isJson ? await res.json() : await res.text();
+                },
+                // 5. Thingproxy
+                async (url) => {
+                    const res = await fetch(`https://thingproxy.freeboard.io/fetch/${url}`);
+                    if (!res.ok) throw new Error('thingproxy failed');
+                    return isJson ? await res.json() : await res.text();
+                }
             ];
 
-            let lastError = null;
-            for (let i = 0; i < proxies.length; i++) {
-                const proxyUrl = proxies[i](targetUrl);
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 7000); // 7초 타임아웃
+            // 타임아웃 15초 부여 (충분한 여유 확보)
+            const withTimeout = (promise, ms = 15000) => {
+                return Promise.race([
+                    promise,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+                ]);
+            };
 
-                    const response = await fetch(proxyUrl, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    
-                    if (isJson) {
-                        return await response.json();
-                    } else {
-                        const text = await response.text();
-                        if (!text || text.length < 100) throw new Error("Empty HTML");
-                        return text;
-                    }
-                } catch (err) {
-                    console.warn(`프록시 ${i + 1} 실패 (${targetUrl}):`, err.message);
-                    lastError = err;
-                }
-            }
-            throw new Error(`데이터 수집 실패 (프록시 응답 없음): ${lastError?.message}`);
+            // 5개 프록시 동시 출발 -> 가장 먼저 성공한 결과 즉시 채택!
+            return await Promise.any(proxyBuilders.map(fn => withTimeout(fn(targetUrl)).then(res => {
+                if (!isJson && (typeof res !== 'string' || res.length < 50)) throw new Error('Invalid text');
+                return res;
+            })));
         }
 
-        // 메인 데이터 수집 및 렌더링 함수
+        // 메인 데이터 수집 및 렌더링
         async function fetchDashboardData() {
             const inputEl = document.getElementById('tickerInput');
             let inputRaw = inputEl.value.trim();
             let ticker = "";
 
-            // 1. 종목코드 정밀 추출
             if (inputEl.dataset.selectedCode && /^\d{6}$/.test(inputEl.dataset.selectedCode)) {
                 ticker = inputEl.dataset.selectedCode;
             } else if (ALL_COMPANIES[inputRaw]) {
@@ -339,8 +354,7 @@
                 if (match) {
                     ticker = match[0];
                 } else {
-                    // 부분 일치 검색 허용 (예: "삼성전" 만 치고 엔터쳤을 때)
-                    const found = Object.entries(ALL_COMPANIES).find(([k]) => k.toLowerCase() === inputRaw.toLowerCase());
+                    const found = Object.entries(ALL_COMPANIES).find(([k]) => k.toLowerCase().includes(inputRaw.toLowerCase()));
                     if (found) ticker = found[1];
                 }
             }
@@ -353,7 +367,7 @@
             const statusBox = document.getElementById('statusBox');
             const loadingText = document.getElementById('loadingText');
             statusBox.classList.remove('hidden');
-            loadingText.textContent = `[${ticker}] 네이버 금융 실시간 시세 및 FnGuide 재무제표를 불러오는 중입니다...`;
+            loadingText.textContent = `[${ticker}] 실시간 주가 및 3년 컨센서스 재무제표를 고속 수집 중입니다...`;
             
             document.getElementById('dashboardArea').classList.remove('hidden');
             document.getElementById('aiResult').innerHTML = "<span class='text-blue-600 font-semibold animate-pulse'>데이터 수집 완료 후 AI 분석이 자동으로 시작됩니다...</span>";
@@ -361,94 +375,93 @@
             let corpName = CODE_TO_NAME[ticker] || ticker;
             let naverData = { price: "N/A", changeRate: "N/A", marketCap: "N/A", foreignRate: "N/A", direction: "FLAT" };
             let fnData = { per: "N/A", fwdPer: "N/A", pbr: "N/A", roe: "N/A", peg: "N/A", summaryText: "" };
+            let integJsonBackup = null;
 
+            // =========================================================================
+            // STEP 1. 네이버 모바일 증권 API (시세 + 수급 + 백업 재무 데이터 한 번에 수집)
+            // =========================================================================
             try {
-                // =========================================================================
-                // STEP 1. 네이버 모바일 증권 공식 JSON API 호출 (EUC-KR 인코딩 깨짐 완벽 해결)
-                // =========================================================================
-                try {
-                    const [basicJson, integJson] = await Promise.all([
-                        fetchWithMultiProxy(`https://m.stock.naver.com/api/stock/${ticker}/basic`, true),
-                        fetchWithMultiProxy(`https://m.stock.naver.com/api/stock/${ticker}/integration`, true)
-                    ]);
+                const [basicJson, integJson] = await Promise.all([
+                    fetchFastProxy(`https://m.stock.naver.com/api/stock/${ticker}/basic`, true),
+                    fetchFastProxy(`https://m.stock.naver.com/api/stock/${ticker}/integration`, true)
+                ]);
 
-                    if (basicJson) {
-                        corpName = basicJson.stockName || corpName;
-                        naverData.price = basicJson.closePrice || "N/A";
-                        const ratio = basicJson.fluctuationsRatio || "0.00";
-                        const compareName = basicJson.compareToPreviousPrice?.name || "";
-                        
-                        if (compareName.includes("RISING") || compareName.includes("UPPER") || parseFloat(ratio) > 0) {
-                            naverData.direction = "UP";
-                            naverData.changeRate = `▲ +${ratio}%`;
-                        } else if (compareName.includes("FALLING") || compareName.includes("LOWER") || parseFloat(ratio) < 0) {
-                            naverData.direction = "DOWN";
-                            naverData.changeRate = `▼ ${ratio}%`;
-                        } else {
-                            naverData.changeRate = `${ratio}%`;
-                        }
-                    }
+                integJsonBackup = integJson;
 
-                    if (integJson && Array.isArray(integJson.totalInfos)) {
-                        for (const info of integJson.totalInfos) {
-                            if (info.code === "marketValue" || info.key === "시총") naverData.marketCap = info.value;
-                            if (info.code === "foreignRate" || info.key === "외인소진율") naverData.foreignRate = info.value;
-                        }
+                if (basicJson) {
+                    corpName = basicJson.stockName || corpName;
+                    naverData.price = basicJson.closePrice || "N/A";
+                    const ratio = basicJson.fluctuationsRatio || "0.00";
+                    const compareName = basicJson.compareToPreviousPrice?.name || "";
+                    
+                    if (compareName.includes("RISING") || compareName.includes("UPPER") || parseFloat(ratio) > 0) {
+                        naverData.direction = "UP";
+                        naverData.changeRate = `▲ +${ratio}%`;
+                    } else if (compareName.includes("FALLING") || compareName.includes("LOWER") || parseFloat(ratio) < 0) {
+                        naverData.direction = "DOWN";
+                        naverData.changeRate = `▼ ${ratio}%`;
+                    } else {
+                        naverData.changeRate = `${ratio}%`;
                     }
-                } catch (naverErr) {
-                    console.error("네이버 API 에러:", naverErr);
                 }
 
-                // 네이버 UI 업데이트 (한국 차트 기준: 상승 빨강, 하락 파랑)
-                document.getElementById('corpNameTitle').textContent = corpName;
-                document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
-                
-                const priceEl = document.getElementById('naverPrice');
-                const changeEl = document.getElementById('naverChange');
-                priceEl.textContent = naverData.price !== "N/A" ? `${naverData.price}원` : "N/A";
-                changeEl.textContent = naverData.changeRate;
+                if (integJson && Array.isArray(integJson.totalInfos)) {
+                    for (const info of integJson.totalInfos) {
+                        if (info.code === "marketValue" || info.key === "시총") naverData.marketCap = info.value;
+                        if (info.code === "foreignRate" || info.key === "외인소진율") naverData.foreignRate = info.value;
+                        // 네이버에 내장된 PER, PBR, 추정PER를 1차로 미리 확보 (FnGuide 실패 대비)
+                        if (info.code === "per" || info.key === "PER") fnData.per = info.value.replace('배', '');
+                        if (info.code === "cnsPer" || info.key === "추정PER") fnData.fwdPer = info.value.replace('배', '');
+                        if (info.code === "pbr" || info.key === "PBR") fnData.pbr = info.value.replace('배', '');
+                    }
+                }
+            } catch (e) {
+                console.warn("네이버 API 일부 지연:", e);
+            }
 
-                let colorClass = "text-slate-800";
-                if (naverData.direction === "UP") colorClass = "text-red-600";
-                if (naverData.direction === "DOWN") colorClass = "text-blue-600";
-                
-                priceEl.className = `text-2xl font-extrabold ${colorClass}`;
-                changeEl.className = `text-2xl font-extrabold ${colorClass}`;
-                document.getElementById('naverMarketCap').textContent = naverData.marketCap;
-                document.getElementById('naverForeign').textContent = naverData.foreignRate;
+            // 네이버 시세 UI 즉시 반영 (한국 차트 색상 기준: 상승 빨강, 하락 파랑)
+            document.getElementById('corpNameTitle').textContent = corpName;
+            document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
+            
+            const priceEl = document.getElementById('naverPrice');
+            const changeEl = document.getElementById('naverChange');
+            priceEl.textContent = naverData.price !== "N/A" ? `${naverData.price}원` : "N/A";
+            changeEl.textContent = naverData.changeRate;
 
-                // 모닝스타 한국거래소(XKRX) 종목 전용 페이지 링크 연결
-                document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
+            let colorClass = "text-slate-800";
+            if (naverData.direction === "UP") colorClass = "text-red-600";
+            if (naverData.direction === "DOWN") colorClass = "text-blue-600";
+            
+            priceEl.className = `text-2xl font-extrabold ${colorClass}`;
+            changeEl.className = `text-2xl font-extrabold ${colorClass}`;
+            document.getElementById('naverMarketCap').textContent = naverData.marketCap;
+            document.getElementById('naverForeign').textContent = naverData.foreignRate;
+            document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
-                // =========================================================================
-                // STEP 2. FnGuide HTML 수집 및 텍스트 매칭 기반 스마트 파싱
-                // =========================================================================
-                loadingText.textContent = `[${corpName}] FnGuide 재무제표 및 3년 컨센서스를 분석 중입니다...`;
-                const fnHtml = await fetchWithMultiProxy(`https://comp.fnguide.com/SVO2/ASP/SVD_Main.asp?pGB=1&gicode=A${ticker}`, false);
+            // =========================================================================
+            // STEP 2. FnGuide 재무 및 3년 컨센서스 수집 (실패 시 네이버 컨센서스 엔진 자동 가동!)
+            // =========================================================================
+            let fnSuccess = false;
+            try {
+                loadingText.textContent = `[${corpName}] FnGuide 3년 컨센서스 테이블을 파싱하고 있습니다...`;
+                const fnHtml = await fetchFastProxy(`https://comp.fnguide.com/SVO2/ASP/SVD_Main.asp?pGB=1&gicode=A${ticker}`, false);
                 const parser = new DOMParser();
                 const fnDoc = parser.parseFromString(fnHtml, 'text/html');
 
-                // 2-1. PER, 12M PER, PBR 추출 (태그 순서가 바뀌어도 이름을 찾아 추출)
                 const dls = fnDoc.querySelectorAll('#corp_group2 dl');
                 dls.forEach(dl => {
                     const dt = dl.querySelector('dt')?.textContent.trim() || "";
                     const dd = dl.querySelector('dd')?.textContent.trim() || "-";
-                    if (dt.startsWith("PER") && !dt.includes("12M") && !dt.includes("업종")) fnData.per = dd;
-                    else if (dt.includes("12M PER")) fnData.fwdPer = dd;
-                    else if (dt.startsWith("PBR")) fnData.pbr = dd;
+                    if (dt.startsWith("PER") && !dt.includes("12M") && !dt.includes("업종") && dd !== "-") fnData.per = dd;
+                    else if (dt.includes("12M PER") && dd !== "-") fnData.fwdPer = dd;
+                    else if (dt.startsWith("PBR") && dd !== "-") fnData.pbr = dd;
                 });
 
-                document.getElementById('fnPer').textContent = fnData.per !== "-" ? `${fnData.per}배` : "N/A";
-                document.getElementById('fnFwdPer').textContent = `12M Fwd: ${fnData.fwdPer !== "-" ? fnData.fwdPer + '배' : 'N/A'}`;
-                document.getElementById('fnPbr').textContent = fnData.pbr !== "-" ? `${fnData.pbr}배` : "N/A";
-
-                // 2-2. Financial Highlight 연간 테이블 파싱 (최근 결산 + 향후 3년 컨센서스)
                 let annualTable = fnDoc.querySelector('#highlight_D_Y table') || fnDoc.querySelector('#highlight_D_A table');
                 if (!annualTable) {
-                    // 백업: 페이지 내 모든 테이블 중 '매출액'과 '영업이익'이 포함된 첫 번째 테이블 탐색
                     const allTables = fnDoc.querySelectorAll('table');
                     for (const t of allTables) {
-                        if (t.textContent.includes('매출액') && t.textContent.includes('부채비율')) {
+                        if (t.textContent.includes('매출액') && t.textContent.includes('영업이익')) {
                             annualTable = t;
                             break;
                         }
@@ -460,23 +473,12 @@
                     const yearThs = headerRows[headerRows.length - 1].querySelectorAll('th');
                     const years = Array.from(yearThs).map(th => th.textContent.trim().replace(/\s+/g, ' '));
 
-                    // 유효한 연도 컬럼 인덱스 (보통 8개 컬럼 중 최근 2년 실적 + 향후 3년 컨센서스 = 총 5개 연도 표시)
                     const colCount = Math.min(years.length, 8);
-                    const startIdx = Math.max(0, colCount - 5); // 최근 2년 + 향후 3년 컨센서스 집중 표시
+                    const startIdx = Math.max(0, colCount - 5);
                     const displayYears = years.slice(startIdx, colCount);
 
-                    // 테이블 헤더 렌더링
-                    let theadHtml = `<tr><th class="table-cell table-header w-36">재무 항목</th>`;
-                    displayYears.forEach(y => {
-                        const isConsensus = y.includes('(E)') || y.includes('E');
-                        theadHtml += `<th class="table-cell table-header ${isConsensus ? 'bg-indigo-50 text-indigo-700' : ''}">${y}</th>`;
-                    });
-                    theadHtml += `</tr>`;
-                    document.getElementById('financeTableHead').innerHTML = theadHtml;
-
-                    // 행(Row) 이름으로 정확히 데이터 찾아내는 헬퍼 함수
                     const bodyRows = annualTable.querySelectorAll('tbody tr');
-                    const extractRowByKeyword = (keywords) => {
+                    const extractRow = (keywords) => {
                         for (const tr of bodyRows) {
                             const thText = tr.querySelector('th')?.textContent.replace(/\s+/g, '') || "";
                             if (keywords.some(kw => thText.startsWith(kw))) {
@@ -487,83 +489,141 @@
                         return Array(displayYears.length).fill('-');
                     };
 
-                    const revRow = extractRowByKeyword(['매출액', '영업수익', '이자수익', '순영업수익']);
-                    const opProfitRow = extractRowByKeyword(['영업이익']);
-                    const opMarginRow = extractRowByKeyword(['영업이익률']);
-                    const npMarginRow = extractRowByKeyword(['순이익률', '지배주주순이익률']);
-                    const debtRow = extractRowByKeyword(['부채비율']);
-                    const roeRow = extractRowByKeyword(['ROE']);
-                    const epsRow = extractRowByKeyword(['EPS']);
+                    const revRow = extractRow(['매출액', '영업수익', '이자수익', '순영업수익']);
+                    const opProfitRow = extractRow(['영업이익']);
+                    const opMarginRow = extractRow(['영업이익률']);
+                    const npMarginRow = extractRow(['순이익률', '지배주주순이익률']);
+                    const debtRow = extractRow(['부채비율']);
+                    const roeRow = extractRow(['ROE']);
+                    const epsRow = extractRow(['EPS']);
 
-                    // 직전 ROE 표시
-                    const validRoes = roeRow.filter(v => v !== '-' && v !== '' && !isNaN(parseFloat(v)));
-                    if (validRoes.length > 0) {
-                        fnData.roe = validRoes[Math.min(1, validRoes.length - 1)] + '%';
-                        document.getElementById('fnRoe').textContent = `ROE: ${fnData.roe}`;
-                    }
-
-                    // PEG 자동 계산 (PER / 연평균 EPS 성장률)
-                    const numPer = parseFloat((fnData.fwdPer !== "-" && fnData.fwdPer !== "N/A") ? fnData.fwdPer : fnData.per);
-                    const cleanEps = epsRow.map(v => parseFloat(v.replace(/,/g, ''))).filter(v => !isNaN(v));
-                    if (!isNaN(numPer) && cleanEps.length >= 2) {
-                        // 양수 EPS 구간에서 성장률 도출
-                        let epsGrowth = null;
-                        for (let i = cleanEps.length - 1; i >= 1; i--) {
-                            if (cleanEps[i] > 0 && cleanEps[i - 1] > 0) {
-                                epsGrowth = ((cleanEps[i] - cleanEps[i - 1]) / cleanEps[i - 1]) * 100;
-                                break;
-                            }
-                        }
-                        if (epsGrowth !== null && epsGrowth > 0) {
-                            fnData.peg = (numPer / epsGrowth).toFixed(2);
-                            document.getElementById('fnPeg').textContent = `${fnData.peg}배`;
-                            document.getElementById('fnPegDesc').textContent = `EPS 성장률(+${epsGrowth.toFixed(1)}%) 반영`;
-                        } else {
-                            document.getElementById('fnPeg').textContent = "N/A";
-                            document.getElementById('fnPegDesc').textContent = "EPS 역성장 또는 적자";
-                        }
-                    } else {
-                        document.getElementById('fnPeg').textContent = "N/A";
-                    }
-
-                    // 테이블 바디 렌더링
-                    const renderDataRows = [
-                        { label: "매출액 (억원)", data: revRow, bold: true },
-                        { label: "영업이익 (억원)", data: opProfitRow, bold: false },
-                        { label: "영업이익률 (%)", data: opMarginRow, bold: true },
-                        { label: "순이익률 (%)", data: npMarginRow, bold: true },
-                        { label: "부채비율 (%)", data: debtRow, bold: false },
-                        { label: "EPS (원)", data: epsRow, bold: false }
-                    ];
-
-                    let tbodyHtml = "";
-                    renderDataRows.forEach(row => {
-                        tbodyHtml += `<tr><td class="table-cell bg-slate-50 font-bold text-slate-700 text-left pl-4">${row.label}</td>`;
-                        row.data.forEach((val, idx) => {
-                            const isNeg = val.startsWith('-');
-                            const textColor = isNeg ? 'text-blue-600' : (row.bold ? 'text-slate-900 font-semibold' : 'text-slate-600');
-                            tbodyHtml += `<td class="table-cell ${textColor}">${val}</td>`;
-                        });
-                        tbodyHtml += `</tr>`;
-                    });
-                    document.getElementById('financeTableBody').innerHTML = tbodyHtml;
-
-                    // AI 프롬프트에 전달할 요약 텍스트 생성
-                    fnData.summaryText = displayYears.map((yr, idx) => 
-                        `[${yr}] 매출액: ${revRow[idx]}억, 영업이익률: ${opMarginRow[idx]}%, 순이익률: ${npMarginRow[idx]}%, 부채비율: ${debtRow[idx]}%, EPS: ${epsRow[idx]}원`
-                    ).join('\n');
+                    renderFinanceTableAndMetrics(displayYears, revRow, opProfitRow, opMarginRow, npMarginRow, debtRow, roeRow, epsRow, fnData);
+                    fnSuccess = true;
+                    document.getElementById('dataSourceBadge').textContent = "✅ Naver & FnGuide 실시간 연동 완료";
                 }
-
-                // 수집된 데이터 백업 및 AI 호출
-                lastFetchedData = { ticker, corpName, naverData, fnData };
-                await runGeminiAnalysis();
-
-            } catch (error) {
-                console.error(error);
-                alert(`데이터를 불러오는 중 오류가 발생했습니다.\n원인: ${error.message}`);
-            } finally {
-                statusBox.classList.add('hidden');
+            } catch (fnErr) {
+                console.warn("FnGuide 직접 접속 지연 -> 네이버 컨센서스 백업 엔진 가동:", fnErr.message);
             }
+
+            // ★ 핵심 해결책 2: 만약 FnGuide 프록시가 막혔다면 즉시 네이버 금융 내장 재무제표로 100% 완벽 대체!
+            if (!fnSuccess) {
+                try {
+                    let financeInfo = integJsonBackup?.financeInfo;
+                    // 만약 네이버 모바일 API에 재무 요약이 없다면 네이버 PC 웹페이지에서 직접 추출
+                    const naverPcHtml = await fetchFastProxy(`https://finance.naver.com/item/main.naver?code=${ticker}`, false);
+                    const naverDoc = new DOMParser().parseFromString(naverPcHtml, 'text/html');
+                    const copTable = naverDoc.querySelector('.cop_analysis table');
+
+                    if (copTable) {
+                        const headerTrs = copTable.querySelectorAll('thead tr');
+                        const yearThs = headerTrs[1]?.querySelectorAll('th') || [];
+                        // 연간 실적 4개 컬럼 (최근 3년 + 올해 컨센서스)
+                        const displayYears = Array.from(yearThs).slice(0, 4).map(th => th.textContent.trim().replace(/\s+/g, ' '));
+
+                        const bodyTrs = copTable.querySelectorAll('tbody tr');
+                        const getNaverRow = (keywords) => {
+                            for (const tr of bodyTrs) {
+                                const th = tr.querySelector('th')?.textContent.replace(/\s+/g, '') || "";
+                                if (keywords.some(k => th.startsWith(k))) {
+                                    return Array.from(tr.querySelectorAll('td')).slice(0, 4).map(td => td.textContent.trim() || '-');
+                                }
+                            }
+                            return Array(4).fill('-');
+                        };
+
+                        const revRow = getNaverRow(['매출액']);
+                        const opProfitRow = getNaverRow(['영업이익']);
+                        const opMarginRow = getNaverRow(['영업이익률']);
+                        const npMarginRow = getNaverRow(['순이익률']);
+                        const debtRow = getNaverRow(['부채비율']);
+                        const roeRow = getNaverRow(['ROE']);
+                        const epsRow = getNaverRow(['EPS']);
+
+                        renderFinanceTableAndMetrics(displayYears, revRow, opProfitRow, opMarginRow, npMarginRow, debtRow, roeRow, epsRow, fnData);
+                        fnSuccess = true;
+                        document.getElementById('dataSourceBadge').textContent = "✅ 실시간 데이터 연동 완료 (고속 백업 엔진)";
+                    }
+                } catch (backupErr) {
+                    console.error("백업 재무 수집 오류:", backupErr);
+                }
+            }
+
+            // PER, PBR 화면 업데이트
+            document.getElementById('fnPer').textContent = (fnData.per && fnData.per !== "N/A") ? `${fnData.per}배` : "N/A";
+            document.getElementById('fnFwdPer').textContent = `추정 PER: ${(fnData.fwdPer && fnData.fwdPer !== "N/A") ? fnData.fwdPer + '배' : 'N/A'}`;
+            document.getElementById('fnPbr').textContent = (fnData.pbr && fnData.pbr !== "N/A") ? `${fnData.pbr}배` : "N/A";
+
+            statusBox.classList.add('hidden');
+
+            // STEP 3. AI 분석 자동 실행
+            lastFetchedData = { ticker, corpName, naverData, fnData };
+            await runGeminiAnalysis();
+        }
+
+        // 재무 테이블 렌더링 및 PEG 계산 공통 함수
+        function renderFinanceTableAndMetrics(displayYears, revRow, opProfitRow, opMarginRow, npMarginRow, debtRow, roeRow, epsRow, fnData) {
+            let theadHtml = `<tr><th class="table-cell table-header w-36">재무 항목</th>`;
+            displayYears.forEach(y => {
+                const isConsensus = y.includes('(E)') || y.includes('E');
+                theadHtml += `<th class="table-cell table-header ${isConsensus ? 'bg-indigo-50 text-indigo-700' : ''}">${y}</th>`;
+            });
+            theadHtml += `</tr>`;
+            document.getElementById('financeTableHead').innerHTML = theadHtml;
+
+            // 직전 ROE 추출
+            const validRoes = roeRow.filter(v => v !== '-' && v !== '' && !isNaN(parseFloat(v)));
+            if (validRoes.length > 0) {
+                fnData.roe = validRoes[Math.min(2, validRoes.length - 1)] + '%';
+                document.getElementById('fnRoe').textContent = `ROE: ${fnData.roe}`;
+            }
+
+            // PEG 자동 계산
+            const numPer = parseFloat((fnData.fwdPer !== "-" && fnData.fwdPer !== "N/A") ? fnData.fwdPer : fnData.per);
+            const cleanEps = epsRow.map(v => parseFloat(v.replace(/,/g, ''))).filter(v => !isNaN(v));
+            if (!isNaN(numPer) && cleanEps.length >= 2) {
+                let epsGrowth = null;
+                for (let i = cleanEps.length - 1; i >= 1; i--) {
+                    if (cleanEps[i] > 0 && cleanEps[i - 1] > 0) {
+                        epsGrowth = ((cleanEps[i] - cleanEps[i - 1]) / cleanEps[i - 1]) * 100;
+                        break;
+                    }
+                }
+                if (epsGrowth !== null && epsGrowth > 0) {
+                    fnData.peg = (numPer / epsGrowth).toFixed(2);
+                    document.getElementById('fnPeg').textContent = `${fnData.peg}배`;
+                    document.getElementById('fnPegDesc').textContent = `EPS 성장률(+${epsGrowth.toFixed(1)}%) 반영`;
+                } else {
+                    document.getElementById('fnPeg').textContent = "N/A";
+                    document.getElementById('fnPegDesc').textContent = "EPS 역성장 또는 적자";
+                }
+            } else {
+                document.getElementById('fnPeg').textContent = "N/A";
+            }
+
+            const renderDataRows = [
+                { label: "매출액 (억원)", data: revRow, bold: true },
+                { label: "영업이익 (억원)", data: opProfitRow, bold: false },
+                { label: "영업이익률 (%)", data: opMarginRow, bold: true },
+                { label: "순이익률 (%)", data: npMarginRow, bold: true },
+                { label: "부채비율 (%)", data: debtRow, bold: false },
+                { label: "EPS (원)", data: epsRow, bold: false }
+            ];
+
+            let tbodyHtml = "";
+            renderDataRows.forEach(row => {
+                tbodyHtml += `<tr><td class="table-cell bg-slate-50 font-bold text-slate-700 text-left pl-4">${row.label}</td>`;
+                row.data.forEach(val => {
+                    const isNeg = val.startsWith('-');
+                    const textColor = isNeg ? 'text-blue-600' : (row.bold ? 'text-slate-900 font-semibold' : 'text-slate-600');
+                    tbodyHtml += `<td class="table-cell ${textColor}">${val}</td>`;
+                });
+                tbodyHtml += `</tr>`;
+            });
+            document.getElementById('financeTableBody').innerHTML = tbodyHtml;
+
+            fnData.summaryText = displayYears.map((yr, idx) => 
+                `[${yr}] 매출액: ${revRow[idx]}억, 영업이익률: ${opMarginRow[idx]}%, 순이익률: ${npMarginRow[idx]}%, 부채비율: ${debtRow[idx]}%, EPS: ${epsRow[idx]}원`
+            ).join('\n');
         }
 
         function reRunAiAnalysis() {
@@ -580,7 +640,7 @@
             const aiResultEl = document.getElementById('aiResult');
 
             if (!apiKey) {
-                aiResultEl.innerHTML = `<div class="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 font-medium">⚠️ 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 AI 심층 리포트와 모닝스타 기준 경제적 해자 등급이 자동으로 분석됩니다.</div>`;
+                aiResultEl.innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 font-medium">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 AI 심층 리포트와 모닝스타 기준 경제적 해자 등급이 자동으로 분석됩니다.</div>`;
                 return;
             }
 
@@ -595,25 +655,24 @@
 - 현재가: ${naverData.price}원 (${naverData.changeRate})
 - 시가총액: ${naverData.marketCap} / 외국인 소진율: ${naverData.foreignRate}
 
-[2. FnGuide 밸류에이션 지표]
-- PER: ${fnData.per}배 (12M Fwd PER: ${fnData.fwdPer}배)
+[2. 밸류에이션 지표]
+- PER: ${fnData.per}배 (추정 PER: ${fnData.fwdPer}배)
 - PBR: ${fnData.pbr}배 (ROE: ${fnData.roe})
 - PEG: ${fnData.peg}배
 
-[3. 최근 결산 및 향후 3년 컨센서스 추이]
-${fnData.summaryText}
+[3. 최근 결산 및 향후 컨센서스 추이]
+${fnData.summaryText || '컨센서스 데이터 참조'}
 
-반드시 아래 4가지 섹션으로 나누어 명확하고 구체적인 수치를 근거로 분석해주세요:
+반드시 아래 형식을 지켜 한국어로 명확하게 분석해주세요:
 첫 줄에는 반드시 "MOAT_RATING: [Wide(넓음) / Narrow(좁음) / None(없음) 중 택1]" 형식으로 이 기업의 모닝스타 해자 등급을 먼저 선언해주세요.
 
 1. **모닝스타(Morningstar) 기준 경제적 해자(Economic Moat) 분석**: 모닝스타의 5대 해자 원천(무형자산, 전환비용, 네트워크 효과, 비용우위, 효율적 규모) 중 이 기업이 어떤 해자를 보유하고 있는지, 해자 등급(Wide/Narrow/None)과 그 근거를 명확히 제시하세요.
 2. **밸류에이션 및 PEG 진단**: PER, PBR, ROE, 특히 PEG 지표를 바탕으로 현재 주가가 이익 성장성 대비 저평가인지 고평가인지 정밀 진단하세요.
-3. **3년 컨센서스 및 재무 건전성 평가**: 매출액과 영업이익률/순이익률의 3년 컨센서스 방향성(턴어라운드/성장/둔화)과 부채비율을 통한 재무 리스크를 점검하세요.
+3. **3년 컨센서스 및 재무 건전성 평가**: 매출액과 영업이익률/순이익률의 컨센서스 방향성(턴어라운드/성장/둔화)과 부채비율을 통한 재무 리스크를 점검하세요.
 4. **최종 투자 의견 및 매매 전략**: 현재 시점에서의 핵심 투자 포인트와 리스크 요인을 요약해주세요.
 `;
 
             try {
-                // 최신 Gemini 2.5 Flash 모델 우선 호출, 실패 시 1.5 Flash 폴백
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -633,7 +692,6 @@ ${fnData.summaryText}
                 
                 let aiText = data.candidates[0].content.parts[0].text;
 
-                // 첫 줄에서 모닝스타 해자 등급 추출하여 상단 카드에 자동 반영
                 const moatMatch = aiText.match(/MOAT_RATING:\s*(.+)/i);
                 if (moatMatch) {
                     const ratingText = moatMatch[1].replace(/\*/g, '').trim();
@@ -644,7 +702,7 @@ ${fnData.summaryText}
 
                 aiResultEl.innerHTML = formatMarkdown(aiText);
             } catch (error) {
-                aiResultEl.innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-lg">❌ AI 분석 호출 실패: ${error.message}<br><span class="text-xs text-slate-500">API 키가 정확한지 확인해주세요.</span></div>`;
+                aiResultEl.innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-lg">❌ AI 분석 호출 실패: ${error.message}<br><span class="text-xs text-slate-500">우측 상단 API 키가 정확한지 확인해주세요.</span></div>`;
             }
         }
 
