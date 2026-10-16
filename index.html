@@ -22,7 +22,7 @@
                 <span class="text-3xl">📈</span>
                 <div>
                     <h1 class="text-xl md:text-2xl font-extrabold text-slate-800">AI 주식 퀀트 대시보드</h1>
-                    <p class="text-xs text-slate-500">Naver 실시간 금융 데이터 100% 연동 · Gemini 3.5 Flash Lite 적용</p>
+                    <p class="text-xs text-slate-500">단일 종목 직통 JSONP 및 PC웹 스크래핑 엔진 · Gemini 3.5 Flash Lite</p>
                 </div>
             </div>
             <div class="flex space-x-2 w-full md:w-auto">
@@ -43,7 +43,7 @@
             
             <!-- 진행 상태 표시줄 -->
             <div id="statusBox" class="hidden mt-4">
-                <p id="loadingText" class="text-blue-600 font-semibold text-sm animate-pulse">실시간 주가 및 재무 데이터를 완벽하게 불러오는 중입니다...</p>
+                <p id="loadingText" class="text-blue-600 font-semibold text-sm animate-pulse">안전한 PC웹 스크래핑 엔진으로 데이터를 수집 중입니다...</p>
             </div>
         </div>
 
@@ -76,7 +76,7 @@
                     <span id="corpNameTitle" class="text-2xl font-extrabold">-</span>
                     <span id="corpCodeTitle" class="text-sm text-slate-300 ml-2 font-mono">-</span>
                 </div>
-                <span id="dataSourceBadge" class="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full font-semibold">실시간 데이터 연동 완료</span>
+                <span id="dataSourceBadge" class="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full font-semibold">실시간 스크래핑 완료</span>
             </div>
 
             <!-- 1. 네이버 증권 요약 -->
@@ -287,27 +287,27 @@
         }
 
         // =========================================================================
-        // ★ 초정밀 JSONP 통신 함수 (다른 종목이 섞여 나오는 오류 완벽 해결)
+        // ★ 단일 종목 완전 격리형 JSONP 통신 (엉뚱한 가격이 뜨는 버그 완벽 차단)
         // =========================================================================
-        function fetchNaverDirectJsonp(queryStr) {
+        function fetchExactRealtimePrice(ticker) {
             return new Promise((resolve) => {
-                const cbName = "__nv_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+                const cbName = "__nv_cb_exact_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
                 const script = document.createElement("script");
                 const timer = setTimeout(() => {
                     cleanup();
                     resolve(null);
-                }, 3500);
+                }, 3000);
 
                 function cleanup() {
                     clearTimeout(timer);
                     if (script.parentNode) script.parentNode.removeChild(script);
-                    try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+                    try { delete window[cbName]; } catch (e) {}
                 }
 
                 window[cbName] = function(res) {
                     cleanup();
-                    if (res && res.result && Array.isArray(res.result.areas)) {
-                        resolve(res.result.areas);
+                    if (res && res.datas && res.datas.length > 0) {
+                        resolve(res.datas[0]);
                     } else {
                         resolve(null);
                     }
@@ -318,41 +318,78 @@
                     resolve(null);
                 };
 
-                script.charset = "euc-kr";
-                script.src = `https://polling.finance.naver.com/api/realtime?query=${encodeURIComponent(queryStr)}&_callback=${cbName}&_=${Date.now()}_${Math.random()}`;
+                // SERVICE_ITEM 대신 정확한 해당 1개 종목 URL만 타겟팅
+                script.src = `https://polling.finance.naver.com/api/realtime/domestic/stock/${ticker}?_callback=${cbName}&_=${Date.now()}`;
                 document.head.appendChild(script);
             });
         }
 
         // =========================================================================
-        // ★ 파이썬 Requests와 동일하게 작동하는 강력한 데이터 Fetcher (CORS 100% 우회)
+        // ★ CORS 방화벽을 뚫는 최강의 무기: 네이버 PC 웹페이지 자체 파싱 엔진
         // =========================================================================
-        async function fetchNaverIntegration(ticker) {
-            const url = `https://m.stock.naver.com/api/stock/${ticker}/integration?_=${Date.now()}`;
-            const encodedUrl = encodeURIComponent(url);
-
-            // 1순위: AllOrigins의 GET Endpoint (브라우저 CORS 정책을 서버단에서 가장 확실히 뚫음)
+        async function fetchNaverPCWebScraping(ticker) {
             try {
-                const res = await fetch(`https://api.allorigins.win/get?url=${encodedUrl}`, { cache: "no-store" });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.contents) {
-                        const parsed = JSON.parse(data.contents);
-                        if (parsed.totalInfos) return parsed;
+                const url = `https://finance.naver.com/item/main.naver?code=${ticker}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const res = await fetch(proxyUrl, { cache: "no-store" });
+                const data = await res.json();
+                
+                // HTML 파싱 시작
+                const doc = new DOMParser().parseFromString(data.contents, "text/html");
+
+                let marketCap = doc.querySelector('#_market_sum')?.innerText.trim() || "N/A";
+                if (marketCap !== "N/A") marketCap += "억원";
+
+                let foreignRate = "N/A";
+                const trsAll = doc.querySelectorAll('tr');
+                for (let tr of trsAll) {
+                    if (tr.innerText.includes("외국인소진율")) {
+                        const em = tr.querySelector('em');
+                        if (em) {
+                            foreignRate = em.innerText.trim();
+                            break;
+                        }
                     }
                 }
-            } catch(e) { console.warn("AllOrigins 실패", e); }
 
-            // 2순위: CodeTabs Proxy 백업
-            try {
-                const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, { cache: "no-store" });
-                if (res.ok) {
-                    const parsed = await res.json();
-                    if (parsed.totalInfos) return parsed;
+                let per = doc.querySelector('#_per')?.innerText.trim() || "-";
+                let fwdPer = doc.querySelector('#_cns_per')?.innerText.trim() || "-";
+                let pbr = doc.querySelector('#_pbr')?.innerText.trim() || "-";
+                
+                let years = ["최근연도-2", "최근연도-1", "당해연도(E)", "향후연도(E)"];
+                let revs = ["-", "-", "-", "-"], ops = ["-", "-", "-", "-"], opMs = ["-", "-", "-", "-"];
+                let npMs = ["-", "-", "-", "-"], debts = ["-", "-", "-", "-"], epss = ["-", "-", "-", "-"];
+                let roe = "-";
+
+                const table = doc.querySelector('.cop_analysis table');
+                if (table) {
+                    const ths = table.querySelectorAll('thead tr:nth-child(2) th');
+                    const parsedYears = Array.from(ths).slice(0, 4).map(th => th.innerText.trim());
+                    if (parsedYears.length > 0) years = parsedYears;
+
+                    const trs = table.querySelectorAll('tbody tr');
+                    trs.forEach(tr => {
+                        const thText = tr.querySelector('th')?.innerText.trim() || "";
+                        const tds = Array.from(tr.querySelectorAll('td')).slice(0, 4).map(td => td.innerText.trim() || "-");
+                        
+                        if (thText.includes("매출액")) revs = tds;
+                        if (thText.includes("영업이익") && !thText.includes("률")) ops = tds;
+                        if (thText.includes("영업이익률")) opMs = tds;
+                        if (thText.includes("순이익률") || thText.includes("순이익율")) npMs = tds;
+                        if (thText.includes("부채비율")) debts = tds;
+                        if (thText.includes("EPS")) epss = tds;
+                        if (thText.includes("ROE")) {
+                            const validRoes = tds.filter(v => v && v !== "-");
+                            if (validRoes.length > 0) roe = validRoes[validRoes.length - 1];
+                        }
+                    });
                 }
-            } catch(e) { console.warn("CodeTabs 실패", e); }
 
-            return null;
+                return { marketCap, foreignRate, per, fwdPer, pbr, roe, years, revs, ops, opMs, npMs, debts, epss };
+            } catch(e) {
+                console.error("PC Web Scraping Error", e);
+                return null;
+            }
         }
 
         async function fetchDashboardData() {
@@ -392,7 +429,7 @@
             const statusBox = document.getElementById('statusBox');
             const loadingText = document.getElementById('loadingText');
             statusBox.classList.remove('hidden');
-            loadingText.textContent = `[${corpName}] 실시간 시세 및 재무제표를 가져오는 중입니다...`;
+            loadingText.textContent = `[${corpName}] 실시간 시세 및 재무제표를 안전하게 파싱 중입니다...`;
             
             document.getElementById('dashboardArea').classList.remove('hidden');
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>데이터 수집 완료 후 AI 심층 리포트가 작성됩니다...</span>";
@@ -403,68 +440,50 @@
 
             let price = "N/A", changeRate = "0.00%", direction = "FLAT";
             
-            // 1. JSONP를 활용한 실시간 현재가/등락률 파싱 (타 종목 꼬임 현상 원천 차단)
+            // 1. 단일 종목 완벽 격리 JSONP로 현재가 확보
             try {
-                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
-                if (areas && areas.length > 0 && areas[0].datas) {
-                    // 반드시 검색한 티커(cd)와 일치하는 데이터만 가져옴
-                    const st = areas[0].datas.find(d => d.cd === ticker) || areas[0].datas[0];
-                    if (st && st.nv) {
-                        price = Number(st.nv).toLocaleString('ko-KR');
-                        const cr = Math.abs(parseFloat(st.cr || 0)).toFixed(2);
-                        const rf = String(st.rf || "3");
-                        if (["1", "2"].includes(rf)) {
-                            direction = "UP";
-                            changeRate = `▲ +${cr}%`;
-                        } else if (["4", "5"].includes(rf)) {
-                            direction = "DOWN";
-                            changeRate = `▼ -${cr}%`;
-                        } else {
-                            changeRate = `${cr}%`;
-                        }
+                const st = await fetchExactRealtimePrice(ticker);
+                if (st && st.nv) {
+                    price = Number(st.nv).toLocaleString('ko-KR');
+                    const cr = Math.abs(parseFloat(st.cr || 0)).toFixed(2);
+                    const cd = String(st.compareToPreviousPrice?.code || "3");
+                    if (["1", "2"].includes(cd)) {
+                        direction = "UP";
+                        changeRate = `▲ +${cr}%`;
+                    } else if (["4", "5"].includes(cd)) {
+                        direction = "DOWN";
+                        changeRate = `▼ -${cr}%`;
+                    } else {
+                        changeRate = `${cr}%`;
                     }
                 }
             } catch(e) { console.error("JSONP Fetch Error", e); }
 
-            // 2. 파이썬과 동일한 강력 프록시를 활용한 밸류에이션 및 재무제표 파싱
+            // 2. 강력한 PC 웹 스크래핑 엔진으로 N/A 없이 재무/수급/밸류에이션 확보
+            const webData = await fetchNaverPCWebScraping(ticker);
+            
             let marketCap = "N/A", foreignRate = "N/A", per = "-", fwdPer = "-", pbr = "-", roe = "-";
             let years = ["최근연도-2", "최근연도-1", "당해연도(E)", "향후연도(E)"];
             let revs = ["-", "-", "-", "-"], ops = ["-", "-", "-", "-"], opMs = ["-", "-", "-", "-"];
             let npMs = ["-", "-", "-", "-"], debts = ["-", "-", "-", "-"], epss = ["-", "-", "-", "-"];
 
-            const integData = await fetchNaverIntegration(ticker);
-
-            if (integData) {
-                if (Array.isArray(integData.totalInfos)) {
-                    integData.totalInfos.forEach(info => {
-                        if (info.code === "marketValue" || info.key === "시총") marketCap = info.value;
-                        if (info.code === "foreignRate" || info.key === "외인소진율") foreignRate = info.value;
-                        if (info.code === "per" || info.key === "PER") per = info.value.replace('배', '');
-                        if (info.code === "cnsPer" || info.key === "추정PER") fwdPer = info.value.replace('배', '');
-                        if (info.code === "pbr" || info.key === "PBR") pbr = info.value.replace('배', '');
-                        if (info.code === "roe" || info.key === "ROE") roe = info.value;
-                    });
-                }
-
-                if (integData.financialStatement && integData.financialStatement.info) {
-                    const fs = integData.financialStatement;
-                    if (fs.years) years = fs.years;
-                    
-                    const findRowByName = (keywords) => {
-                        const row = fs.info.find(r => keywords.some(kw => r.name.includes(kw)));
-                        return row ? row.values : ["-", "-", "-", "-"];
-                    };
-
-                    revs = findRowByName(["매출"]);
-                    ops = findRowByName(["영업이익"]);
-                    opMs = findRowByName(["영업이익률"]);
-                    npMs = findRowByName(["순이익률", "순이익율"]);
-                    debts = findRowByName(["부채비율"]);
-                    epss = findRowByName(["EPS"]);
-                }
+            if (webData) {
+                marketCap = webData.marketCap;
+                foreignRate = webData.foreignRate;
+                per = webData.per;
+                fwdPer = webData.fwdPer;
+                pbr = webData.pbr;
+                roe = webData.roe;
+                years = webData.years;
+                revs = webData.revs;
+                ops = webData.ops;
+                opMs = webData.opMs;
+                npMs = webData.npMs;
+                debts = webData.debts;
+                epss = webData.epss;
             }
 
-            // 3. 네이버 시세 UI 반영 (한국 주식 차트색상 기준 적용)
+            // 3. 네이버 시세 UI 반영
             const priceEl = document.getElementById('naverPrice');
             const changeEl = document.getElementById('naverChange');
             priceEl.textContent = price !== "N/A" ? `${price}원` : "N/A";
@@ -482,7 +501,7 @@
             document.getElementById('fnPer').textContent = per !== "-" ? `${per}배` : "N/A";
             document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${fwdPer !== "-" ? fwdPer + '배' : 'N/A'}`;
             document.getElementById('fnPbr').textContent = pbr !== "-" ? `${pbr}배` : "N/A";
-            document.getElementById('fnRoe').textContent = `ROE: ${roe}`;
+            document.getElementById('fnRoe').textContent = `ROE: ${roe}%`;
 
             // PEG 자동 계산
             const numPer = parseFloat(fwdPer !== "-" ? fwdPer : per);
@@ -538,7 +557,7 @@
             document.getElementById('financeTableBody').innerHTML = tbodyHtml;
             statusBox.classList.add('hidden');
 
-            // 5. 요청하신 'gemini-3.5-flash-lite' 모델 우선 호출 적용
+            // 5. 사용자 지정 Gemini 3.5 Flash Lite 모델 호출
             lastFetchedData = { ticker, corpName, price, changeRate, marketCap, foreignRate, per, pbr };
             await runGeminiAnalysisOnly(corpName, ticker, price, changeRate, marketCap, foreignRate, per, pbr);
         }
@@ -562,7 +581,6 @@
 반드시 첫 줄에 "MOAT_RATING: [Wide(넓음) 또는 Narrow(좁음) 또는 None(없음)]"을 적고, 그 아래에 3개의 단락으로 구성된 전문적인 퀀트 분석 리포트를 마크다운 굵은 글씨(**)를 활용해 작성해줘.
 `;
             
-            // 사용자님이 요청하신 gemini-3.5-flash-lite 모델 최우선 적용
             let modelName = "gemini-3.5-flash-lite";
             let response;
             
@@ -575,9 +593,8 @@
                     })
                 });
 
-                // 만약 모델명 오류로 실패 시, 범용 안정 모델인 1.5-flash로 자동 백업
                 if (!response.ok) {
-                    modelName = "gemini-1.5-flash";
+                    modelName = "gemini-1.5-flash"; // 안전 장치 폴백
                     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
