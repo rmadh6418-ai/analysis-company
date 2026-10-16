@@ -45,7 +45,7 @@ def fetch_stock_data(name, ticker):
         "name": name, "price": "N/A", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "roe": "-",
         "peg": "N/A", "pegDesc": "EPS 부족",
-        "finance": { "years": ["-","-","-","-","-"], "revs": ["-","-","-","-","-"], "ops": ["-","-","-","-","-"], "opMs": ["-","-","-","-","-"], "npMs": ["-","-","-","-","-"], "debts": ["-","-","-","-","-"], "epss": ["-","-","-","-","-"] }
+        "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
     }
     
     try:
@@ -59,7 +59,7 @@ def fetch_stock_data(name, ticker):
         if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
 
-        # 2. 투자지표 (ROE 포함)
+        # 2. 투자지표
         res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
         for info in res_integ.get("totalInfos", []):
             key, val = info.get("key", ""), info.get("value", "-")
@@ -70,7 +70,7 @@ def fetch_stock_data(name, ticker):
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
             elif "ROE" in key.upper(): stock_info["roe"] = val.replace("%", "")
             
-        # 3. 재무제표 (네이버 모바일 API 100% 자동화용)
+        # 3. 재무제표 (🔥 빈칸 제거 핵심: 제공되는 전체 데이터의 가장 최신 5년치를 타이트하게 추출)
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
         
@@ -78,34 +78,34 @@ def fetch_stock_data(name, ticker):
             tr_list = fin_info["trTitleList"]
             r_list = fin_info["rowList"]
             
-            keys = [item.get("key", "") for item in tr_list][-5:]
+            # API가 반환하는 전체 데이터 중 최근 5개만 확보 (2028년이 없으면 2026년까지의 앞 5개 확보)
+            valid_cols = tr_list[-5:]
+            keys = [item.get("key", "") for item in valid_cols]
+            
             years = []
-            for item in tr_list[-5:]:
+            for item in valid_cols:
                 y_text = item.get("title", "")
                 if item.get("isConsensus") == "Y" and "(E)" not in y_text:
                     y_text += "(E)"
                 years.append(y_text)
             
-            # 5칸을 맞추기 위해 앞을 빈칸으로 채움 (우측 정렬 효과)
-            pad_len = 5 - len(years)
-            stock_info["finance"]["years"] = (["-"] * pad_len) + years
+            stock_info["finance"]["years"] = years
             
-            def get_fin_val(keyword):
+            def get_fin_valid(keyword):
                 for row in r_list:
                     if keyword in row.get("title", ""):
                         cols = row.get("columns", {})
-                        extracted = [str(cols.get(k, {}).get("value", "-")) if k else "-" for k in keys]
-                        return (["-"] * pad_len) + extracted
-                return ["-", "-", "-", "-", "-"]
+                        return [str(cols.get(k, {}).get("value", "-")) for k in keys]
+                return ["-"] * len(keys)
 
-            stock_info["finance"]["revs"] = get_fin_val("매출액")
-            stock_info["finance"]["ops"] = get_fin_val("영업이익")
-            stock_info["finance"]["opMs"] = get_fin_val("영업이익률")
-            stock_info["finance"]["npMs"] = get_fin_val("순이익률")
-            stock_info["finance"]["debts"] = get_fin_val("부채비율")
-            stock_info["finance"]["epss"] = get_fin_val("EPS")
+            stock_info["finance"]["revs"] = get_fin_valid("매출액")
+            stock_info["finance"]["ops"] = get_fin_valid("영업이익")
+            stock_info["finance"]["opMs"] = get_fin_valid("영업이익률")
+            stock_info["finance"]["npMs"] = get_fin_valid("순이익률")
+            stock_info["finance"]["debts"] = get_fin_valid("부채비율")
+            stock_info["finance"]["epss"] = get_fin_valid("EPS")
 
-        # 4. PEG 계산 (마지막 2개년 데이터 사용)
+        # 4. PEG 계산 (마지막 2개년 유효 데이터로 성장률 도출)
         try:
             target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
             per_float = float(str(target_per).replace(',', ''))
@@ -135,7 +135,7 @@ def fetch_stock_data(name, ticker):
     return ticker, stock_info
 
 quant_data = {}
-print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 시작 (자동화 봇 모드)...")
+print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 시작...")
 start_time = time.time()
 
 with ThreadPoolExecutor(max_workers=10) as executor:
@@ -148,4 +148,4 @@ with open("quant_data.json", "w", encoding="utf-8") as f:
     json.dump(quant_data, f, ensure_ascii=False, indent=2)
 
 end_time = time.time()
-print(f"✅ 데이터 수집 완료! (소요 시간: {end_time - start_time:.2f}초)")
+print(f"✅ 데이터 수집 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
