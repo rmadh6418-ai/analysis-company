@@ -1,10 +1,9 @@
 import requests
-from bs4 import BeautifulSoup
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-# 1. 150여개 전체 종목 리스트 (KOSPI 200 + KOSDAQ 150 완벽 매핑)
+# 1. 150여개 전체 종목 리스트 완벽 매핑
 KOSPI200_SECTORS = {
     "화학·에너지": {"LG화학": "051910", "S-Oil": "010950", "SK이노베이션": "096770", "롯데케미칼": "011170", "SK가스": "018670", "GS": "078930", "한국가스공사": "036460", "한화솔루션": "009830", "금호석유": "011780", "OCI홀딩스": "010060", "대한유화": "006650"},
     "이차전지·배터리": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "포스코퓨처엠": "003670", "삼성SDI": "006400", "엘앤에프": "066970", "에코프로머티": "450080", "코스모신소재": "005070", "포스코인터내셔널": "047050", "솔루스첨단소재": "336370", "금양": "001570"},
@@ -35,12 +34,11 @@ KOSDAQ150_SECTORS = {
     "피팅·배관기자재": {"성광벤드": "014620", "태광": "023160", "하이록코리아": "013030", "디케이락": "105740", "비엠티": "086670", "태웅": "044490"}
 }
 
-# 딕셔너리 병합
 TARGET_STOCKS = {}
 for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companies)
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
-# 연결 재사용 세션
+# 세션 생성 (속도 최적화)
 session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
 
@@ -53,7 +51,7 @@ def fetch_stock_data(name, ticker):
     }
     
     try:
-        # 1. 실시간 주가 (네이버 모바일)
+        # 1. 실시간 주가
         res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
         raw_price = int(res_basic.get("closePrice", "0").replace(',', ''))
         stock_info["price"] = res_basic.get("closePrice", "N/A")
@@ -63,7 +61,7 @@ def fetch_stock_data(name, ticker):
         if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
 
-        # 2. 투자지표 (네이버 모바일)
+        # 2. 투자지표
         res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
         for info in res_integ.get("totalInfos", []):
             key, val = info.get("key", ""), info.get("value", "-")
@@ -74,49 +72,50 @@ def fetch_stock_data(name, ticker):
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
             elif key in ["ROE", "roe"]: stock_info["roe"] = val
             
-        # 3. 재무제표 (🔥에프앤가이드 크롤링: 향후 3년치 컨센서스 완벽 제공 엔진)
-        fn_url = f"https://comp.fnguide.com/SVO2/ASP/SVD_Main.asp?pGB=1&gicode=A{ticker}"
-        res_fn = session.get(fn_url, timeout=5)
-        soup = BeautifulSoup(res_fn.text, 'html.parser')
+        # 3. 재무제표 (🔥 GitHub Actions에서 절대 막히지 않는 네이버 모바일 JSON API로 5년치 추출)
+        res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
+        fin_info = res_fin.get("financeInfo", {})
         
-        div_y = soup.find('div', {'id': 'highlight_D_Y'})
-        if div_y:
-            table = div_y.find('table')
-            if table:
-                thead_trs = table.find('thead').find_all('tr')
-                ths = thead_trs[-1].find_all('th')
-                # 연도 타이틀 추출
-                years = [th.text.strip().replace('\xa0', '') for th in ths if th.text.strip()]
+        if fin_info and "trTitleList" in fin_info and "rowList" in fin_info:
+            tr_list = fin_info["trTitleList"]
+            r_list = fin_info["rowList"]
+            
+            # 전체 데이터 중 가장 최근 5년치(과거+미래 컨센서스)만 깔끔하게 추출
+            target_cols = tr_list[-5:]
+            keys = [item.get("key", "") for item in target_cols]
+            years = []
+            for item in target_cols:
+                y_text = item.get("title", "")
+                if item.get("isConsensus") == "Y" and "(E)" not in y_text:
+                    y_text += "(E)"
+                years.append(y_text)
                 
-                # 끝에서 5개 (과거 2년 + 향후 3년) 가져오기, 모자라면 "-"로 채움
-                years_5 = years[-5:]
-                years_5 = (["-"] * (5 - len(years_5))) + years_5
-                stock_info["finance"]["years"] = years_5
-                
-                tbody_trs = table.find('tbody').find_all('tr')
-                
-                def get_fnguide_row(keywords):
-                    for tr in tbody_trs:
-                        th = tr.find('th')
-                        if th:
-                            th_text = th.text.replace(' ', '').replace('\xa0', '').replace('\n', '')
-                            if any(k in th_text for k in keywords):
-                                tds = tr.find_all('td')
-                                vals = [td.text.strip().replace('\xa0', '') for td in tds]
-                                vals = [v if v else "-" for v in vals]
-                                vals_5 = vals[-5:]
-                                return (["-"] * (5 - len(vals_5))) + vals_5
-                    return ["-", "-", "-", "-", "-"]
+            # 데이터가 5개가 안될 경우 빈칸("-")으로 자동 채움
+            keys = ([""] * (5 - len(keys))) + keys
+            years = (["-"] * (5 - len(years))) + years
+            stock_info["finance"]["years"] = years
+            
+            def get_fin_new(keyword):
+                for row in r_list:
+                    if keyword in row.get("title", ""):
+                        cols = row.get("columns", {})
+                        extracted = []
+                        for k in keys:
+                            if not k:
+                                extracted.append("-")
+                            else:
+                                extracted.append(str(cols.get(k, {}).get("value", "-")))
+                        return extracted
+                return ["-", "-", "-", "-", "-"]
 
-                # 항목별 데이터 매핑
-                stock_info["finance"]["revs"] = get_fnguide_row(['매출액'])
-                stock_info["finance"]["ops"] = get_fnguide_row(['영업이익'])
-                stock_info["finance"]["opMs"] = get_fnguide_row(['영업이익률'])
-                stock_info["finance"]["npMs"] = get_fnguide_row(['순이익률', '지배주주순이익률'])
-                stock_info["finance"]["debts"] = get_fnguide_row(['부채비율'])
-                stock_info["finance"]["epss"] = get_fnguide_row(['EPS'])
+            stock_info["finance"]["revs"] = get_fin_new("매출액")
+            stock_info["finance"]["ops"] = get_fin_new("영업이익")
+            stock_info["finance"]["opMs"] = get_fin_new("영업이익률")
+            stock_info["finance"]["npMs"] = get_fin_new("순이익률")
+            stock_info["finance"]["debts"] = get_fin_new("부채비율")
+            stock_info["finance"]["epss"] = get_fin_new("EPS")
 
-        # 4. PEG 계산 (마지막 2개년 유효 데이터로 성장률 도출)
+        # 4. PEG 연산 (안정적인 EPS 데이터를 바탕으로 완벽 계산)
         try:
             target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
             per_float = float(str(target_per).replace(',', ''))
@@ -146,7 +145,7 @@ def fetch_stock_data(name, ticker):
     return ticker, stock_info
 
 # =======================================================
-# 멀티스레딩 엔진: 150종목 10초 컷
+# 멀티스레딩 엔진 (10초 컷)
 # =======================================================
 quant_data = {}
 print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 시작...")
