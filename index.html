@@ -129,7 +129,7 @@
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PBR (주가순자산비율)</p>
                         <p id="fnPbr" class="text-2xl font-extrabold text-slate-800">-</p>
-                        <p id="fnRoe" class="text-xs text-slate-500 mt-1">ROE: -</p>
+                        <p id="fnRoe" class="text-xs text-slate-500 mt-1 font-bold text-slate-700">ROE: -</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PEG (주가수익성장비율)</p>
@@ -144,9 +144,9 @@
                 </div>
             </div>
 
-            <!-- 재무제표 전체 연도 및 그래프 영역 -->
+            <!-- 재무제표 5년치 및 그래프 영역 -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- 표 영역 (2칸) -->
+                <!-- 표 영역 -->
                 <div class="lg:col-span-2">
                     <div class="flex justify-between items-end mb-3">
                         <h2 class="text-lg font-bold text-slate-800 border-l-4 border-indigo-600 pl-3">최근 결산 및 전체 컨센서스 (향후 3년 포함)</h2>
@@ -160,7 +160,7 @@
                     </div>
                 </div>
                 
-                <!-- 차트 영역 (1칸) -->
+                <!-- 차트 영역 -->
                 <div class="lg:col-span-1">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-cyan-500 pl-3 mb-3">📊 영업이익 트렌드</h2>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-64 flex items-center justify-center">
@@ -243,7 +243,8 @@
             });
 
             try {
-                const res = await fetch('./quant_data.json?v=' + new Date().getTime());
+                // 캐시 완전 무시하고 가장 최신 데이터 강제 호출
+                const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' });
                 if(res.ok) globalQuantData = await res.json();
             } catch(e) { console.warn("JSON 파일 로드 실패", e); }
         };
@@ -339,7 +340,7 @@
             document.getElementById('fnPer').textContent = data.per !== "-" ? `${data.per}배` : "N/A";
             document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
             document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
-            document.getElementById('fnRoe').textContent = `ROE: ${data.roe}${data.roe !== "-" ? "%" : ""}`;
+            document.getElementById('fnRoe').textContent = `ROE: ${data.roe && data.roe !== "-" ? data.roe + '%' : "-"}`;
 
             // 목표 매수가 계산
             if (data.rawPrice && data.rawPrice > 0) {
@@ -389,8 +390,8 @@
             renderChart(data.finance.years, data.finance.ops);
             document.getElementById('statusBox').classList.add('hidden');
 
-            lastFetchedData = { corpName: data.name, ticker, price: data.price, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, pbr: data.pbr };
-            await runGeminiAnalysisOnly(data.name, ticker, data.price, data.changeRate, data.marketCap, data.foreignRate, data.per, data.pbr);
+            lastFetchedData = { corpName: data.name, ticker, price: data.price, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, pbr: data.pbr, roe: data.roe };
+            await runGeminiAnalysisOnly(data.name, ticker, data.price, data.changeRate, data.marketCap, data.foreignRate, data.per, data.pbr, data.roe);
         }
 
         function renderChart(labels, dataArr) {
@@ -430,14 +431,14 @@
             });
         }
 
-        async function runGeminiAnalysisOnly(corpName, ticker, price, changeRate, marketCap, foreignRate, per, pbr) {
+        async function runGeminiAnalysisOnly(corpName, ticker, price, changeRate, marketCap, foreignRate, per, pbr, roe) {
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
                 document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 심층 분석 리포트가 출력됩니다.</div>`;
                 return;
             }
 
-            const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트야. 한국 상장기업 [${corpName} (${ticker})]에 대한 데이터를 바탕으로 심층 리포트를 작성해. 현재가:${price}원(${changeRate}), 시총:${marketCap}, 외인소진율:${foreignRate}, PER:${per}배, PBR:${pbr}배. 첫 줄에 "MOAT_RATING: [Wide/Narrow/None]"을 적고 그 아래 3단락 마크다운 굵은글씨(**) 사용해서 작성해줘.`;
+            const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. 한국 상장기업 [${corpName} (${ticker})]에 대한 데이터를 바탕으로 심층 리포트를 작성해주세요. 현재가:${price}원(${changeRate}), 시총:${marketCap}, 외인소진율:${foreignRate}, PER:${per}배, PBR:${pbr}배, ROE:${roe}%. 반드시 첫 줄에 모닝스타(Morningstar) 방법론을 엄격하게 적용한 경제적 해자 평가인 "MOAT_RATING: [Wide/Narrow/None]"을 적고, 그 아래 3단락으로 마크다운 굵은글씨(**)를 사용해 작성해주세요.`;
             
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
@@ -471,7 +472,7 @@
         function reRunAiAnalysis() {
             if (!lastFetchedData) return;
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 심층 리포트를 다시 작성 중입니다...</span>";
-            runGeminiAnalysisOnly(lastFetchedData.corpName, lastFetchedData.ticker, lastFetchedData.price, lastFetchedData.changeRate, lastFetchedData.marketCap, lastFetchedData.foreignRate, lastFetchedData.per, lastFetchedData.pbr);
+            runGeminiAnalysisOnly(lastFetchedData.corpName, lastFetchedData.ticker, lastFetchedData.price, lastFetchedData.changeRate, lastFetchedData.marketCap, lastFetchedData.foreignRate, lastFetchedData.per, lastFetchedData.pbr, lastFetchedData.roe);
         }
     </script>
 </body>
