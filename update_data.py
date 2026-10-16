@@ -43,7 +43,7 @@ session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)
 def fetch_stock_data(name, ticker):
     stock_info = {
         "name": name, "price": "N/A", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
-        "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "roe": "-",
+        "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-",
         "peg": "N/A", "pegDesc": "EPS 부족",
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
     }
@@ -68,7 +68,6 @@ def fetch_stock_data(name, ticker):
             elif key in ["PER", "per"]: stock_info["per"] = val.replace("배", "")
             elif key in ["추정PER", "cnsPer"]: stock_info["fwdPer"] = val.replace("배", "")
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
-            elif "ROE" in key.upper(): stock_info["roe"] = val.replace("%", "")
             
         # 3. 재무제표 (🔥 빈칸 제거 핵심: 제공되는 전체 데이터의 가장 최신 5년치를 타이트하게 추출)
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
