@@ -10,7 +10,6 @@
     "per": "N/A",
     "fwdPer": "-95.60",
     "pbr": "0.56",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -69,7 +68,6 @@
     "per": "11.79",
     "fwdPer": "5.68",
     "pbr": "1.78",
-    "roe": "-",
     "peg": "0.00배",
     "pegDesc": "EPS 성장률(+1687.8%) 반영",
     "finance": {
@@ -128,7 +126,6 @@
     "per": "N/A",
     "fwdPer": "7.42",
     "pbr": "0.98",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -187,7 +184,6 @@
     "per": "N/A",
     "fwdPer": "-11.87",
     "pbr": "0.17",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -246,7 +242,6 @@
     "per": "8.07",
     "fwdPer": "8.48",
     "pbr": "0.64",
-    "roe": "-",
     "peg": "0.30배",
     "pegDesc": "EPS 성장률(+28.5%) 반영",
     "finance": {
@@ -305,7 +300,6 @@
     "per": "3.75",
     "fwdPer": "3.47",
     "pbr": "0.53",
-    "roe": "-",
     "peg": "0.02배",
     "pegDesc": "EPS 성장률(+216.2%) 반영",
     "finance": {
@@ -364,7 +358,6 @@
     "per": "5.91",
     "fwdPer": "2.89",
     "pbr": "0.27",
-    "roe": "-",
     "peg": "0.00배",
     "pegDesc": "EPS 성장률(+772.2%) 반영",
     "finance": {
@@ -423,7 +416,6 @@
     "per": "N/A",
     "fwdPer": "15.07",
     "pbr": "0.61",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -482,7 +474,6 @@
     "per": "6.50",
     "fwdPer": "5.91",
     "pbr": "0.43",
-    "roe": "-",
     "peg": "0.06배",
     "pegDesc": "EPS 성장률(+95.2%) 반영",
     "finance": {
@@ -541,7 +532,6 @@
     "per": "99.55",
     "fwdPer": "22.46",
     "pbr": "0.90",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -600,7 +590,6 @@
     "per": "7.45",
     "fwdPer": "8.29",
     "pbr": "0.28",
-    "roe": "-",
     "peg": "0.08배",
     "pegDesc": "EPS 성장률(+108.9%) 반영",
     "finance": {
@@ -659,7 +648,6 @@
     "per": "N/A",
     "fwdPer": "-389.86",
     "pbr": "4.23",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -718,7 +706,6 @@
     "per": "17.75",
     "fwdPer": "12.31",
     "pbr": "0.39",
-    "roe": "-",
     "peg": "0.06배",
     "pegDesc": "EPS 성장률(+198.3%) 반영",
     "finance": {
@@ -777,7 +764,6 @@
     "per": "339.53",
     "fwdPer": "485.31",
     "pbr": "3.64",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -836,7 +822,6 @@
     "per": "1,157.21",
     "fwdPer": "44.25",
     "pbr": "1.72",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -895,7 +880,6 @@
     "per": "N/A",
     "fwdPer": "-91.65",
     "pbr": "4.80",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -954,7 +938,6 @@
     "per": "33.98",
     "fwdPer": "N/A",
     "pbr": "2.11",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -1013,7 +996,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "2.53",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -1072,7 +1054,6 @@
     "per": "12.00",
     "fwdPer": "10.55",
     "pbr": "1.38",
-    "roe": "-",
     "peg": "0.20배",
     "pegDesc": "EPS 성장률(+53.4%) 반영",
     "finance": {
@@ -1131,7 +1112,6 @@
     "per": "17.68",
     "fwdPer": "N/A",
     "pbr": "0.97",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -1190,7 +1170,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "1.41",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -1249,7 +1228,6 @@
     "per": "13.71",
     "fwdPer": "11.58",
     "pbr": "3.50",
-    "roe": "-",
     "peg": "0.12배",
     "pegDesc": "EPS 성장률(+93.4%) 반영",
     "finance": {
@@ -1308,7 +1286,6 @@
     "per": "9.54",
     "fwdPer": "10.09",
     "pbr": "2.63",
-    "roe": "-",
     "peg": "0.18배",
     "pegDesc": "EPS 성장률(+56.8%) 반영",
     "finance": {
@@ -1367,7 +1344,6 @@
     "per": "28.71",
     "fwdPer": "17.42",
     "pbr": "3.30",
-    "roe": "-",
     "peg": "0.25배",
     "pegDesc": "EPS 성장률(+70.6%) 반영",
     "finance": {
@@ -1426,7 +1402,6 @@
     "per": "5.43",
     "fwdPer": "4.72",
     "pbr": "1.26",
-    "roe": "-",
     "peg": "0.06배",
     "pegDesc": "EPS 성장률(+82.9%) 반영",
     "finance": {
@@ -1485,7 +1460,6 @@
     "per": "14.37",
     "fwdPer": "16.82",
     "pbr": "4.84",
-    "roe": "-",
     "peg": "2.18배",
     "pegDesc": "EPS 성장률(+7.7%) 반영",
     "finance": {
@@ -1544,7 +1518,6 @@
     "per": "4.58",
     "fwdPer": "3.25",
     "pbr": "0.92",
-    "roe": "-",
     "peg": "0.01배",
     "pegDesc": "EPS 성장률(+300.7%) 반영",
     "finance": {
@@ -1603,7 +1576,6 @@
     "per": "7.17",
     "fwdPer": "10.92",
     "pbr": "2.67",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -1662,7 +1634,6 @@
     "per": "28.29",
     "fwdPer": "27.08",
     "pbr": "10.60",
-    "roe": "-",
     "peg": "0.92배",
     "pegDesc": "EPS 성장률(+29.6%) 반영",
     "finance": {
@@ -1721,7 +1692,6 @@
     "per": "9.02",
     "fwdPer": "7.78",
     "pbr": "1.37",
-    "roe": "-",
     "peg": "0.46배",
     "pegDesc": "EPS 성장률(+17.0%) 반영",
     "finance": {
@@ -1780,7 +1750,6 @@
     "per": "-",
     "fwdPer": "-",
     "pbr": "-",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -1804,7 +1773,6 @@
     "per": "15.86",
     "fwdPer": "10.34",
     "pbr": "0.77",
-    "roe": "-",
     "peg": "0.62배",
     "pegDesc": "EPS 성장률(+16.7%) 반영",
     "finance": {
@@ -1863,7 +1831,6 @@
     "per": "10.52",
     "fwdPer": "7.36",
     "pbr": "0.56",
-    "roe": "-",
     "peg": "0.12배",
     "pegDesc": "EPS 성장률(+60.5%) 반영",
     "finance": {
@@ -1922,7 +1889,6 @@
     "per": "9.73",
     "fwdPer": "4.77",
     "pbr": "2.52",
-    "roe": "-",
     "peg": "0.01배",
     "pegDesc": "EPS 성장률(+593.5%) 반영",
     "finance": {
@@ -1981,7 +1947,6 @@
     "per": "5.64",
     "fwdPer": "3.57",
     "pbr": "3.43",
-    "roe": "-",
     "peg": "0.01배",
     "pegDesc": "EPS 성장률(+500.3%) 반영",
     "finance": {
@@ -2040,7 +2005,6 @@
     "per": "91.19",
     "fwdPer": "57.19",
     "pbr": "8.74",
-    "roe": "-",
     "peg": "0.45배",
     "pegDesc": "EPS 성장률(+127.5%) 반영",
     "finance": {
@@ -2099,7 +2063,6 @@
     "per": "14.47",
     "fwdPer": "11.90",
     "pbr": "1.51",
-    "roe": "-",
     "peg": "0.09배",
     "pegDesc": "EPS 성장률(+136.3%) 반영",
     "finance": {
@@ -2158,7 +2121,6 @@
     "per": "90.34",
     "fwdPer": "N/A",
     "pbr": "26.73",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -2217,7 +2179,6 @@
     "per": "29.55",
     "fwdPer": "14.96",
     "pbr": "1.14",
-    "roe": "-",
     "peg": "0.13배",
     "pegDesc": "EPS 성장률(+114.4%) 반영",
     "finance": {
@@ -2276,7 +2237,6 @@
     "per": "36.16",
     "fwdPer": "26.49",
     "pbr": "8.46",
-    "roe": "-",
     "peg": "0.40배",
     "pegDesc": "EPS 성장률(+65.6%) 반영",
     "finance": {
@@ -2335,7 +2295,6 @@
     "per": "13.50",
     "fwdPer": "N/A",
     "pbr": "1.89",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -2394,7 +2353,6 @@
     "per": "23.69",
     "fwdPer": "22.29",
     "pbr": "1.49",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -2453,7 +2411,6 @@
     "per": "N/A",
     "fwdPer": "-13.23",
     "pbr": "0.60",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -2512,7 +2469,6 @@
     "per": "15.99",
     "fwdPer": "10.55",
     "pbr": "1.48",
-    "roe": "-",
     "peg": "0.04배",
     "pegDesc": "EPS 성장률(+241.0%) 반영",
     "finance": {
@@ -2571,7 +2527,6 @@
     "per": "10.23",
     "fwdPer": "8.88",
     "pbr": "0.67",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -2630,7 +2585,6 @@
     "per": "6.16",
     "fwdPer": "5.35",
     "pbr": "0.67",
-    "roe": "-",
     "peg": "0.64배",
     "pegDesc": "EPS 성장률(+8.4%) 반영",
     "finance": {
@@ -2689,7 +2643,6 @@
     "per": "8.87",
     "fwdPer": "7.93",
     "pbr": "0.61",
-    "roe": "-",
     "peg": "0.65배",
     "pegDesc": "EPS 성장률(+12.3%) 반영",
     "finance": {
@@ -2748,7 +2701,6 @@
     "per": "47.29",
     "fwdPer": "42.78",
     "pbr": "4.77",
-    "roe": "-",
     "peg": "2.75배",
     "pegDesc": "EPS 성장률(+15.6%) 반영",
     "finance": {
@@ -2807,7 +2759,6 @@
     "per": "9.07",
     "fwdPer": "8.54",
     "pbr": "1.28",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -2866,7 +2817,6 @@
     "per": "18.52",
     "fwdPer": "8.76",
     "pbr": "0.35",
-    "roe": "-",
     "peg": "0.17배",
     "pegDesc": "EPS 성장률(+51.4%) 반영",
     "finance": {
@@ -2925,7 +2875,6 @@
     "per": "5.90",
     "fwdPer": "6.02",
     "pbr": "0.82",
-    "roe": "-",
     "peg": "0.30배",
     "pegDesc": "EPS 성장률(+20.3%) 반영",
     "finance": {
@@ -2984,7 +2933,6 @@
     "per": "11.43",
     "fwdPer": "9.71",
     "pbr": "0.66",
-    "roe": "-",
     "peg": "0.10배",
     "pegDesc": "EPS 성장률(+99.1%) 반영",
     "finance": {
@@ -3043,7 +2991,6 @@
     "per": "6.43",
     "fwdPer": "6.09",
     "pbr": "0.57",
-    "roe": "-",
     "peg": "0.34배",
     "pegDesc": "EPS 성장률(+17.7%) 반영",
     "finance": {
@@ -3102,7 +3049,6 @@
     "per": "2.34",
     "fwdPer": "4.60",
     "pbr": "0.36",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -3161,7 +3107,6 @@
     "per": "227.56",
     "fwdPer": "121.74",
     "pbr": "5.04",
-    "roe": "-",
     "peg": "0.39배",
     "pegDesc": "EPS 성장률(+310.6%) 반영",
     "finance": {
@@ -3220,7 +3165,6 @@
     "per": "107.01",
     "fwdPer": "67.36",
     "pbr": "6.46",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -3279,7 +3223,6 @@
     "per": "14.56",
     "fwdPer": "12.95",
     "pbr": "1.40",
-    "roe": "-",
     "peg": "0.74배",
     "pegDesc": "EPS 성장률(+17.5%) 반영",
     "finance": {
@@ -3338,7 +3281,6 @@
     "per": "30.98",
     "fwdPer": "23.92",
     "pbr": "7.00",
-    "roe": "-",
     "peg": "0.52배",
     "pegDesc": "EPS 성장률(+45.8%) 반영",
     "finance": {
@@ -3397,7 +3339,6 @@
     "per": "30.75",
     "fwdPer": "26.30",
     "pbr": "8.37",
-    "roe": "-",
     "peg": "0.64배",
     "pegDesc": "EPS 성장률(+41.3%) 반영",
     "finance": {
@@ -3456,7 +3397,6 @@
     "per": "N/A",
     "fwdPer": "92.25",
     "pbr": "2.47",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -3515,7 +3455,6 @@
     "per": "22.28",
     "fwdPer": "17.03",
     "pbr": "4.79",
-    "roe": "-",
     "peg": "0.22배",
     "pegDesc": "EPS 성장률(+77.1%) 반영",
     "finance": {
@@ -3574,7 +3513,6 @@
     "per": "61.34",
     "fwdPer": "44.25",
     "pbr": "11.11",
-    "roe": "-",
     "peg": "0.50배",
     "pegDesc": "EPS 성장률(+88.0%) 반영",
     "finance": {
@@ -3633,7 +3571,6 @@
     "per": "21.74",
     "fwdPer": "19.98",
     "pbr": "8.19",
-    "roe": "-",
     "peg": "0.76배",
     "pegDesc": "EPS 성장률(+26.3%) 반영",
     "finance": {
@@ -3692,7 +3629,6 @@
     "per": "42.99",
     "fwdPer": "35.10",
     "pbr": "7.58",
-    "roe": "-",
     "peg": "1.21배",
     "pegDesc": "EPS 성장률(+29.0%) 반영",
     "finance": {
@@ -3751,7 +3687,6 @@
     "per": "16.87",
     "fwdPer": "10.73",
     "pbr": "1.18",
-    "roe": "-",
     "peg": "0.07배",
     "pegDesc": "EPS 성장률(+149.1%) 반영",
     "finance": {
@@ -3810,7 +3745,6 @@
     "per": "4.48",
     "fwdPer": "5.23",
     "pbr": "0.77",
-    "roe": "-",
     "peg": "0.24배",
     "pegDesc": "EPS 성장률(+21.7%) 반영",
     "finance": {
@@ -3869,7 +3803,6 @@
     "per": "22.44",
     "fwdPer": "20.18",
     "pbr": "3.86",
-    "roe": "-",
     "peg": "0.37배",
     "pegDesc": "EPS 성장률(+55.3%) 반영",
     "finance": {
@@ -3928,7 +3861,6 @@
     "per": "13.18",
     "fwdPer": "12.62",
     "pbr": "3.12",
-    "roe": "-",
     "peg": "1.38배",
     "pegDesc": "EPS 성장률(+9.1%) 반영",
     "finance": {
@@ -3987,7 +3919,6 @@
     "per": "59.21",
     "fwdPer": "45.77",
     "pbr": "5.53",
-    "roe": "-",
     "peg": "2.02배",
     "pegDesc": "EPS 성장률(+22.7%) 반영",
     "finance": {
@@ -4046,7 +3977,6 @@
     "per": "81.81",
     "fwdPer": "107.91",
     "pbr": "3.35",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -4105,7 +4035,6 @@
     "per": "44.54",
     "fwdPer": "35.48",
     "pbr": "7.94",
-    "roe": "-",
     "peg": "0.85배",
     "pegDesc": "EPS 성장률(+41.7%) 반영",
     "finance": {
@@ -4164,7 +4093,6 @@
     "per": "12.35",
     "fwdPer": "7.87",
     "pbr": "0.70",
-    "roe": "-",
     "peg": "0.03배",
     "pegDesc": "EPS 성장률(+242.5%) 반영",
     "finance": {
@@ -4223,7 +4151,6 @@
     "per": "8.69",
     "fwdPer": "5.89",
     "pbr": "0.70",
-    "roe": "-",
     "peg": "0.06배",
     "pegDesc": "EPS 성장률(+101.5%) 반영",
     "finance": {
@@ -4282,7 +4209,6 @@
     "per": "35.96",
     "fwdPer": "31.82",
     "pbr": "7.20",
-    "roe": "-",
     "peg": "0.59배",
     "pegDesc": "EPS 성장률(+54.0%) 반영",
     "finance": {
@@ -4341,7 +4267,6 @@
     "per": "29.52",
     "fwdPer": "28.42",
     "pbr": "2.48",
-    "roe": "-",
     "peg": "0.47배",
     "pegDesc": "EPS 성장률(+61.0%) 반영",
     "finance": {
@@ -4400,7 +4325,6 @@
     "per": "27.54",
     "fwdPer": "38.18",
     "pbr": "2.52",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -4459,7 +4383,6 @@
     "per": "23.43",
     "fwdPer": "16.58",
     "pbr": "3.59",
-    "roe": "-",
     "peg": "0.19배",
     "pegDesc": "EPS 성장률(+85.5%) 반영",
     "finance": {
@@ -4518,7 +4441,6 @@
     "per": "14.34",
     "fwdPer": "17.35",
     "pbr": "5.63",
-    "roe": "-",
     "peg": "0.72배",
     "pegDesc": "EPS 성장률(+24.1%) 반영",
     "finance": {
@@ -4577,7 +4499,6 @@
     "per": "N/A",
     "fwdPer": "8.10",
     "pbr": "1.18",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -4636,7 +4557,6 @@
     "per": "6.24",
     "fwdPer": "6.60",
     "pbr": "1.14",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -4695,7 +4615,6 @@
     "per": "N/A",
     "fwdPer": "-35.96",
     "pbr": "1.61",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -4754,7 +4673,6 @@
     "per": "11.53",
     "fwdPer": "14.00",
     "pbr": "0.86",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -4813,7 +4731,6 @@
     "per": "67.01",
     "fwdPer": "N/A",
     "pbr": "0.63",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -4872,7 +4789,6 @@
     "per": "N/A",
     "fwdPer": "-243.68",
     "pbr": "13.34",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -4931,7 +4847,6 @@
     "per": "33.37",
     "fwdPer": "25.43",
     "pbr": "1.71",
-    "roe": "-",
     "peg": "0.43배",
     "pegDesc": "EPS 성장률(+59.2%) 반영",
     "finance": {
@@ -4990,7 +4905,6 @@
     "per": "N/A",
     "fwdPer": "22.40",
     "pbr": "0.82",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -5049,7 +4963,6 @@
     "per": "16.60",
     "fwdPer": "15.54",
     "pbr": "3.06",
-    "roe": "-",
     "peg": "0.27배",
     "pegDesc": "EPS 성장률(+57.9%) 반영",
     "finance": {
@@ -5108,7 +5021,6 @@
     "per": "18.26",
     "fwdPer": "19.05",
     "pbr": "5.20",
-    "roe": "-",
     "peg": "0.44배",
     "pegDesc": "EPS 성장률(+43.6%) 반영",
     "finance": {
@@ -5167,7 +5079,6 @@
     "per": "9.98",
     "fwdPer": "N/A",
     "pbr": "0.92",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -5226,7 +5137,6 @@
     "per": "17.02",
     "fwdPer": "N/A",
     "pbr": "0.68",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -5285,7 +5195,6 @@
     "per": "5.32",
     "fwdPer": "5.82",
     "pbr": "1.32",
-    "roe": "-",
     "peg": "0.29배",
     "pegDesc": "EPS 성장률(+20.0%) 반영",
     "finance": {
@@ -5344,7 +5253,6 @@
     "per": "2.95",
     "fwdPer": "N/A",
     "pbr": "0.29",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -5403,7 +5311,6 @@
     "per": "9.57",
     "fwdPer": "8.71",
     "pbr": "0.93",
-    "roe": "-",
     "peg": "0.40배",
     "pegDesc": "EPS 성장률(+21.8%) 반영",
     "finance": {
@@ -5462,7 +5369,6 @@
     "per": "8.39",
     "fwdPer": "7.51",
     "pbr": "0.73",
-    "roe": "-",
     "peg": "0.32배",
     "pegDesc": "EPS 성장률(+23.8%) 반영",
     "finance": {
@@ -5521,7 +5427,6 @@
     "per": "8.33",
     "fwdPer": "7.66",
     "pbr": "0.70",
-    "roe": "-",
     "peg": "0.57배",
     "pegDesc": "EPS 성장률(+13.6%) 반영",
     "finance": {
@@ -5580,7 +5485,6 @@
     "per": "9.34",
     "fwdPer": "8.73",
     "pbr": "1.84",
-    "roe": "-",
     "peg": "0.51배",
     "pegDesc": "EPS 성장률(+17.0%) 반영",
     "finance": {
@@ -5639,7 +5543,6 @@
     "per": "6.02",
     "fwdPer": "5.67",
     "pbr": "0.42",
-    "roe": "-",
     "peg": "1.65배",
     "pegDesc": "EPS 성장률(+3.4%) 반영",
     "finance": {
@@ -5698,7 +5601,6 @@
     "per": "7.31",
     "fwdPer": "7.24",
     "pbr": "0.59",
-    "roe": "-",
     "peg": "2.12배",
     "pegDesc": "EPS 성장률(+3.4%) 반영",
     "finance": {
@@ -5757,7 +5659,6 @@
     "per": "6.36",
     "fwdPer": "5.69",
     "pbr": "0.42",
-    "roe": "-",
     "peg": "0.54배",
     "pegDesc": "EPS 성장률(+10.5%) 반영",
     "finance": {
@@ -5816,7 +5717,6 @@
     "per": "17.82",
     "fwdPer": "16.32",
     "pbr": "1.45",
-    "roe": "-",
     "peg": "0.68배",
     "pegDesc": "EPS 성장률(+23.8%) 반영",
     "finance": {
@@ -5875,7 +5775,6 @@
     "per": "55.08",
     "fwdPer": "38.40",
     "pbr": "2.45",
-    "roe": "-",
     "peg": "0.22배",
     "pegDesc": "EPS 성장률(+177.9%) 반영",
     "finance": {
@@ -5934,7 +5833,6 @@
     "per": "17.19",
     "fwdPer": "17.03",
     "pbr": "0.44",
-    "roe": "-",
     "peg": "0.96배",
     "pegDesc": "EPS 성장률(+17.7%) 반영",
     "finance": {
@@ -5993,7 +5891,6 @@
     "per": "4.09",
     "fwdPer": "2.81",
     "pbr": "0.67",
-    "roe": "-",
     "peg": "0.00배",
     "pegDesc": "EPS 성장률(+632.6%) 반영",
     "finance": {
@@ -6052,9 +5949,8 @@
     "per": "13.29",
     "fwdPer": "11.59",
     "pbr": "0.69",
-    "roe": "-",
-    "peg": "0.44배",
-    "pegDesc": "EPS 성장률(+26.1%) 반영",
+    "peg": "0.48배",
+    "pegDesc": "EPS 성장률(+24.0%) 반영",
     "finance": {
       "years": [
         "2023.12.",
@@ -6072,7 +5968,7 @@
         "23,573",
         "26,496",
         "26,591",
-        "32,996"
+        "32,941"
       ],
       "opMs": [
         "11.32",
@@ -6096,7 +5992,7 @@
         "35,961",
         "41,007",
         "40,703",
-        "51,327"
+        "50,487"
       ]
     }
   },
@@ -6111,7 +6007,6 @@
     "per": "6.92",
     "fwdPer": "7.26",
     "pbr": "0.79",
-    "roe": "-",
     "peg": "1.35배",
     "pegDesc": "EPS 성장률(+5.4%) 반영",
     "finance": {
@@ -6170,7 +6065,6 @@
     "per": "3.25",
     "fwdPer": "3.31",
     "pbr": "0.52",
-    "roe": "-",
     "peg": "0.37배",
     "pegDesc": "EPS 성장률(+9.1%) 반영",
     "finance": {
@@ -6229,7 +6123,6 @@
     "per": "3.12",
     "fwdPer": "N/A",
     "pbr": "0.32",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -6288,7 +6181,6 @@
     "per": "16.99",
     "fwdPer": "14.64",
     "pbr": "0.30",
-    "roe": "-",
     "peg": "0.32배",
     "pegDesc": "EPS 성장률(+46.1%) 반영",
     "finance": {
@@ -6347,7 +6239,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "0.79",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -6406,7 +6297,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "0.63",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -6465,7 +6355,6 @@
     "per": "5.81",
     "fwdPer": "N/A",
     "pbr": "0.63",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -6524,7 +6413,6 @@
     "per": "4.82",
     "fwdPer": "4.33",
     "pbr": "0.81",
-    "roe": "-",
     "peg": "0.07배",
     "pegDesc": "EPS 성장률(+61.8%) 반영",
     "finance": {
@@ -6583,7 +6471,6 @@
     "per": "4.81",
     "fwdPer": "5.51",
     "pbr": "0.91",
-    "roe": "-",
     "peg": "0.05배",
     "pegDesc": "EPS 성장률(+112.3%) 반영",
     "finance": {
@@ -6642,7 +6529,6 @@
     "per": "3.19",
     "fwdPer": "3.21",
     "pbr": "0.65",
-    "roe": "-",
     "peg": "0.07배",
     "pegDesc": "EPS 성장률(+44.6%) 반영",
     "finance": {
@@ -6701,7 +6587,6 @@
     "per": "3.49",
     "fwdPer": "3.27",
     "pbr": "0.77",
-    "roe": "-",
     "peg": "0.05배",
     "pegDesc": "EPS 성장률(+68.2%) 반영",
     "finance": {
@@ -6760,7 +6645,6 @@
     "per": "6.78",
     "fwdPer": "N/A",
     "pbr": "0.64",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -6819,7 +6703,6 @@
     "per": "5.95",
     "fwdPer": "5.61",
     "pbr": "0.87",
-    "roe": "-",
     "peg": "0.11배",
     "pegDesc": "EPS 성장률(+51.6%) 반영",
     "finance": {
@@ -6878,7 +6761,6 @@
     "per": "11.08",
     "fwdPer": "N/A",
     "pbr": "0.40",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -6937,7 +6819,6 @@
     "per": "5.67",
     "fwdPer": "N/A",
     "pbr": "0.26",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -6996,7 +6877,6 @@
     "per": "4.89",
     "fwdPer": "N/A",
     "pbr": "0.37",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -7055,7 +6935,6 @@
     "per": "13.99",
     "fwdPer": "14.79",
     "pbr": "0.91",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -7114,7 +6993,6 @@
     "per": "40.49",
     "fwdPer": "25.26",
     "pbr": "1.19",
-    "roe": "-",
     "peg": "2.02배",
     "pegDesc": "EPS 성장률(+12.5%) 반영",
     "finance": {
@@ -7173,7 +7051,6 @@
     "per": "10.98",
     "fwdPer": "10.91",
     "pbr": "1.17",
-    "roe": "-",
     "peg": "0.80배",
     "pegDesc": "EPS 성장률(+13.7%) 반영",
     "finance": {
@@ -7232,7 +7109,6 @@
     "per": "7.27",
     "fwdPer": "9.40",
     "pbr": "1.15",
-    "roe": "-",
     "peg": "0.24배",
     "pegDesc": "EPS 성장률(+38.4%) 반영",
     "finance": {
@@ -7291,7 +7167,6 @@
     "per": "7.43",
     "fwdPer": "5.81",
     "pbr": "0.47",
-    "roe": "-",
     "peg": "0.05배",
     "pegDesc": "EPS 성장률(+127.8%) 반영",
     "finance": {
@@ -7350,7 +7225,6 @@
     "per": "23.37",
     "fwdPer": "20.67",
     "pbr": "1.13",
-    "roe": "-",
     "peg": "0.58배",
     "pegDesc": "EPS 성장률(+35.9%) 반영",
     "finance": {
@@ -7409,7 +7283,6 @@
     "per": "N/A",
     "fwdPer": "10.78",
     "pbr": "1.61",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -7468,7 +7341,6 @@
     "per": "18.72",
     "fwdPer": "17.09",
     "pbr": "0.50",
-    "roe": "-",
     "peg": "0.32배",
     "pegDesc": "EPS 성장률(+53.4%) 반영",
     "finance": {
@@ -7527,7 +7399,6 @@
     "per": "4.14",
     "fwdPer": "5.45",
     "pbr": "0.45",
-    "roe": "-",
     "peg": "0.23배",
     "pegDesc": "EPS 성장률(+24.1%) 반영",
     "finance": {
@@ -7586,7 +7457,6 @@
     "per": "7.60",
     "fwdPer": "3.82",
     "pbr": "0.41",
-    "roe": "-",
     "peg": "0.03배",
     "pegDesc": "EPS 성장률(+132.0%) 반영",
     "finance": {
@@ -7645,7 +7515,6 @@
     "per": "19.47",
     "fwdPer": "15.93",
     "pbr": "1.70",
-    "roe": "-",
     "peg": "0.29배",
     "pegDesc": "EPS 성장률(+54.3%) 반영",
     "finance": {
@@ -7704,7 +7573,6 @@
     "per": "N/A",
     "fwdPer": "49.05",
     "pbr": "0.19",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -7763,7 +7631,6 @@
     "per": "33.47",
     "fwdPer": "10.92",
     "pbr": "0.26",
-    "roe": "-",
     "peg": "0.02배",
     "pegDesc": "EPS 성장률(+437.3%) 반영",
     "finance": {
@@ -7822,7 +7689,6 @@
     "per": "6.99",
     "fwdPer": "4.45",
     "pbr": "0.34",
-    "roe": "-",
     "peg": "0.02배",
     "pegDesc": "EPS 성장률(+193.6%) 반영",
     "finance": {
@@ -7881,7 +7747,6 @@
     "per": "18.97",
     "fwdPer": "16.43",
     "pbr": "6.04",
-    "roe": "-",
     "peg": "0.37배",
     "pegDesc": "EPS 성장률(+44.4%) 반영",
     "finance": {
@@ -7940,7 +7805,6 @@
     "per": "N/A",
     "fwdPer": "10.66",
     "pbr": "0.40",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -7999,7 +7863,6 @@
     "per": "10.25",
     "fwdPer": "9.21",
     "pbr": "1.06",
-    "roe": "-",
     "peg": "0.42배",
     "pegDesc": "EPS 성장률(+22.0%) 반영",
     "finance": {
@@ -8058,7 +7921,6 @@
     "per": "12.68",
     "fwdPer": "12.01",
     "pbr": "0.80",
-    "roe": "-",
     "peg": "0.54배",
     "pegDesc": "EPS 성장률(+22.2%) 반영",
     "finance": {
@@ -8117,7 +7979,6 @@
     "per": "10.92",
     "fwdPer": "10.27",
     "pbr": "1.78",
-    "roe": "-",
     "peg": "0.59배",
     "pegDesc": "EPS 성장률(+17.3%) 반영",
     "finance": {
@@ -8176,7 +8037,6 @@
     "per": "95.06",
     "fwdPer": "-121.63",
     "pbr": "0.15",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -8235,7 +8095,6 @@
     "per": "13.42",
     "fwdPer": "7.28",
     "pbr": "0.16",
-    "roe": "-",
     "peg": "0.01배",
     "pegDesc": "EPS 성장률(+547.7%) 반영",
     "finance": {
@@ -8294,7 +8153,6 @@
     "per": "15.67",
     "fwdPer": "6.34",
     "pbr": "0.45",
-    "roe": "-",
     "peg": "0.00배",
     "pegDesc": "EPS 성장률(+2911.8%) 반영",
     "finance": {
@@ -8353,7 +8211,6 @@
     "per": "23.60",
     "fwdPer": "10.67",
     "pbr": "0.94",
-    "roe": "-",
     "peg": "0.07배",
     "pegDesc": "EPS 성장률(+151.2%) 반영",
     "finance": {
@@ -8412,7 +8269,6 @@
     "per": "85.59",
     "fwdPer": "53.84",
     "pbr": "30.60",
-    "roe": "-",
     "peg": "0.47배",
     "pegDesc": "EPS 성장률(+114.5%) 반영",
     "finance": {
@@ -8471,7 +8327,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "16.16",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -8530,7 +8385,6 @@
     "per": "275.73",
     "fwdPer": "N/A",
     "pbr": "16.18",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -8589,7 +8443,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "6.31",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -8648,7 +8501,6 @@
     "per": "24.45",
     "fwdPer": "27.64",
     "pbr": "3.01",
-    "roe": "-",
     "peg": "1.28배",
     "pegDesc": "EPS 성장률(+21.5%) 반영",
     "finance": {
@@ -8707,7 +8559,6 @@
     "per": "11.90",
     "fwdPer": "11.71",
     "pbr": "0.76",
-    "roe": "-",
     "peg": "0.81배",
     "pegDesc": "EPS 성장률(+14.4%) 반영",
     "finance": {
@@ -8766,7 +8617,6 @@
     "per": "14.97",
     "fwdPer": "13.62",
     "pbr": "1.64",
-    "roe": "-",
     "peg": "0.50배",
     "pegDesc": "EPS 성장률(+27.0%) 반영",
     "finance": {
@@ -8825,7 +8675,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "13.05",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -8884,7 +8733,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "9.51",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -8943,7 +8791,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "14.27",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9002,7 +8849,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "18.04",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9061,7 +8907,6 @@
     "per": "14.82",
     "fwdPer": "N/A",
     "pbr": "6.46",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9120,7 +8965,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "5.84",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9179,7 +9023,6 @@
     "per": "40.39",
     "fwdPer": "N/A",
     "pbr": "3.83",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9238,7 +9081,6 @@
     "per": "46.01",
     "fwdPer": "N/A",
     "pbr": "1.73",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9297,7 +9139,6 @@
     "per": "34.41",
     "fwdPer": "22.75",
     "pbr": "1.25",
-    "roe": "-",
     "peg": "0.57배",
     "pegDesc": "EPS 성장률(+39.6%) 반영",
     "finance": {
@@ -9356,7 +9197,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "32.86",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9415,7 +9255,6 @@
     "per": "13.76",
     "fwdPer": "14.43",
     "pbr": "1.81",
-    "roe": "-",
     "peg": "2.82배",
     "pegDesc": "EPS 성장률(+5.1%) 반영",
     "finance": {
@@ -9474,7 +9313,6 @@
     "per": "13.17",
     "fwdPer": "12.00",
     "pbr": "3.28",
-    "roe": "-",
     "peg": "0.82배",
     "pegDesc": "EPS 성장률(+14.6%) 반영",
     "finance": {
@@ -9533,7 +9371,6 @@
     "per": "10.32",
     "fwdPer": "9.72",
     "pbr": "3.30",
-    "roe": "-",
     "peg": "0.26배",
     "pegDesc": "EPS 성장률(+37.1%) 반영",
     "finance": {
@@ -9592,7 +9429,6 @@
     "per": "17.38",
     "fwdPer": "14.49",
     "pbr": "4.28",
-    "roe": "-",
     "peg": "0.41배",
     "pegDesc": "EPS 성장률(+35.0%) 반영",
     "finance": {
@@ -9651,7 +9487,6 @@
     "per": "-",
     "fwdPer": "-",
     "pbr": "-",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9675,7 +9510,6 @@
     "per": "9.58",
     "fwdPer": "N/A",
     "pbr": "2.15",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9734,7 +9568,6 @@
     "per": "11.54",
     "fwdPer": "N/A",
     "pbr": "1.68",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9793,7 +9626,6 @@
     "per": "-",
     "fwdPer": "-",
     "pbr": "-",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9817,7 +9649,6 @@
     "per": "18.65",
     "fwdPer": "N/A",
     "pbr": "1.99",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -9876,7 +9707,6 @@
     "per": "19.23",
     "fwdPer": "16.31",
     "pbr": "4.48",
-    "roe": "-",
     "peg": "0.25배",
     "pegDesc": "EPS 성장률(+65.6%) 반영",
     "finance": {
@@ -9935,7 +9765,6 @@
     "per": "238.26",
     "fwdPer": "1,238.37",
     "pbr": "5.80",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -9994,7 +9823,6 @@
     "per": "78.67",
     "fwdPer": "N/A",
     "pbr": "4.92",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10053,7 +9881,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "1.00",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10112,7 +9939,6 @@
     "per": "161.23",
     "fwdPer": "N/A",
     "pbr": "5.79",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10171,7 +9997,6 @@
     "per": "-",
     "fwdPer": "-",
     "pbr": "-",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10195,7 +10020,6 @@
     "per": "45.47",
     "fwdPer": "N/A",
     "pbr": "2.58",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10254,7 +10078,6 @@
     "per": "9.22",
     "fwdPer": "N/A",
     "pbr": "1.03",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10313,7 +10136,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "0.37",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10372,7 +10194,6 @@
     "per": "118.75",
     "fwdPer": "N/A",
     "pbr": "4.09",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10431,7 +10252,6 @@
     "per": "30.80",
     "fwdPer": "N/A",
     "pbr": "1.56",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10490,7 +10310,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "2.61",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10549,7 +10368,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "0.36",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10608,7 +10426,6 @@
     "per": "27.18",
     "fwdPer": "N/A",
     "pbr": "0.94",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10667,7 +10484,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "1.41",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10726,7 +10542,6 @@
     "per": "52.28",
     "fwdPer": "37.02",
     "pbr": "13.99",
-    "roe": "-",
     "peg": "0.55배",
     "pegDesc": "EPS 성장률(+67.4%) 반영",
     "finance": {
@@ -10785,7 +10600,6 @@
     "per": "28.76",
     "fwdPer": "28.63",
     "pbr": "6.93",
-    "roe": "-",
     "peg": "1.18배",
     "pegDesc": "EPS 성장률(+24.2%) 반영",
     "finance": {
@@ -10844,7 +10658,6 @@
     "per": "1,373.38",
     "fwdPer": "N/A",
     "pbr": "16.33",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10903,7 +10716,6 @@
     "per": "50.58",
     "fwdPer": "N/A",
     "pbr": "7.34",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -10962,7 +10774,6 @@
     "per": "20.41",
     "fwdPer": "15.26",
     "pbr": "2.23",
-    "roe": "-",
     "peg": "0.13배",
     "pegDesc": "EPS 성장률(+116.0%) 반영",
     "finance": {
@@ -11021,7 +10832,6 @@
     "per": "10.23",
     "fwdPer": "N/A",
     "pbr": "1.73",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -11080,7 +10890,6 @@
     "per": "32.66",
     "fwdPer": "24.81",
     "pbr": "4.82",
-    "roe": "-",
     "peg": "0.41배",
     "pegDesc": "EPS 성장률(+60.0%) 반영",
     "finance": {
@@ -11139,7 +10948,6 @@
     "per": "43.73",
     "fwdPer": "37.79",
     "pbr": "5.81",
-    "roe": "-",
     "peg": "0.63배",
     "pegDesc": "EPS 성장률(+59.9%) 반영",
     "finance": {
@@ -11198,7 +11006,6 @@
     "per": "16.45",
     "fwdPer": "14.34",
     "pbr": "1.68",
-    "roe": "-",
     "peg": "0.16배",
     "pegDesc": "EPS 성장률(+92.0%) 반영",
     "finance": {
@@ -11257,7 +11064,6 @@
     "per": "43.46",
     "fwdPer": "28.49",
     "pbr": "6.77",
-    "roe": "-",
     "peg": "0.07배",
     "pegDesc": "EPS 성장률(+387.3%) 반영",
     "finance": {
@@ -11316,7 +11122,6 @@
     "per": "26.28",
     "fwdPer": "N/A",
     "pbr": "5.30",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -11375,7 +11180,6 @@
     "per": "N/A",
     "fwdPer": "24.31",
     "pbr": "7.29",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -11434,7 +11238,6 @@
     "per": "30.80",
     "fwdPer": "24.16",
     "pbr": "4.92",
-    "roe": "-",
     "peg": "0.15배",
     "pegDesc": "EPS 성장률(+162.6%) 반영",
     "finance": {
@@ -11493,7 +11296,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "7.33",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -11552,7 +11354,6 @@
     "per": "78.13",
     "fwdPer": "38.69",
     "pbr": "5.30",
-    "roe": "-",
     "peg": "1.08배",
     "pegDesc": "EPS 성장률(+35.8%) 반영",
     "finance": {
@@ -11611,7 +11412,6 @@
     "per": "64.26",
     "fwdPer": "70.68",
     "pbr": "4.86",
-    "roe": "-",
     "peg": "0.04배",
     "pegDesc": "EPS 성장률(+1964.1%) 반영",
     "finance": {
@@ -11670,7 +11470,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "7.37",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -11729,7 +11528,6 @@
     "per": "15.09",
     "fwdPer": "10.18",
     "pbr": "1.37",
-    "roe": "-",
     "peg": "0.05배",
     "pegDesc": "EPS 성장률(+218.5%) 반영",
     "finance": {
@@ -11788,7 +11586,6 @@
     "per": "12.76",
     "fwdPer": "11.84",
     "pbr": "1.99",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -11847,7 +11644,6 @@
     "per": "14.80",
     "fwdPer": "16.07",
     "pbr": "1.89",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -11906,7 +11702,6 @@
     "per": "22.74",
     "fwdPer": "20.18",
     "pbr": "0.91",
-    "roe": "-",
     "peg": "0.08배",
     "pegDesc": "EPS 성장률(+241.7%) 반영",
     "finance": {
@@ -11965,7 +11760,6 @@
     "per": "N/A",
     "fwdPer": "22.27",
     "pbr": "0.29",
-    "roe": "-",
     "peg": "0.62배",
     "pegDesc": "EPS 성장률(+36.1%) 반영",
     "finance": {
@@ -12024,7 +11818,6 @@
     "per": "23.29",
     "fwdPer": "16.87",
     "pbr": "1.50",
-    "roe": "-",
     "peg": "0.63배",
     "pegDesc": "EPS 성장률(+26.7%) 반영",
     "finance": {
@@ -12083,7 +11876,6 @@
     "per": "13.33",
     "fwdPer": "14.31",
     "pbr": "2.21",
-    "roe": "-",
     "peg": "0.18배",
     "pegDesc": "EPS 성장률(+81.7%) 반영",
     "finance": {
@@ -12142,7 +11934,6 @@
     "per": "22.34",
     "fwdPer": "N/A",
     "pbr": "0.28",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12201,7 +11992,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "0.57",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12260,7 +12050,6 @@
     "per": "7.93",
     "fwdPer": "6.65",
     "pbr": "1.95",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "적자지속/흑자전환",
     "finance": {
@@ -12319,7 +12108,6 @@
     "per": "N/A",
     "fwdPer": "-8.03",
     "pbr": "0.82",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12378,7 +12166,6 @@
     "per": "7.38",
     "fwdPer": "N/A",
     "pbr": "1.19",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12437,7 +12224,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "2.78",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12496,7 +12282,6 @@
     "per": "34.53",
     "fwdPer": "16.19",
     "pbr": "0.41",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 역성장",
     "finance": {
@@ -12555,7 +12340,6 @@
     "per": "6.22",
     "fwdPer": "7.86",
     "pbr": "0.64",
-    "roe": "-",
     "peg": "11.98배",
     "pegDesc": "EPS 성장률(+0.7%) 반영",
     "finance": {
@@ -12614,7 +12398,6 @@
     "per": "13.22",
     "fwdPer": "13.95",
     "pbr": "0.51",
-    "roe": "-",
     "peg": "0.56배",
     "pegDesc": "EPS 성장률(+25.0%) 반영",
     "finance": {
@@ -12673,7 +12456,6 @@
     "per": "5.24",
     "fwdPer": "N/A",
     "pbr": "0.52",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12732,7 +12514,6 @@
     "per": "19.72",
     "fwdPer": "N/A",
     "pbr": "2.12",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12791,7 +12572,6 @@
     "per": "4,039.77",
     "fwdPer": "N/A",
     "pbr": "51.91",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12850,7 +12630,6 @@
     "per": "N/A",
     "fwdPer": "-2,853.66",
     "pbr": "9.52",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -12909,7 +12688,6 @@
     "per": "16.20",
     "fwdPer": "11.99",
     "pbr": "0.83",
-    "roe": "-",
     "peg": "0.24배",
     "pegDesc": "EPS 성장률(+50.7%) 반영",
     "finance": {
@@ -12968,7 +12746,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "4.96",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13027,7 +12804,6 @@
     "per": "1,535.00",
     "fwdPer": "N/A",
     "pbr": "6.73",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13086,7 +12862,6 @@
     "per": "184.38",
     "fwdPer": "109.41",
     "pbr": "6.40",
-    "roe": "-",
     "peg": "1.45배",
     "pegDesc": "EPS 성장률(+75.5%) 반영",
     "finance": {
@@ -13145,7 +12920,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "6.81",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13204,7 +12978,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "10.46",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13263,7 +13036,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "7.68",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13322,7 +13094,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "4.41",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13381,7 +13152,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "2.09",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13440,7 +13210,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "9.81",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13499,7 +13268,6 @@
     "per": "N/A",
     "fwdPer": "N/A",
     "pbr": "1.90",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13558,7 +13326,6 @@
     "per": "19.55",
     "fwdPer": "N/A",
     "pbr": "1.28",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13617,7 +13384,6 @@
     "per": "5.57",
     "fwdPer": "N/A",
     "pbr": "0.96",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13676,7 +13442,6 @@
     "per": "6.71",
     "fwdPer": "N/A",
     "pbr": "0.81",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13735,7 +13500,6 @@
     "per": "7.31",
     "fwdPer": "N/A",
     "pbr": "0.80",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13794,7 +13558,6 @@
     "per": "7.18",
     "fwdPer": "N/A",
     "pbr": "1.10",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
@@ -13853,7 +13616,6 @@
     "per": "57.20",
     "fwdPer": "N/A",
     "pbr": "0.94",
-    "roe": "-",
     "peg": "N/A",
     "pegDesc": "EPS 부족",
     "finance": {
