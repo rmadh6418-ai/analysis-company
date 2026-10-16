@@ -22,13 +22,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: 📦 특수 우회 라이브러리 설치 (cloudscraper 추가)
-        run: pip install requests beautifulsoup4 cloudscraper
+      - name: 📦 필수 라이브러리 설치
+        run: pip install requests
 
       - name: 🚀 데이터 수집 봇 실행
         run: python update_data.py
 
-      - name: 💾 결과 파일 커밋 및 푸시
+      - name: 💾 결과 파일(quant_data.json) 커밋 및 푸시
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
