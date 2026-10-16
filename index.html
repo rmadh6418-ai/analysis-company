@@ -6,6 +6,8 @@
     <title>AI 주식 퀀트 대시보드 Pro</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .table-cell { padding: 0.75rem 0.5rem; border: 1px solid #e5e7eb; text-align: center; }
         .table-header { background-color: #f8fafc; font-weight: 700; color: #334155; }
@@ -22,7 +24,7 @@
                 <span class="text-3xl">📈</span>
                 <div>
                     <h1 class="text-xl md:text-2xl font-extrabold text-slate-800">AI 주식 퀀트 대시보드</h1>
-                    <p class="text-xs text-slate-500">Auto Scraper Engine · Gemini AI</p>
+                    <p class="text-xs text-slate-500">Auto Scraper Engine · Gemini AI · 5Y Consensus</p>
                 </div>
             </div>
             <div class="flex space-x-2 w-full md:w-auto">
@@ -96,6 +98,25 @@
                 </div>
             </div>
 
+            <!-- 신규: 목표 매수가 계산기 (하락률 탭) -->
+            <div>
+                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 mb-3">🎯 분할 매수 타점 (현재가 대비 하락률)</h2>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-rose-50 p-4 rounded-xl shadow-sm border border-rose-200 text-center">
+                        <p class="text-sm font-bold text-rose-800 mb-1">1차 매수가 (-11%)</p>
+                        <p id="buyTarget11" class="text-xl font-extrabold text-slate-800">-</p>
+                    </div>
+                    <div class="bg-rose-100 p-4 rounded-xl shadow-sm border border-rose-200 text-center">
+                        <p class="text-sm font-bold text-rose-800 mb-1">2차 매수가 (-15%)</p>
+                        <p id="buyTarget15" class="text-xl font-extrabold text-slate-800">-</p>
+                    </div>
+                    <div class="bg-rose-200 p-4 rounded-xl shadow-sm border border-rose-300 text-center">
+                        <p class="text-sm font-bold text-rose-900 mb-1">3차 매수가 (-21%)</p>
+                        <p id="buyTarget21" class="text-xl font-extrabold text-slate-800">-</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- 밸류에이션 및 PEG -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & 모닝스타 경제적 해자</h2>
@@ -123,17 +144,28 @@
                 </div>
             </div>
 
-            <!-- 재무제표 (컨센서스) -->
-            <div>
-                <div class="flex justify-between items-end mb-3">
-                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-indigo-600 pl-3">최근 결산 및 컨센서스 (로컬 데이터베이스)</h2>
-                    <span class="text-xs text-slate-500">* (E) 표시는 증권사 컨센서스(추정치)입니다.</span>
+            <!-- 재무제표 5년치 및 그래프 영역 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 표 영역 (2칸 차지) -->
+                <div class="lg:col-span-2">
+                    <div class="flex justify-between items-end mb-3">
+                        <h2 class="text-lg font-bold text-slate-800 border-l-4 border-indigo-600 pl-3">최근 결산 및 향후 3년 컨센서스</h2>
+                        <span class="text-xs text-slate-500">* (E) 표시는 증권사 추정치입니다.</span>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                        <table class="w-full text-sm border-collapse" id="financeTable">
+                            <thead id="financeTableHead"></thead>
+                            <tbody id="financeTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-                    <table class="w-full text-sm border-collapse" id="financeTable">
-                        <thead id="financeTableHead"></thead>
-                        <tbody id="financeTableBody"></tbody>
-                    </table>
+                
+                <!-- 차트 영역 (1칸 차지) -->
+                <div class="lg:col-span-1">
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-cyan-500 pl-3 mb-3">📊 영업이익 트렌드</h2>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-64 flex items-center justify-center">
+                        <canvas id="opChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -195,6 +227,7 @@
 
         let lastFetchedData = null;
         let globalQuantData = null;
+        let myChart = null; // 차트 객체 저장용
 
         window.onload = async () => {
             const savedKey = localStorage.getItem('geminiApiKey');
@@ -308,43 +341,100 @@
             document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
             document.getElementById('fnRoe').textContent = `ROE: ${data.roe}${data.roe !== "-" ? "%" : ""}`;
 
+            // 목표 매수가 계산 (-11%, -15%, -21%)
+            if (data.rawPrice && data.rawPrice > 0) {
+                const p = data.rawPrice;
+                document.getElementById('buyTarget11').textContent = Math.floor(p * 0.89).toLocaleString() + "원";
+                document.getElementById('buyTarget15').textContent = Math.floor(p * 0.85).toLocaleString() + "원";
+                document.getElementById('buyTarget21').textContent = Math.floor(p * 0.79).toLocaleString() + "원";
+            } else {
+                document.getElementById('buyTarget11').textContent = "N/A";
+                document.getElementById('buyTarget15').textContent = "N/A";
+                document.getElementById('buyTarget21').textContent = "N/A";
+            }
+
             // PEG 띄우기
             document.getElementById('fnPeg').textContent = data.peg || "N/A";
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "데이터 부족";
 
-            // 재무제표 렌더링
-            let theadHtml = `<tr><th class="table-cell table-header w-36">재무 항목</th>`;
+            // 재무제표 5년치 렌더링
+            let theadHtml = `<tr><th class="table-cell table-header w-24">재무 항목</th>`;
             data.finance.years.forEach(y => {
-                theadHtml += `<th class="table-cell table-header ${y.includes('E') ? 'bg-indigo-50 text-indigo-700' : ''}">${y}</th>`;
+                theadHtml += `<th class="table-cell table-header text-xs ${y.includes('E') ? 'bg-indigo-50 text-indigo-700' : ''}">${y}</th>`;
             });
             theadHtml += `</tr>`;
             document.getElementById('financeTableHead').innerHTML = theadHtml;
 
             const rowsData = [
-                { label: "매출액 (억원)", data: data.finance.revs, bold: true },
-                { label: "영업이익 (억원)", data: data.finance.ops, bold: false },
-                { label: "영업이익률 (%)", data: data.finance.opMs, bold: true },
-                { label: "순이익률 (%)", data: data.finance.npMs, bold: true },
-                { label: "부채비율 (%)", data: data.finance.debts, bold: false },
-                { label: "EPS (원)", data: data.finance.epss, bold: false }
+                { label: "매출(억)", data: data.finance.revs, bold: true },
+                { label: "영익(억)", data: data.finance.ops, bold: false },
+                { label: "영익률(%)", data: data.finance.opMs, bold: true },
+                { label: "순익률(%)", data: data.finance.npMs, bold: true },
+                { label: "부채(%)", data: data.finance.debts, bold: false },
+                { label: "EPS(원)", data: data.finance.epss, bold: false }
             ];
 
             let tbodyHtml = "";
             rowsData.forEach(r => {
-                tbodyHtml += `<tr><td class="table-cell bg-slate-50 font-bold text-slate-700 text-left pl-4">${r.label}</td>`;
+                tbodyHtml += `<tr><td class="table-cell bg-slate-50 font-bold text-slate-700 text-left pl-2 text-xs">${r.label}</td>`;
                 r.data.forEach(val => {
                     const str = String(val);
                     const isNeg = str.startsWith('-');
                     const cls = isNeg ? 'text-blue-600' : (r.bold && str !== '-' ? 'text-slate-900 font-semibold' : 'text-slate-600');
-                    tbodyHtml += `<td class="table-cell ${cls}">${str}</td>`;
+                    tbodyHtml += `<td class="table-cell text-xs ${cls}">${str}</td>`;
                 });
                 tbodyHtml += `</tr>`;
             });
             document.getElementById('financeTableBody').innerHTML = tbodyHtml;
+            
+            // 차트 렌더링 (영업이익)
+            renderChart(data.finance.years, data.finance.ops);
+
             document.getElementById('statusBox').classList.add('hidden');
 
             lastFetchedData = { corpName: data.name, ticker, price: data.price, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, pbr: data.pbr };
             await runGeminiAnalysisOnly(data.name, ticker, data.price, data.changeRate, data.marketCap, data.foreignRate, data.per, data.pbr);
+        }
+
+        // 한국 주식 관례 반영 차트 (상승/흑자 = 빨강, 하락/적자 = 파랑)
+        function renderChart(labels, dataArr) {
+            const ctx = document.getElementById('opChart').getContext('2d');
+            
+            const numericData = dataArr.map(val => {
+                const num = parseFloat(String(val).replace(/,/g, ''));
+                return isNaN(num) ? 0 : num;
+            });
+
+            // 흑자는 빨강, 적자는 파랑
+            const bgColors = numericData.map(val => val >= 0 ? 'rgba(220, 38, 38, 0.7)' : 'rgba(37, 99, 235, 0.7)');
+            const borderColors = numericData.map(val => val >= 0 ? 'rgba(220, 38, 38, 1)' : 'rgba(37, 99, 235, 1)');
+
+            // 기존 차트가 있으면 삭제
+            if (myChart) { myChart.destroy(); }
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '영업이익 (억원)',
+                        data: numericData,
+                        backgroundColor: bgColors,
+                        borderColor: borderColors,
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { font: { size: 10 } } },
+                        x: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
         }
 
         async function runGeminiAnalysisOnly(corpName, ticker, price, changeRate, marketCap, foreignRate, per, pbr) {
