@@ -68,7 +68,7 @@ def fetch_stock_data(name, ticker):
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
             elif key in ["ROE", "roe"]: stock_info["roe"] = val
             
-        # 🔥 네이버 모바일 API에서 제공하는 전체 연도 데이터를 자르지 않고 통째로 수집
+        # 🔥 핵심 수정: 뒤에서 4개만 자르지 않고, API가 제공하는 모든 연도(과거 + 향후 3년치 이상 추정치 전부)를 가져옵니다!
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
         
