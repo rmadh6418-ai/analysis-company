@@ -3,7 +3,6 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-# 1. 150여개 전체 종목 리스트 (KOSPI 200 + KOSDAQ 150)
 KOSPI200_SECTORS = {
     "화학·에너지": {"LG화학": "051910", "S-Oil": "010950", "SK이노베이션": "096770", "롯데케미칼": "011170", "SK가스": "018670", "GS": "078930", "한국가스공사": "036460", "한화솔루션": "009830", "금호석유": "011780", "OCI홀딩스": "010060", "대한유화": "006650"},
     "이차전지·배터리": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "포스코퓨처엠": "003670", "삼성SDI": "006400", "엘앤에프": "066970", "에코프로머티": "450080", "코스모신소재": "005070", "포스코인터내셔널": "047050", "솔루스첨단소재": "336370", "금양": "001570"},
@@ -34,28 +33,28 @@ KOSDAQ150_SECTORS = {
     "피팅·배관기자재": {"성광벤드": "014620", "태광": "023160", "하이록코리아": "013030", "디케이락": "105740", "비엠티": "086670", "태웅": "044490"}
 }
 
-# 딕셔너리 병합
 TARGET_STOCKS = {}
 for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companies)
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
-# 연결 재사용 세션
 session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
-# 개별 종목 수집 함수
 def fetch_stock_data(name, ticker):
     stock_info = {
-        "name": name, "price": "N/A", "changeRate": "0.00%", "direction": "FLAT",
+        "name": name, "price": "N/A", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "roe": "-",
         "peg": "N/A", "pegDesc": "EPS 부족",
-        "finance": { "years": ["-","-","-","-"], "revs": ["-","-","-","-"], "ops": ["-","-","-","-"], "opMs": ["-","-","-","-"], "npMs": ["-","-","-","-"], "debts": ["-","-","-","-"], "epss": ["-","-","-","-"] }
+        "finance": { "years": ["-","-","-","-","-"], "revs": ["-","-","-","-","-"], "ops": ["-","-","-","-","-"], "opMs": ["-","-","-","-","-"], "npMs": ["-","-","-","-","-"], "debts": ["-","-","-","-","-"], "epss": ["-","-","-","-","-"] }
     }
     
     try:
         # 1. 실시간 주가
         res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
+        raw_price = int(res_basic.get("closePrice", "0").replace(',', ''))
         stock_info["price"] = res_basic.get("closePrice", "N/A")
+        stock_info["rawPrice"] = raw_price
+        
         fluctuation = float(res_basic.get("fluctuationsRatio", 0))
         if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
@@ -71,28 +70,26 @@ def fetch_stock_data(name, ticker):
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
             elif key in ["ROE", "roe"]: stock_info["roe"] = val
             
-        # 3. 재무제표 (네이버 모바일 API 최신 변경 구조 완벽 대응 🚀)
+        # 3. 재무제표 (5년치 확장: 최근결산 2년 + 향후 3년 컨센서스)
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
         
         if fin_info:
-            # 바뀐 최신 구조 파싱 로직 (trTitleList, rowList)
             if "trTitleList" in fin_info and "rowList" in fin_info:
                 tr_list = fin_info["trTitleList"]
                 r_list = fin_info["rowList"]
                 
-                # 연도 컬럼 추출 (최근 4개만)
-                keys = [item.get("key", "") for item in tr_list][-4:]
+                # 끝에서부터 5개 가져오기
+                keys = [item.get("key", "") for item in tr_list][-5:]
                 years = []
-                for item in tr_list[-4:]:
+                for item in tr_list[-5:]:
                     y_text = item.get("title", "")
                     if item.get("isConsensus") == "Y" and "(E)" not in y_text:
                         y_text += "(E)"
                     years.append(y_text)
                 
-                # 데이터가 4개가 안될 경우 빈칸 채우기
-                keys = ([""] * (4 - len(keys))) + keys
-                years = (["-"] * (4 - len(years))) + years
+                keys = ([""] * (5 - len(keys))) + keys
+                years = (["-"] * (5 - len(years))) + years
                 stock_info["finance"]["years"] = years
                 
                 def get_fin_new(keyword):
@@ -106,7 +103,7 @@ def fetch_stock_data(name, ticker):
                                 else:
                                     extracted.append(cols.get(k, {}).get("value", "-"))
                             return extracted
-                    return ["-", "-", "-", "-"]
+                    return ["-", "-", "-", "-", "-"]
 
                 stock_info["finance"]["revs"] = get_fin_new("매출액")
                 stock_info["finance"]["ops"] = get_fin_new("영업이익")
@@ -115,27 +112,7 @@ def fetch_stock_data(name, ticker):
                 stock_info["finance"]["debts"] = get_fin_new("부채비율")
                 stock_info["finance"]["epss"] = get_fin_new("EPS")
 
-            # 만약 과거 데이터 구조일 경우를 대비한 예외 처리
-            elif "dateList" in fin_info and "itemLists" in fin_info:
-                years = fin_info.get("dateList", ["-", "-", "-", "-"])
-                stock_info["finance"]["years"] = years[-4:]
-                item_lists = fin_info.get("itemLists", [])
-                
-                def get_fin_old(keyword):
-                    for item in item_lists:
-                        if keyword in item.get("title", ""):
-                            cols = item.get("columns", [])
-                            return (["-"] * (4 - len(cols)) + cols)[-4:]
-                    return ["-", "-", "-", "-"]
-                
-                stock_info["finance"]["revs"] = get_fin_old("매출액")
-                stock_info["finance"]["ops"] = get_fin_old("영업이익")
-                stock_info["finance"]["opMs"] = get_fin_old("영업이익률")
-                stock_info["finance"]["npMs"] = get_fin_old("순이익률")
-                stock_info["finance"]["debts"] = get_fin_old("부채비율")
-                stock_info["finance"]["epss"] = get_fin_old("EPS")
-
-        # 4. PEG 연산 로직 (EPS 데이터가 생겼으니 이제 작동합니다!)
+        # 4. PEG 계산 (마지막 2개년 데이터 사용)
         try:
             target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
             per_float = float(str(target_per).replace(',', ''))
@@ -163,9 +140,6 @@ def fetch_stock_data(name, ticker):
         
     return ticker, stock_info
 
-# =======================================================
-# 메인 실행부: 10개씩 동시 수집 (로딩 시간 초고속)
-# =======================================================
 quant_data = {}
 print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 시작...")
 start_time = time.time()
