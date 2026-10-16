@@ -1,8 +1,8 @@
 import requests
+from bs4 import BeautifulSoup
 import json
 import time
 
-# 대시보드 UI에 있는 KOSPI 200, KOSDAQ 150 관심 종목 리스트
 TARGET_STOCKS = {
     "LG화학":"051910", "S-Oil":"010950", "SK이노베이션":"096770", "롯데케미칼":"011170", "SK가스":"018670", "한국가스공사":"036460", "한화솔루션":"009830",
     "LG에너지솔루션":"373220", "POSCO홀딩스":"005490", "포스코퓨처엠":"003670", "삼성SDI":"006400", "엘앤에프":"066970", "코스모신소재":"005070",
@@ -30,11 +30,12 @@ for name, ticker in TARGET_STOCKS.items():
     stock_info = {
         "name": name, "price": "N/A", "changeRate": "0.00%", "direction": "FLAT",
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "roe": "-",
-        "finance": {}
+        "peg": "N/A", "pegDesc": "EPS 확인 불가",
+        "finance": { "years": ["-","-","-","-"], "revs": ["-","-","-","-"], "ops": ["-","-","-","-"], "opMs": ["-","-","-","-"], "npMs": ["-","-","-","-"], "debts": ["-","-","-","-"], "epss": ["-","-","-","-"] }
     }
     
     try:
-        # 1. 실시간 현재가
+        # 1. 실시간 현재가 (모바일 API)
         res_basic = requests.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", headers=headers).json()
         stock_info["price"] = res_basic.get("closePrice", "N/A")
         fluctuation = float(res_basic.get("fluctuationsRatio", 0))
@@ -57,31 +58,67 @@ for name, ticker in TARGET_STOCKS.items():
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
             elif key in ["ROE", "roe"]: stock_info["roe"] = val
             
-        # 3. 연간 재무제표
-        res_finance = requests.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", headers=headers).json()
-        fin_info = res_finance.get("financeInfo", {})
+        # 3. 재무제표 크롤링 (네이버 금융 PC버전 - 가장 안정적임)
+        url = f"https://finance.naver.com/item/main.naver?code={ticker}"
+        res_html = requests.get(url, headers=headers)
+        soup = BeautifulSoup(res_html.text, 'html.parser')
         
-        years = fin_info.get("dateList", ["-", "-", "-", "-"])
-        stock_info["finance"]["years"] = years[-4:] # 최근 4년
-        
-        def get_fin_data(title):
-            for item in fin_info.get("itemLists", []):
-                if title in item.get("title", ""):
-                    return item.get("columns", [])[-4:]
-            return ["-", "-", "-", "-"]
+        cop_analysis = soup.find('div', {'class': 'cop_analysis'})
+        if cop_analysis:
+            table = cop_analysis.find('table')
+            thead_trs = table.find('thead').find_all('tr')
+            # 연도 4개 파싱
+            years = [th.text.strip() for th in thead_trs[1].find_all('th')[:4]]
             
-        stock_info["finance"]["revs"] = get_fin_data("매출액")
-        stock_info["finance"]["ops"] = get_fin_data("영업이익")
-        stock_info["finance"]["opMs"] = get_fin_data("영업이익률")
-        stock_info["finance"]["npMs"] = get_fin_data("순이익률")
-        stock_info["finance"]["debts"] = get_fin_data("부채비율")
-        stock_info["finance"]["epss"] = get_fin_data("EPS")
-        
+            tbody_trs = table.find('tbody').find_all('tr')
+            def get_row(title):
+                for tr in tbody_trs:
+                    th = tr.find('th')
+                    if th and title in th.text:
+                        return [td.text.strip() for td in tr.find_all('td')[:4]]
+                return ["-", "-", "-", "-"]
+
+            revs = get_row("매출액")
+            ops = get_row("영업이익")
+            opMs = get_row("영업이익률")
+            npMs = get_row("순이익률")
+            debts = get_row("부채비율")
+            epss = get_row("EPS")
+            
+            stock_info["finance"] = {
+                "years": years, "revs": revs, "ops": ops, "opMs": opMs, "npMs": npMs, "debts": debts, "epss": epss
+            }
+
+        # 4. 백엔드에서 PEG 직접 계산
+        try:
+            target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
+            per_float = float(target_per.replace(',', ''))
+            
+            eps_valid = []
+            for e in stock_info["finance"]["epss"]:
+                try: eps_valid.append(float(e.replace(',', '')))
+                except: pass
+                
+            if per_float > 0 and len(eps_valid) >= 2:
+                eps_current = eps_valid[-1]
+                eps_prev = eps_valid[-2]
+                if eps_current > 0 and eps_prev > 0:
+                    growth = ((eps_current - eps_prev) / eps_prev) * 100
+                    if growth > 0:
+                        stock_info["peg"] = f"{per_float / growth:.2f}배"
+                        stock_info["pegDesc"] = f"EPS 성장률(+{growth:.1f}%) 반영"
+                    else:
+                        stock_info["pegDesc"] = "EPS 역성장"
+                else:
+                    stock_info["pegDesc"] = "적자 지속 또는 흑자 전환"
+        except:
+            pass # 계산 불가 시 기본값 유지
+
     except Exception as e:
         print(f"❌ 오류 발생 ({name}): {e}")
         
     quant_data[ticker] = stock_info
-    time.sleep(0.5) # IP 차단 방지를 위한 딜레이
+    time.sleep(0.5)
 
 with open("quant_data.json", "w", encoding="utf-8") as f:
     json.dump(quant_data, f, ensure_ascii=False, indent=2)
