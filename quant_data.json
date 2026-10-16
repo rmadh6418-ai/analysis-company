@@ -10,6 +10,8 @@
     "fwdPer": "-95.60",
     "pbr": "0.56",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -66,6 +68,8 @@
     "fwdPer": "5.68",
     "pbr": "1.78",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -122,6 +126,8 @@
     "fwdPer": "7.42",
     "pbr": "0.98",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -178,6 +184,8 @@
     "fwdPer": "-11.87",
     "pbr": "0.17",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -234,6 +242,8 @@
     "fwdPer": "8.48",
     "pbr": "0.64",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -290,6 +300,8 @@
     "fwdPer": "2.89",
     "pbr": "0.27",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -346,6 +358,8 @@
     "fwdPer": "15.07",
     "pbr": "0.61",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -402,6 +416,8 @@
     "fwdPer": "-389.86",
     "pbr": "4.23",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -458,6 +474,8 @@
     "fwdPer": "12.31",
     "pbr": "0.39",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -514,6 +532,8 @@
     "fwdPer": "485.31",
     "pbr": "3.64",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -570,6 +590,8 @@
     "fwdPer": "44.25",
     "pbr": "1.72",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -626,6 +648,8 @@
     "fwdPer": "-91.65",
     "pbr": "4.80",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -682,6 +706,8 @@
     "fwdPer": "N/A",
     "pbr": "2.53",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -738,6 +764,8 @@
     "fwdPer": "11.58",
     "pbr": "3.50",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -794,6 +822,8 @@
     "fwdPer": "10.09",
     "pbr": "2.63",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -850,6 +880,8 @@
     "fwdPer": "17.42",
     "pbr": "3.30",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -906,6 +938,8 @@
     "fwdPer": "4.72",
     "pbr": "1.26",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -962,6 +996,8 @@
     "fwdPer": "10.92",
     "pbr": "2.67",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1018,6 +1054,8 @@
     "fwdPer": "10.34",
     "pbr": "0.77",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1074,6 +1112,8 @@
     "fwdPer": "4.77",
     "pbr": "2.52",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1130,6 +1170,8 @@
     "fwdPer": "3.57",
     "pbr": "3.43",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1186,6 +1228,8 @@
     "fwdPer": "57.19",
     "pbr": "8.74",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1242,6 +1286,8 @@
     "fwdPer": "11.90",
     "pbr": "1.51",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1298,6 +1344,8 @@
     "fwdPer": "N/A",
     "pbr": "26.73",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1354,6 +1402,8 @@
     "fwdPer": "14.96",
     "pbr": "1.14",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1410,6 +1460,8 @@
     "fwdPer": "8.88",
     "pbr": "0.67",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1466,6 +1518,8 @@
     "fwdPer": "5.35",
     "pbr": "0.67",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1522,6 +1576,8 @@
     "fwdPer": "7.93",
     "pbr": "0.61",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1578,6 +1634,8 @@
     "fwdPer": "8.54",
     "pbr": "1.28",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1634,6 +1692,8 @@
     "fwdPer": "8.76",
     "pbr": "0.35",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1690,6 +1750,8 @@
     "fwdPer": "20.18",
     "pbr": "3.86",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1746,6 +1808,8 @@
     "fwdPer": "12.62",
     "pbr": "3.12",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1802,6 +1866,8 @@
     "fwdPer": "45.77",
     "pbr": "5.53",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1858,6 +1924,8 @@
     "fwdPer": "107.91",
     "pbr": "3.35",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1914,6 +1982,8 @@
     "fwdPer": "35.48",
     "pbr": "7.94",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -1970,6 +2040,8 @@
     "fwdPer": "31.82",
     "pbr": "7.20",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2026,6 +2098,8 @@
     "fwdPer": "28.42",
     "pbr": "2.48",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2082,6 +2156,8 @@
     "fwdPer": "38.18",
     "pbr": "2.52",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2138,6 +2214,8 @@
     "fwdPer": "16.58",
     "pbr": "3.59",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2194,6 +2272,8 @@
     "fwdPer": "17.35",
     "pbr": "5.63",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2250,6 +2330,8 @@
     "fwdPer": "8.71",
     "pbr": "0.93",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2306,6 +2388,8 @@
     "fwdPer": "7.51",
     "pbr": "0.73",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2362,6 +2446,8 @@
     "fwdPer": "7.66",
     "pbr": "0.70",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2418,6 +2504,8 @@
     "fwdPer": "16.32",
     "pbr": "1.45",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2474,6 +2562,8 @@
     "fwdPer": "17.03",
     "pbr": "0.44",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2530,6 +2620,8 @@
     "fwdPer": "53.84",
     "pbr": "30.60",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2586,6 +2678,8 @@
     "fwdPer": "N/A",
     "pbr": "16.16",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2642,6 +2736,8 @@
     "fwdPer": "N/A",
     "pbr": "16.18",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2698,6 +2794,8 @@
     "fwdPer": "N/A",
     "pbr": "6.31",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2754,6 +2852,8 @@
     "fwdPer": "27.64",
     "pbr": "3.01",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2810,6 +2910,8 @@
     "fwdPer": "N/A",
     "pbr": "6.46",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2866,6 +2968,8 @@
     "fwdPer": "14.43",
     "pbr": "1.81",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2922,6 +3026,8 @@
     "fwdPer": "12.00",
     "pbr": "3.28",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -2978,6 +3084,8 @@
     "fwdPer": "9.72",
     "pbr": "3.30",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3034,6 +3142,8 @@
     "fwdPer": "14.49",
     "pbr": "4.28",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3090,7 +3200,52 @@
     "fwdPer": "-",
     "pbr": "-",
     "roe": "-",
-    "finance": {}
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
+    "finance": {
+      "years": [
+        "-",
+        "-",
+        "-",
+        "-"
+      ],
+      "revs": [
+        "-",
+        "-",
+        "-",
+        "-"
+      ],
+      "ops": [
+        "-",
+        "-",
+        "-",
+        "-"
+      ],
+      "opMs": [
+        "-",
+        "-",
+        "-",
+        "-"
+      ],
+      "npMs": [
+        "-",
+        "-",
+        "-",
+        "-"
+      ],
+      "debts": [
+        "-",
+        "-",
+        "-",
+        "-"
+      ],
+      "epss": [
+        "-",
+        "-",
+        "-",
+        "-"
+      ]
+    }
   },
   "403870": {
     "name": "HPSP",
@@ -3103,6 +3258,8 @@
     "fwdPer": "37.02",
     "pbr": "13.99",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3159,6 +3316,8 @@
     "fwdPer": "28.63",
     "pbr": "6.93",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3215,6 +3374,8 @@
     "fwdPer": "N/A",
     "pbr": "16.33",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3271,6 +3432,8 @@
     "fwdPer": "N/A",
     "pbr": "7.34",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3327,6 +3490,8 @@
     "fwdPer": "N/A",
     "pbr": "1.73",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3383,6 +3548,8 @@
     "fwdPer": "N/A",
     "pbr": "51.91",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3439,6 +3606,8 @@
     "fwdPer": "-2,853.66",
     "pbr": "9.52",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3495,6 +3664,8 @@
     "fwdPer": "11.99",
     "pbr": "0.83",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
@@ -3551,6 +3722,8 @@
     "fwdPer": "N/A",
     "pbr": "4.96",
     "roe": "-",
+    "peg": "N/A",
+    "pegDesc": "EPS 확인 불가",
     "finance": {
       "years": [
         "-",
