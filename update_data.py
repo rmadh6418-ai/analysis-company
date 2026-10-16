@@ -3,7 +3,7 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-# 1. 150여개 전체 종목 리스트 (KOSPI 200 + KOSDAQ 150 완벽 매핑)
+# 1. 150여개 전체 종목 리스트 (KOSPI 200 + KOSDAQ 150)
 KOSPI200_SECTORS = {
     "화학·에너지": {"LG화학": "051910", "S-Oil": "010950", "SK이노베이션": "096770", "롯데케미칼": "011170", "SK가스": "018670", "GS": "078930", "한국가스공사": "036460", "한화솔루션": "009830", "금호석유": "011780", "OCI홀딩스": "010060", "대한유화": "006650"},
     "이차전지·배터리": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "포스코퓨처엠": "003670", "삼성SDI": "006400", "엘앤에프": "066970", "에코프로머티": "450080", "코스모신소재": "005070", "포스코인터내셔널": "047050", "솔루스첨단소재": "336370", "금양": "001570"},
@@ -39,7 +39,7 @@ TARGET_STOCKS = {}
 for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companies)
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
-# 연결 재사용을 통한 초고속 세션 생성 (속도의 핵심)
+# 연결 재사용 세션
 session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
@@ -71,31 +71,71 @@ def fetch_stock_data(name, ticker):
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
             elif key in ["ROE", "roe"]: stock_info["roe"] = val
             
-        # 3. 재무제표 (가장 안정적이고 빠른 모바일 JSON API)
+        # 3. 재무제표 (네이버 모바일 API 최신 변경 구조 완벽 대응 🚀)
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
         
         if fin_info:
-            years = fin_info.get("dateList", ["-", "-", "-", "-"])
-            stock_info["finance"]["years"] = years[-4:]
-            
-            item_lists = fin_info.get("itemLists", [])
-            
-            def get_fin(keyword):
-                for item in item_lists:
-                    if keyword in item.get("title", ""):
-                        cols = item.get("columns", [])
-                        return (["-"] * (4 - len(cols)) + cols)[-4:]
-                return ["-", "-", "-", "-"]
+            # 바뀐 최신 구조 파싱 로직 (trTitleList, rowList)
+            if "trTitleList" in fin_info and "rowList" in fin_info:
+                tr_list = fin_info["trTitleList"]
+                r_list = fin_info["rowList"]
+                
+                # 연도 컬럼 추출 (최근 4개만)
+                keys = [item.get("key", "") for item in tr_list][-4:]
+                years = []
+                for item in tr_list[-4:]:
+                    y_text = item.get("title", "")
+                    if item.get("isConsensus") == "Y" and "(E)" not in y_text:
+                        y_text += "(E)"
+                    years.append(y_text)
+                
+                # 데이터가 4개가 안될 경우 빈칸 채우기
+                keys = ([""] * (4 - len(keys))) + keys
+                years = (["-"] * (4 - len(years))) + years
+                stock_info["finance"]["years"] = years
+                
+                def get_fin_new(keyword):
+                    for row in r_list:
+                        if keyword in row.get("title", ""):
+                            cols = row.get("columns", {})
+                            extracted = []
+                            for k in keys:
+                                if not k:
+                                    extracted.append("-")
+                                else:
+                                    extracted.append(cols.get(k, {}).get("value", "-"))
+                            return extracted
+                    return ["-", "-", "-", "-"]
 
-            stock_info["finance"]["revs"] = get_fin("매출액")
-            stock_info["finance"]["ops"] = get_fin("영업이익")
-            stock_info["finance"]["opMs"] = get_fin("영업이익률")
-            stock_info["finance"]["npMs"] = get_fin("순이익률")
-            stock_info["finance"]["debts"] = get_fin("부채비율")
-            stock_info["finance"]["epss"] = get_fin("EPS")
+                stock_info["finance"]["revs"] = get_fin_new("매출액")
+                stock_info["finance"]["ops"] = get_fin_new("영업이익")
+                stock_info["finance"]["opMs"] = get_fin_new("영업이익률")
+                stock_info["finance"]["npMs"] = get_fin_new("순이익률")
+                stock_info["finance"]["debts"] = get_fin_new("부채비율")
+                stock_info["finance"]["epss"] = get_fin_new("EPS")
 
-        # 4. PEG 연산 로직
+            # 만약 과거 데이터 구조일 경우를 대비한 예외 처리
+            elif "dateList" in fin_info and "itemLists" in fin_info:
+                years = fin_info.get("dateList", ["-", "-", "-", "-"])
+                stock_info["finance"]["years"] = years[-4:]
+                item_lists = fin_info.get("itemLists", [])
+                
+                def get_fin_old(keyword):
+                    for item in item_lists:
+                        if keyword in item.get("title", ""):
+                            cols = item.get("columns", [])
+                            return (["-"] * (4 - len(cols)) + cols)[-4:]
+                    return ["-", "-", "-", "-"]
+                
+                stock_info["finance"]["revs"] = get_fin_old("매출액")
+                stock_info["finance"]["ops"] = get_fin_old("영업이익")
+                stock_info["finance"]["opMs"] = get_fin_old("영업이익률")
+                stock_info["finance"]["npMs"] = get_fin_old("순이익률")
+                stock_info["finance"]["debts"] = get_fin_old("부채비율")
+                stock_info["finance"]["epss"] = get_fin_old("EPS")
+
+        # 4. PEG 연산 로직 (EPS 데이터가 생겼으니 이제 작동합니다!)
         try:
             target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
             per_float = float(str(target_per).replace(',', ''))
@@ -123,9 +163,11 @@ def fetch_stock_data(name, ticker):
         
     return ticker, stock_info
 
-# 메인 실행부
+# =======================================================
+# 메인 실행부: 10개씩 동시 수집 (로딩 시간 초고속)
+# =======================================================
 quant_data = {}
-print(f"총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 시작...")
+print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 시작...")
 start_time = time.time()
 
 with ThreadPoolExecutor(max_workers=10) as executor:
@@ -138,4 +180,4 @@ with open("quant_data.json", "w", encoding="utf-8") as f:
     json.dump(quant_data, f, ensure_ascii=False, indent=2)
 
 end_time = time.time()
-print(f"데이터 수집 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
+print(f"✅ 데이터 수집 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
