@@ -242,9 +242,13 @@
                 }
             });
 
+            // 🌟 브라우저 캐시 무조건 파기 및 최신 데이터 강제 로드
             try {
-                const res = await fetch('./quant_data.json?v=' + new Date().getTime());
-                if(res.ok) globalQuantData = await res.json();
+                const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' });
+                if(res.ok) {
+                    globalQuantData = await res.json();
+                    console.log("최신 퀀트 데이터 강제 로드 성공!");
+                }
             } catch(e) { console.warn("JSON 파일 로드 실패", e); }
         };
 
@@ -326,7 +330,6 @@
             document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
             document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
-            // UI 바인딩
             const priceEl = document.getElementById('naverPrice');
             const changeEl = document.getElementById('naverChange');
             priceEl.textContent = data.price !== "N/A" ? `${data.price}원` : "N/A";
@@ -341,7 +344,6 @@
             document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
             document.getElementById('fnRoe').textContent = `ROE: ${data.roe}${data.roe !== "-" ? "%" : ""}`;
 
-            // 목표 매수가 계산
             if (data.rawPrice && data.rawPrice > 0) {
                 const p = data.rawPrice;
                 document.getElementById('buyTarget11').textContent = Math.floor(p * 0.89).toLocaleString() + "원";
