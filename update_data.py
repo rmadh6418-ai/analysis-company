@@ -49,52 +49,57 @@ def fetch_stock_data(name, ticker):
     }
     
     try:
-        # 1. 실시간 주가 (basic 통신에서 최대한의 데이터를 안전하게 선제 확보)
+        # 1. 실시간 주가
         res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
-        raw_price_str = str(res_basic.get("closePrice", "0")).replace(',', '')
-        stock_info["rawPrice"] = int(raw_price_str) if raw_price_str.isdigit() else 0
+        raw_price_str = "".join(filter(str.isdigit, str(res_basic.get("closePrice", "0"))))
+        stock_info["rawPrice"] = int(raw_price_str) if raw_price_str else 0
         stock_info["price"] = res_basic.get("closePrice", "N/A")
         
         fluctuation = float(res_basic.get("fluctuationsRatio", 0))
         if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
 
-        if res_basic.get("cnsTargetPrice"):
-            try: stock_info["targetPrice"] = f"{int(res_basic['cnsTargetPrice']):,}"
-            except: pass
-            
+        # 배당률 1차 시도
         if res_basic.get("dividendYield"):
             stock_info["dividend"] = str(res_basic["dividendYield"]) + "%"
 
-        # 2. 투자지표 (integration API 이중망 필터링)
+        # 2. 투자지표 통합 통신
         try:
             res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
             
-            if stock_info["targetPrice"] == "-" and "opinion" in res_integ:
-                tp = res_integ["opinion"].get("targetPrice", "")
-                if tp and tp != "0": stock_info["targetPrice"] = tp
-
+            # [핵심] 목표주가 가장 확실한 위치 (opinion 객체)에서 우선 추출
+            if "opinion" in res_integ and res_integ["opinion"]:
+                tp_val = str(res_integ["opinion"].get("targetPrice", ""))
+                digits = "".join(filter(str.isdigit, tp_val))
+                if digits and int(digits) > 0:
+                    stock_info["targetPrice"] = f"{int(digits):,}"
+            
+            # totalInfos 배열 순회
             for info in res_integ.get("totalInfos", []):
                 k = str(info.get("key", "")).lower()
                 n = str(info.get("name", "")).lower()
                 t = str(info.get("title", "")).lower()
                 val = str(info.get("value", "-"))
                 
-                # 모든 필드를 통합하여 텍스트를 검사함으로써 key이름이 바뀌어도 100% 잡아냄
-                comb = f"{k} {n} {t}"
+                if "시가총액" in n or "시총" in n or "marketvalue" in k: stock_info["marketCap"] = val
+                elif "외국인" in n or "외인" in n or "foreign" in k: stock_info["foreignRate"] = val
+                elif "추정per" in n or "cnsper" in k: stock_info["fwdPer"] = val.replace("배", "")
+                elif "per" == k or ("per" in k and "추정" not in n): stock_info["per"] = val.replace("배", "")
+                elif "pbr" in k: stock_info["pbr"] = val.replace("배", "")
+                elif ("배당" in n or "dividend" in k) and stock_info["dividend"] == "-": 
+                    stock_info["dividend"] = val if "%" in val else f"{val}%"
                 
-                if "시가총액" in comb or "시총" in comb or "marketvalue" in comb: stock_info["marketCap"] = val
-                elif "외국인" in comb or "외인" in comb or "foreign" in comb: stock_info["foreignRate"] = val
-                elif "추정per" in comb or "cnsper" in comb: stock_info["fwdPer"] = val.replace("배", "")
-                elif "per" in comb and "추정" not in comb: stock_info["per"] = val.replace("배", "")
-                elif "pbr" in comb: stock_info["pbr"] = val.replace("배", "")
-                elif ("배당" in comb or "dividend" in comb) and stock_info["dividend"] == "-": stock_info["dividend"] = val
-                elif ("목표" in comb or "target" in comb) and stock_info["targetPrice"] == "-":
-                    if val and val != "-" and val != "0": stock_info["targetPrice"] = val
-        except Exception:
-            pass 
+                # [핵심 보완] opinion 객체에 없었을 경우 totalInfos에서 2차 추출 시도
+                if stock_info["targetPrice"] == "-":
+                    if "target" in k or "목표" in n or "목표" in t:
+                        digits = "".join(filter(str.isdigit, val))
+                        if digits and int(digits) > 0:
+                            stock_info["targetPrice"] = f"{int(digits):,}"
+                            
+        except Exception as e:
+            print(f"Integration 파싱 에러 ({name}): {e}")
 
-        # 3. 재무제표 
+        # 3. 재무제표
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
         
