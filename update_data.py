@@ -41,8 +41,9 @@ session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
 
 def fetch_stock_data(name, ticker):
+    # 변경점: "targetPrice": "-" 항목이 딕셔너리에 추가되었습니다.
     stock_info = {
-        "name": name, "price": "N/A", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
+        "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-",
         "peg": "N/A", "pegDesc": "EPS 부족",
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
@@ -59,7 +60,7 @@ def fetch_stock_data(name, ticker):
         if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
 
-        # 2. 투자지표
+        # 2. 투자지표 (목표주가 추출 로직 추가)
         res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
         for info in res_integ.get("totalInfos", []):
             key, val = info.get("key", ""), info.get("value", "-")
@@ -68,8 +69,10 @@ def fetch_stock_data(name, ticker):
             elif key in ["PER", "per"]: stock_info["per"] = val.replace("배", "")
             elif key in ["추정PER", "cnsPer"]: stock_info["fwdPer"] = val.replace("배", "")
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
+            # 변경점: 목표주가(targetPrice) 필터링 조건문 추가
+            elif "목표주가" in key or key in ["targetPrice", "cnsTargetPrice"]: stock_info["targetPrice"] = val
             
-        # 3. 재무제표 (🔥 빈칸 제거 핵심: 제공되는 전체 데이터의 가장 최신 5년치를 타이트하게 추출)
+        # 3. 재무제표 (빈칸 제거 핵심: 제공되는 전체 데이터의 가장 최신 5년치를 타이트하게 추출)
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
         
@@ -77,7 +80,6 @@ def fetch_stock_data(name, ticker):
             tr_list = fin_info["trTitleList"]
             r_list = fin_info["rowList"]
             
-            # API가 반환하는 전체 데이터 중 최근 5개만 확보 (2028년이 없으면 2026년까지의 앞 5개 확보)
             valid_cols = tr_list[-5:]
             keys = [item.get("key", "") for item in valid_cols]
             
