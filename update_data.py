@@ -48,8 +48,8 @@ def fetch_stock_data(name, ticker):
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
     }
     
+    # 1. 실시간 주가 및 1차 목표가/배당수익률 수집
     try:
-        # 1. 실시간 주가
         res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
         raw_price_str = "".join(filter(str.isdigit, str(res_basic.get("closePrice", "0"))))
         stock_info["rawPrice"] = int(raw_price_str) if raw_price_str else 0
@@ -59,47 +59,57 @@ def fetch_stock_data(name, ticker):
         if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
 
-        # 배당률 1차 시도
+        if res_basic.get("cnsTargetPrice"):
+            digits = "".join(filter(str.isdigit, str(res_basic["cnsTargetPrice"])))
+            if digits and int(digits) > 0:
+                stock_info["targetPrice"] = f"{int(digits):,}"
+                
         if res_basic.get("dividendYield"):
             stock_info["dividend"] = str(res_basic["dividendYield"]) + "%"
+    except Exception:
+        pass # 에러가 발생해도 다음 블록으로 무조건 넘어갑니다.
 
-        # 2. 투자지표 통합 통신
-        try:
-            res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
+    # 2. 투자지표 (시가총액, 외인소진율, 목표주가 등) 안전 탐색
+    try:
+        res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
+        
+        opinion = res_integ.get("opinion")
+        if isinstance(opinion, dict) and stock_info["targetPrice"] == "-":
+            tp_val = str(opinion.get("targetPrice", ""))
+            digits = "".join(filter(str.isdigit, tp_val))
+            if digits and int(digits) > 0:
+                stock_info["targetPrice"] = f"{int(digits):,}"
+        
+        for info in res_integ.get("totalInfos", []):
+            k = str(info.get("key", "")).lower()
+            n = str(info.get("name", "")).lower()
+            val = str(info.get("value", "-")).strip()
             
-            # [핵심] 목표주가 가장 확실한 위치 (opinion 객체)에서 우선 추출
-            if "opinion" in res_integ and res_integ["opinion"]:
-                tp_val = str(res_integ["opinion"].get("targetPrice", ""))
-                digits = "".join(filter(str.isdigit, tp_val))
-                if digits and int(digits) > 0:
-                    stock_info["targetPrice"] = f"{int(digits):,}"
-            
-            # totalInfos 배열 순회
-            for info in res_integ.get("totalInfos", []):
-                k = str(info.get("key", "")).lower()
-                n = str(info.get("name", "")).lower()
-                t = str(info.get("title", "")).lower()
-                val = str(info.get("value", "-"))
+            if val == "-" or not val: continue
                 
-                if "시가총액" in n or "시총" in n or "marketvalue" in k: stock_info["marketCap"] = val
-                elif "외국인" in n or "외인" in n or "foreign" in k: stock_info["foreignRate"] = val
-                elif "추정per" in n or "cnsper" in k: stock_info["fwdPer"] = val.replace("배", "")
-                elif "per" == k or ("per" in k and "추정" not in n): stock_info["per"] = val.replace("배", "")
-                elif "pbr" in k: stock_info["pbr"] = val.replace("배", "")
-                elif ("배당" in n or "dividend" in k) and stock_info["dividend"] == "-": 
+            if k in ["marketvalue", "marketsum", "marketcap"] or "시총" in n or "시가총액" in n:
+                stock_info["marketCap"] = val
+            elif k in ["foreignrate", "foreignratio"] or "외인" in n or "외국인" in n:
+                stock_info["foreignRate"] = val
+            elif k == "per":
+                stock_info["per"] = val.replace("배", "")
+            elif k == "cnsper" or "추정per" in n:
+                stock_info["fwdPer"] = val.replace("배", "")
+            elif k == "pbr":
+                stock_info["pbr"] = val.replace("배", "")
+            elif k == "dividendyield" or "배당" in n:
+                if stock_info["dividend"] == "-":
                     stock_info["dividend"] = val if "%" in val else f"{val}%"
-                
-                # [핵심 보완] opinion 객체에 없었을 경우 totalInfos에서 2차 추출 시도
+            elif k in ["targetprice", "cnstargetprice"] or "목표" in n:
                 if stock_info["targetPrice"] == "-":
-                    if "target" in k or "목표" in n or "목표" in t:
-                        digits = "".join(filter(str.isdigit, val))
-                        if digits and int(digits) > 0:
-                            stock_info["targetPrice"] = f"{int(digits):,}"
-                            
-        except Exception as e:
-            print(f"Integration 파싱 에러 ({name}): {e}")
+                    digits = "".join(filter(str.isdigit, val))
+                    if digits and int(digits) > 0:
+                        stock_info["targetPrice"] = f"{int(digits):,}"
+    except Exception:
+        pass
 
-        # 3. 재무제표
+    # 3. 재무제표 수집
+    try:
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
         
@@ -131,34 +141,33 @@ def fetch_stock_data(name, ticker):
             stock_info["finance"]["npMs"] = get_fin_valid("순이익률")
             stock_info["finance"]["debts"] = get_fin_valid("부채비율")
             stock_info["finance"]["epss"] = get_fin_valid("EPS")
+    except Exception:
+        pass
 
-        # 4. PEG 계산
-        try:
-            target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
-            per_float = float(str(target_per).replace(',', ''))
-            
-            eps_valid = []
-            for e in stock_info["finance"]["epss"]:
-                clean_e = str(e).replace(',', '').strip()
-                if clean_e and clean_e != "-":
-                    try: eps_valid.append(float(clean_e))
-                    except ValueError: pass
-                
-            if per_float > 0 and len(eps_valid) >= 2:
-                eps_current, eps_prev = eps_valid[-1], eps_valid[-2]
-                if eps_current > 0 and eps_prev > 0:
-                    growth = ((eps_current - eps_prev) / eps_prev) * 100
-                    if growth > 0:
-                        stock_info["peg"] = f"{per_float / growth:.2f}배"
-                        stock_info["pegDesc"] = f"EPS 성장률(+{growth:.1f}%) 반영"
-                    else: stock_info["pegDesc"] = "EPS 역성장"
-                else: stock_info["pegDesc"] = "적자지속/흑자전환"
-        except Exception:
-            pass
-
-    except Exception as e:
-        print(f"오류 발생 ({name}): {e}")
+    # 4. PEG 계산 로직
+    try:
+        target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
+        per_float = float(str(target_per).replace(',', ''))
         
+        eps_valid = []
+        for e in stock_info["finance"]["epss"]:
+            clean_e = str(e).replace(',', '').strip()
+            if clean_e and clean_e != "-":
+                try: eps_valid.append(float(clean_e))
+                except ValueError: pass
+            
+        if per_float > 0 and len(eps_valid) >= 2:
+            eps_current, eps_prev = eps_valid[-1], eps_valid[-2]
+            if eps_current > 0 and eps_prev > 0:
+                growth = ((eps_current - eps_prev) / eps_prev) * 100
+                if growth > 0:
+                    stock_info["peg"] = f"{per_float / growth:.2f}배"
+                    stock_info["pegDesc"] = f"EPS 성장률(+{growth:.1f}%) 반영"
+                else: stock_info["pegDesc"] = "EPS 역성장"
+            else: stock_info["pegDesc"] = "적자지속/흑자전환"
+    except Exception:
+        pass
+
     return ticker, stock_info
 
 quant_data = {}
