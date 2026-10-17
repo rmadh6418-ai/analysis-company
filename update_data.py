@@ -43,42 +43,57 @@ session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)
 def fetch_stock_data(name, ticker):
     stock_info = {
         "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
-        "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-",
+        "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "dividend": "-",
         "peg": "N/A", "pegDesc": "EPS 부족",
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
     }
     
     try:
-        # 1. 실시간 주가 및 기본 정보 (목표주가 1차 체크)
+        # 1. 실시간 주가 (basic 통신에서 최대한의 데이터를 안전하게 선제 확보)
         res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
-        raw_price = int(res_basic.get("closePrice", "0").replace(',', ''))
+        raw_price_str = str(res_basic.get("closePrice", "0")).replace(',', '')
+        stock_info["rawPrice"] = int(raw_price_str) if raw_price_str.isdigit() else 0
         stock_info["price"] = res_basic.get("closePrice", "N/A")
-        stock_info["rawPrice"] = raw_price
         
         fluctuation = float(res_basic.get("fluctuationsRatio", 0))
         if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
 
-        # 목표주가가 숫자 형태로 basic 응답에 존재하는 경우 처리
-        if "cnsTargetPrice" in res_basic:
-            stock_info["targetPrice"] = f"{int(res_basic['cnsTargetPrice']):,}"
+        if res_basic.get("cnsTargetPrice"):
+            try: stock_info["targetPrice"] = f"{int(res_basic['cnsTargetPrice']):,}"
+            except: pass
+            
+        if res_basic.get("dividendYield"):
+            stock_info["dividend"] = str(res_basic["dividendYield"]) + "%"
 
-        # 2. 투자지표 (title과 key를 이중으로 검사하여 목표주가 누락 방지)
-        res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
-        for info in res_integ.get("totalInfos", []):
-            key = info.get("key", "")
-            title = info.get("title", "")
-            val = info.get("value", "-")
+        # 2. 투자지표 (integration API 이중망 필터링)
+        try:
+            res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
             
-            if "시총" in title or key == "marketValue": stock_info["marketCap"] = val
-            elif "외인" in title or key == "foreignRate": stock_info["foreignRate"] = val
-            elif key in ["PER", "per"]: stock_info["per"] = val.replace("배", "")
-            elif key in ["추정PER", "cnsPer"]: stock_info["fwdPer"] = val.replace("배", "")
-            elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
-            elif "목표" in title or key in ["targetPrice", "cnsTargetPrice"]: 
-                if val and val != "-": 
-                    stock_info["targetPrice"] = val
-            
+            if stock_info["targetPrice"] == "-" and "opinion" in res_integ:
+                tp = res_integ["opinion"].get("targetPrice", "")
+                if tp and tp != "0": stock_info["targetPrice"] = tp
+
+            for info in res_integ.get("totalInfos", []):
+                k = str(info.get("key", "")).lower()
+                n = str(info.get("name", "")).lower()
+                t = str(info.get("title", "")).lower()
+                val = str(info.get("value", "-"))
+                
+                # 모든 필드를 통합하여 텍스트를 검사함으로써 key이름이 바뀌어도 100% 잡아냄
+                comb = f"{k} {n} {t}"
+                
+                if "시가총액" in comb or "시총" in comb or "marketvalue" in comb: stock_info["marketCap"] = val
+                elif "외국인" in comb or "외인" in comb or "foreign" in comb: stock_info["foreignRate"] = val
+                elif "추정per" in comb or "cnsper" in comb: stock_info["fwdPer"] = val.replace("배", "")
+                elif "per" in comb and "추정" not in comb: stock_info["per"] = val.replace("배", "")
+                elif "pbr" in comb: stock_info["pbr"] = val.replace("배", "")
+                elif ("배당" in comb or "dividend" in comb) and stock_info["dividend"] == "-": stock_info["dividend"] = val
+                elif ("목표" in comb or "target" in comb) and stock_info["targetPrice"] == "-":
+                    if val and val != "-" and val != "0": stock_info["targetPrice"] = val
+        except Exception:
+            pass 
+
         # 3. 재무제표 
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
@@ -93,8 +108,7 @@ def fetch_stock_data(name, ticker):
             years = []
             for item in valid_cols:
                 y_text = item.get("title", "")
-                if item.get("isConsensus") == "Y" and "(E)" not in y_text:
-                    y_text += "(E)"
+                if item.get("isConsensus") == "Y" and "(E)" not in y_text: y_text += "(E)"
                 years.append(y_text)
             
             stock_info["finance"]["years"] = years
