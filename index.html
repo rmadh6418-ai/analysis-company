@@ -73,14 +73,13 @@
                 <span class="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full font-semibold">데이터 연동 완료</span>
             </div>
 
-            <!-- 요약 지표 (높이 및 정렬 강제 교정) -->
+            <!-- 요약 지표 -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-500 pl-3 mb-3">현재가 및 수급 현황</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">현재가</p>
                         <p id="naverPrice" class="text-2xl font-extrabold text-slate-800">-</p>
-                        <!-- 높이 맞춤용 투명 스페이서 -->
                         <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
                     
@@ -127,7 +126,7 @@
                 </div>
             </div>
 
-            <!-- 밸류에이션 및 배당/PEG (높이 및 정렬 강제 교정, 순서 교체 완료) -->
+            <!-- 밸류에이션 (PEG 3번째, 배당 4번째 배치) -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & 모닝스타 경제적 해자</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -166,7 +165,6 @@
 
             <!-- 재무제표 영역 -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- 표 영역 -->
                 <div class="lg:col-span-2">
                     <div class="flex justify-between items-end mb-3">
                         <h2 class="text-lg font-bold text-slate-800 border-l-4 border-indigo-600 pl-3">최근 결산 및 컨센서스 (자동수집)</h2>
@@ -180,7 +178,6 @@
                     </div>
                 </div>
                 
-                <!-- 차트 영역 -->
                 <div class="lg:col-span-1">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-cyan-500 pl-3 mb-3">📊 영업이익 트렌드</h2>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-64 flex items-center justify-center">
@@ -263,7 +260,6 @@
             });
 
             try {
-                // 수동 새로고침시 캐시 파괴
                 const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' });
                 if(res.ok) globalQuantData = await res.json();
             } catch(e) { console.warn("JSON 파일 로드 실패", e); }
@@ -389,7 +385,6 @@
             document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
             document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
             
-            // 배당수익률 업데이트
             document.getElementById('fnDiv').textContent = data.dividend !== "-" ? data.dividend : "N/A";
 
             if (data.rawPrice && data.rawPrice > 0) {
@@ -507,7 +502,7 @@
                 const moatMatch = aiText.match(/MOAT_RATING:\s*(.+)/i);
                 if (moatMatch) {
                     document.getElementById('moatRating').textContent = moatMatch[1].replace(/\*/g, '').trim();
-                    document.getElementById('moatRating').className = "text-lg font-extrabold text-amber-700 my-1";
+                    document.getElementById('moatRating').className = "text-lg font-extrabold text-amber-700 my-0";
                     aiText = aiText.replace(/MOAT_RATING:\s*(.+)\n?/i, '');
                 }
 
