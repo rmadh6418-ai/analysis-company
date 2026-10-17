@@ -41,7 +41,6 @@ session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
 
 def fetch_stock_data(name, ticker):
-    # 변경점: "targetPrice": "-" 항목이 딕셔너리에 추가되었습니다.
     stock_info = {
         "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-",
@@ -50,7 +49,7 @@ def fetch_stock_data(name, ticker):
     }
     
     try:
-        # 1. 실시간 주가
+        # 1. 실시간 주가 및 기본 정보 (목표주가 1차 체크)
         res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
         raw_price = int(res_basic.get("closePrice", "0").replace(',', ''))
         stock_info["price"] = res_basic.get("closePrice", "N/A")
@@ -60,19 +59,27 @@ def fetch_stock_data(name, ticker):
         if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
 
-        # 2. 투자지표 (목표주가 추출 로직 추가)
+        # 목표주가가 숫자 형태로 basic 응답에 존재하는 경우 처리
+        if "cnsTargetPrice" in res_basic:
+            stock_info["targetPrice"] = f"{int(res_basic['cnsTargetPrice']):,}"
+
+        # 2. 투자지표 (title과 key를 이중으로 검사하여 목표주가 누락 방지)
         res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
         for info in res_integ.get("totalInfos", []):
-            key, val = info.get("key", ""), info.get("value", "-")
-            if "시총" in key or key == "marketValue": stock_info["marketCap"] = val
-            elif "외인소진율" in key or key == "foreignRate": stock_info["foreignRate"] = val
+            key = info.get("key", "")
+            title = info.get("title", "")
+            val = info.get("value", "-")
+            
+            if "시총" in title or key == "marketValue": stock_info["marketCap"] = val
+            elif "외인" in title or key == "foreignRate": stock_info["foreignRate"] = val
             elif key in ["PER", "per"]: stock_info["per"] = val.replace("배", "")
             elif key in ["추정PER", "cnsPer"]: stock_info["fwdPer"] = val.replace("배", "")
             elif key in ["PBR", "pbr"]: stock_info["pbr"] = val.replace("배", "")
-            # 변경점: 목표주가(targetPrice) 필터링 조건문 추가
-            elif "목표주가" in key or key in ["targetPrice", "cnsTargetPrice"]: stock_info["targetPrice"] = val
+            elif "목표" in title or key in ["targetPrice", "cnsTargetPrice"]: 
+                if val and val != "-": 
+                    stock_info["targetPrice"] = val
             
-        # 3. 재무제표 (빈칸 제거 핵심: 제공되는 전체 데이터의 가장 최신 5년치를 타이트하게 추출)
+        # 3. 재무제표 
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
         
@@ -106,7 +113,7 @@ def fetch_stock_data(name, ticker):
             stock_info["finance"]["debts"] = get_fin_valid("부채비율")
             stock_info["finance"]["epss"] = get_fin_valid("EPS")
 
-        # 4. PEG 계산 (마지막 2개년 유효 데이터로 성장률 도출)
+        # 4. PEG 계산
         try:
             target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
             per_float = float(str(target_per).replace(',', ''))
