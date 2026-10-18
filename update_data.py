@@ -2,6 +2,7 @@ import requests
 import json
 import time
 import re
+from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 
 KOSPI200_SECTORS = {
@@ -49,11 +50,13 @@ def fetch_stock_data(name, ticker):
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
     
-    # 1. API 통신
+    # 1. 모바일 API 통신
     try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
     except: res_basic = {}
     try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
     except: res_integ = {}
+    try: res_cns = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/consensus", timeout=5).json()
+    except: res_cns = {}
 
     # 2. 기본 주가 데이터
     try:
@@ -76,7 +79,7 @@ def fetch_stock_data(name, ticker):
         if res_basic.get("pbr"): stock_info["pbr"] = str(res_basic["pbr"])
     except: pass
 
-    # 4. 2차 정보 추출 (integration) - 가장 유연한 방식으로 추출
+    # 4. 2차 정보 추출 (integration)
     try:
         if stock_info["targetPrice"] == "-" and res_integ.get("opinion", {}).get("targetPrice"):
             tp = str(res_integ["opinion"]["targetPrice"])
@@ -86,7 +89,6 @@ def fetch_stock_data(name, ticker):
             val = str(info.get("value", "-")).strip()
             if val == "-" or not val: continue
             
-            # 키/이름 값들을 묶어서 편하게 검사
             comb = str(info.get("name", "")).lower() + " " + str(info.get("key", "")).lower() + " " + str(info.get("title", "")).lower()
 
             if ("시가총액" in comb or "시총" in comb) and stock_info["marketCap"] == "-": stock_info["marketCap"] = val
@@ -97,36 +99,51 @@ def fetch_stock_data(name, ticker):
             elif ("배당" in comb) and stock_info["dividend"] == "-": stock_info["dividend"] = val if "%" in val else f"{val}%"
     except: pass
 
-    # 5. 🔥 최후의 수단: PC 버전 HTML 직접 크롤링 (누락 100% 방지) 🔥
+    # 5. 🔥 최후의 절대 방어선: PC 웹사이트 BeautifulSoup 강제 크롤링 🔥
     try:
-        html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
+        # requests로 PC 페이지 가져와서 BeautifulSoup로 구문 분석
+        pc_url = f"https://finance.naver.com/item/main.naver?code={ticker}"
+        html_response = session.get(pc_url, timeout=5)
+        soup = BeautifulSoup(html_response.text, 'html.parser')
         
+        # 5-1. 목표주가 무조건 뽑아오기
         if stock_info["targetPrice"] == "-":
-            idx = html.find('목표주가')
-            if idx != -1:
-                match = re.search(r'<em>([\d,]+)</em>', html[idx:idx+200])
-                if match: stock_info["targetPrice"] = match.group(1)
+            # 1순위: 투자정보 테이블의 목표주가 em 태그 찾기
+            target_th = soup.find('th', text=re.compile('목표주가'))
+            if target_th:
+                target_td = target_th.find_next_sibling('td')
+                if target_td:
+                    target_em = target_td.find('em')
+                    if target_em:
+                        tp_val = target_em.text.replace(',', '').strip()
+                        if tp_val.isdigit() and int(tp_val) > 0:
+                            stock_info["targetPrice"] = f"{int(tp_val):,}"
 
+            # 2순위: 1순위가 실패하면 페이지 전체에서 목표주가 관련 텍스트 검색
+            if stock_info["targetPrice"] == "-":
+                for tag in soup.find_all(text=re.compile('목표주가')):
+                    parent = tag.parent
+                    if parent:
+                        next_el = parent.find_next_sibling()
+                        if next_el:
+                            tp_str = "".join(filter(str.isdigit, next_el.text))
+                            if tp_str and int(tp_str) > 0:
+                                stock_info["targetPrice"] = f"{int(tp_str):,}"
+                                break
+
+        # 5-2. 배당수익률 무조건 뽑아오기
         if stock_info["dividend"] == "-":
-            idx = html.find('배당수익률')
-            if idx != -1:
-                match = re.search(r'<em>([\d.]+)</em>', html[idx:idx+200])
-                if match: stock_info["dividend"] = match.group(1) + "%"
-                
-        if stock_info["marketCap"] == "-":
-            idx = html.find('시가총액')
-            if idx != -1:
-                match = re.search(r'<em>([\d,]+)</em>', html[idx:idx+200])
-                if match: stock_info["marketCap"] = match.group(1) + "억"
-                
-        if stock_info["foreignRate"] == "-":
-            idx = html.find('외국인소진율')
-            if idx != -1:
-                match = re.search(r'<em>([\d.]+)</em>', html[idx:idx+200])
-                if match: stock_info["foreignRate"] = match.group(1) + "%"
-    except: pass
+            div_th = soup.find('th', text=re.compile('배당수익률'))
+            if div_th:
+                div_td = div_th.find_next_sibling('td')
+                if div_td:
+                    div_em = div_td.find('em')
+                    if div_em:
+                        stock_info["dividend"] = div_em.text.strip() + "%"
+    except Exception as e:
+        print(f"BS4 크롤링 에러 ({name}): {e}")
 
-    # 6. 재무제표 
+    # 6. 재무제표 (기존 로직 동일)
     try:
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
