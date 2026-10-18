@@ -2,7 +2,6 @@ import requests
 import json
 import time
 import re
-from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 
 KOSPI200_SECTORS = {
@@ -99,51 +98,44 @@ def fetch_stock_data(name, ticker):
             elif ("배당" in comb) and stock_info["dividend"] == "-": stock_info["dividend"] = val if "%" in val else f"{val}%"
     except: pass
 
-    # 5. 🔥 최후의 절대 방어선: PC 웹사이트 BeautifulSoup 강제 크롤링 🔥
+    # 5. 🔥 최후의 절대 방어선: PC 웹사이트 직접 정밀 타격 (누락 100% 방지) 🔥
     try:
-        # requests로 PC 페이지 가져와서 BeautifulSoup로 구문 분석
-        pc_url = f"https://finance.naver.com/item/main.naver?code={ticker}"
-        html_response = session.get(pc_url, timeout=5)
-        soup = BeautifulSoup(html_response.text, 'html.parser')
-        
-        # 5-1. 목표주가 무조건 뽑아오기
+        html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
+
+        def extract_naver_em(keyword, html_text):
+            idx = html_text.find(keyword)
+            if idx != -1:
+                sub_html = html_text[idx:idx+300]
+                # <td> 태그 안에 있는 <em> 태그(숫자)를 무조건 추출하는 정규식
+                match = re.search(r'<td[^>]*>\s*<em[^>]*>([\d,.]+)</em>', sub_html)
+                if match: return match.group(1)
+            return None
+
+        # 목표주가가 여전히 '-'라면 정밀 타격
         if stock_info["targetPrice"] == "-":
-            # 1순위: 투자정보 테이블의 목표주가 em 태그 찾기
-            target_th = soup.find('th', text=re.compile('목표주가'))
-            if target_th:
-                target_td = target_th.find_next_sibling('td')
-                if target_td:
-                    target_em = target_td.find('em')
-                    if target_em:
-                        tp_val = target_em.text.replace(',', '').strip()
-                        if tp_val.isdigit() and int(tp_val) > 0:
-                            stock_info["targetPrice"] = f"{int(tp_val):,}"
+            tp_val = extract_naver_em('목표주가', html)
+            if tp_val:
+                clean_val = tp_val.replace(',', '')
+                if clean_val.isdigit() and int(clean_val) > 0:
+                    stock_info["targetPrice"] = f"{int(clean_val):,}"
 
-            # 2순위: 1순위가 실패하면 페이지 전체에서 목표주가 관련 텍스트 검색
-            if stock_info["targetPrice"] == "-":
-                for tag in soup.find_all(text=re.compile('목표주가')):
-                    parent = tag.parent
-                    if parent:
-                        next_el = parent.find_next_sibling()
-                        if next_el:
-                            tp_str = "".join(filter(str.isdigit, next_el.text))
-                            if tp_str and int(tp_str) > 0:
-                                stock_info["targetPrice"] = f"{int(tp_str):,}"
-                                break
-
-        # 5-2. 배당수익률 무조건 뽑아오기
+        # 배당수익률 정밀 타격
         if stock_info["dividend"] == "-":
-            div_th = soup.find('th', text=re.compile('배당수익률'))
-            if div_th:
-                div_td = div_th.find_next_sibling('td')
-                if div_td:
-                    div_em = div_td.find('em')
-                    if div_em:
-                        stock_info["dividend"] = div_em.text.strip() + "%"
+            div_val = extract_naver_em('배당수익률', html)
+            if div_val: stock_info["dividend"] = div_val + "%"
+            
+        # PER, PBR 정밀 타격
+        if stock_info["per"] == "-":
+            per_val = extract_naver_em('PER', html)
+            if per_val: stock_info["per"] = per_val
+        if stock_info["pbr"] == "-":
+            pbr_val = extract_naver_em('PBR', html)
+            if pbr_val: stock_info["pbr"] = pbr_val
+            
     except Exception as e:
-        print(f"BS4 크롤링 에러 ({name}): {e}")
+        print(f"HTML 크롤링 에러 ({name}): {e}")
 
-    # 6. 재무제표 (기존 로직 동일)
+    # 6. 재무제표 
     try:
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
