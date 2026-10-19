@@ -73,7 +73,7 @@
                 <span class="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full font-semibold">데이터 연동 완료</span>
             </div>
 
-            <!-- 요약 지표 (높이 및 정렬 강제 교정) -->
+            <!-- 요약 지표 -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-500 pl-3 mb-3">현재가 및 수급 현황</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -126,9 +126,9 @@
                 </div>
             </div>
 
-            <!-- 밸류에이션 (PEG 3번째, 배당수익률 4번째로 완벽 교체) -->
+            <!-- 밸류에이션 및 AI 목표가 -->
             <div>
-                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & 모닝스타 경제적 해자</h2>
+                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & AI 적정 주가</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <!-- 1. PER -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
@@ -154,11 +154,10 @@
                         <p id="fnDiv" class="text-2xl font-extrabold text-indigo-600">-</p>
                         <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
-                    <!-- 5. 모닝스타 경제적 해자 -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-300 bg-amber-50/30 text-center flex flex-col justify-center items-center h-full">
-                        <p class="text-xs font-semibold text-amber-800 mb-1">경제적 해자 (Morningstar)</p>
-                        <p id="moatRating" class="text-base font-extrabold text-slate-800 my-0">AI 분석 대기중</p>
-                        <a id="moatLink" href="#" target="_blank" class="text-xs bg-amber-500 text-white py-1 px-2 mt-1 rounded hover:bg-amber-600 transition font-semibold inline-block">모닝스타 원문 확인 ↗</a>
+                    <!-- 5. AI 산출 목표주가 -->
+                    <div class="bg-purple-50 p-4 rounded-xl shadow-sm border border-purple-300 text-center flex flex-col justify-center items-center h-full">
+                        <p class="text-xs font-bold text-purple-800 mb-1">AI 적정 목표주가</p>
+                        <p id="aiTargetPriceBox" class="text-lg font-extrabold text-slate-800 my-0">AI 분석 대기중</p>
                     </div>
                 </div>
             </div>
@@ -191,12 +190,12 @@
             <!-- AI 분석 -->
             <div>
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 AI 퀀트 & 모닝스타 해자 심층 분석</h2>
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 AI 목표주가 산출 및 설정 근거</h2>
                     <button onclick="reRunAiAnalysis()" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700 font-semibold transition">🔄 AI 분석 다시 실행</button>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div id="aiResult" class="text-slate-700 leading-relaxed space-y-2 text-sm md:text-base">
-                        우측 상단에 Gemini API Key를 입력하고 종목을 검색하면 AI 분석 결과가 이곳에 출력됩니다.
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-purple-200">
+                    <div id="aiResult" class="text-slate-800 leading-relaxed space-y-2 text-sm md:text-base">
+                        우측 상단에 Gemini API Key를 입력하고 종목을 검색하면 AI의 목표주가와 논리적 산출 근거가 이곳에 출력됩니다.
                     </div>
                 </div>
             </div>
@@ -262,7 +261,6 @@
             });
 
             try {
-                // 수동 새로고침시 캐시 파괴
                 const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' });
                 if(res.ok) globalQuantData = await res.json();
             } catch(e) { console.warn("JSON 파일 로드 실패", e); }
@@ -340,11 +338,10 @@
             const data = globalQuantData[ticker];
             document.getElementById('statusBox').classList.remove('hidden');
             document.getElementById('dashboardArea').classList.remove('hidden');
-            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>로컬 데이터를 기반으로 AI 심층 리포트 작성 중...</span>";
+            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>로컬 데이터를 기반으로 AI 목표주가 및 근거를 분석 중...</span>";
 
             document.getElementById('corpNameTitle').textContent = data.name;
             document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
-            document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
             const priceEl = document.getElementById('naverPrice');
             const targetPriceEl = document.getElementById('naverTargetPrice');
@@ -356,7 +353,6 @@
             let targetPriceStr = data.targetPrice && data.targetPrice !== "-" ? data.targetPrice : null;
             if (targetPriceStr) {
                 targetPriceEl.textContent = targetPriceStr + "원";
-                
                 const currentP = data.rawPrice;
                 const targetP = parseInt(targetPriceStr.replace(/,/g, ''));
                 
@@ -387,8 +383,6 @@
             document.getElementById('fnPer').textContent = data.per !== "-" ? `${data.per}배` : "N/A";
             document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
             document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
-            
-            // 배당수익률 업데이트
             document.getElementById('fnDiv').textContent = data.dividend !== "-" ? data.dividend : "N/A";
 
             if (data.rawPrice && data.rawPrice > 0) {
@@ -438,6 +432,8 @@
             document.getElementById('statusBox').classList.add('hidden');
 
             lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, pbr: data.pbr, dividend: data.dividend };
+            
+            // AI 분석 실행
             await runGeminiAnalysisOnly(data.name, ticker, data.price, data.targetPrice, data.changeRate, data.marketCap, data.foreignRate, data.per, data.pbr, data.dividend);
         }
 
@@ -481,11 +477,19 @@
         async function runGeminiAnalysisOnly(corpName, ticker, price, targetPrice, changeRate, marketCap, foreignRate, per, pbr, dividend) {
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
-                document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 심층 분석 리포트가 출력됩니다.</div>`;
+                document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 AI의 목표주가 심층 분석이 출력됩니다.</div>`;
                 return;
             }
 
-            const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. 한국 상장기업 [${corpName} (${ticker})]에 대한 데이터를 바탕으로 심층 리포트를 작성해주세요. 현재가:${price}원, 목표주가:${targetPrice}원, 등락률:${changeRate}, 시총:${marketCap}, 외인소진율:${foreignRate}, PER:${per}배, PBR:${pbr}배, 배당수익률:${dividend}. 반드시 첫 줄에 모닝스타(Morningstar) 방법론을 엄격하게 적용한 경제적 해자 평가인 "MOAT_RATING: [Wide/Narrow/None]"을 적고, 그 아래 3단락으로 마크다운 굵은글씨(**)를 사용해 작성해주세요. 배당 투자 관점의 매력도도 한 문장으로 포함해주세요.`;
+            // 프롬프트 수정: 목표주가 산출과 근거 작성에만 집중하도록 변경
+            const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. 한국 상장기업 [${corpName} (${ticker})]에 대한 데이터를 바탕으로 'AI 적정 목표주가'와 '설정 근거'만 명확하게 제시해주세요.
+            
+제공된 데이터: 현재가:${price}원, 증권사 평균 목표주가:${targetPrice}원, 전일대비 등락률:${changeRate}, 시가총액:${marketCap}, 외국인소진율:${foreignRate}, PER:${per}배, PBR:${pbr}배, 배당수익률:${dividend}.
+
+[작성 규칙]
+1. 반드시 첫 줄에 "AI_TARGET_PRICE: [금액]원" 형식으로 목표주가를 제시하세요. (예: AI_TARGET_PRICE: 85,000원)
+2. 줄바꿈 후, 마크다운 굵은글씨(**)를 활용하여 해당 목표주가를 산출한 논리적 근거(밸류에이션, 수익성, 증권사 컨센서스 대비 디스카운트/프리미엄 요인 등)를 3~4개의 핵심 문장 또는 불릿 포인트로 상세히 설명하세요.
+3. 일반적인 기업 소개나 불필요한 인사말은 절대 제외하고, 오직 '목표가'와 '수치에 기반한 설정 근거'만 냉철하게 작성하세요.`;
             
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
@@ -501,16 +505,24 @@
                 }
 
                 const data = await response.json();
-                let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "분석 완료";
+                let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "분석을 완료하지 못했습니다.";
                 
-                const moatMatch = aiText.match(/MOAT_RATING:\s*(.+)/i);
-                if (moatMatch) {
-                    document.getElementById('moatRating').textContent = moatMatch[1].replace(/\*/g, '').trim();
-                    document.getElementById('moatRating').className = "text-lg font-extrabold text-amber-700 my-0";
-                    aiText = aiText.replace(/MOAT_RATING:\s*(.+)\n?/i, '');
+                // 정규식을 통해 "AI_TARGET_PRICE: 금액" 추출
+                const targetMatch = aiText.match(/AI_TARGET_PRICE:\s*(.+)/i);
+                if (targetMatch) {
+                    const extractedPrice = targetMatch[1].replace(/\*/g, '').trim();
+                    document.getElementById('aiTargetPriceBox').textContent = extractedPrice;
+                    document.getElementById('aiTargetPriceBox').className = "text-xl font-extrabold text-purple-700 my-0";
+                    // 본문에서 타겟 프라이스 선언부는 제거하고 근거만 남김
+                    aiText = aiText.replace(/AI_TARGET_PRICE:\s*(.+)\n?/i, '').trim();
                 }
 
-                document.getElementById('aiResult').innerHTML = aiText.replace(/### (.*?)\n/g, '<h3 class="text-lg font-extrabold text-slate-800 mt-4 mb-2">$1</h3>').replace(/## (.*?)\n/g, '<h2 class="text-xl font-extrabold text-slate-900 mt-5 mb-2 border-b pb-1">$1</h2>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-yellow-100/60 px-1 rounded">$1</strong>').replace(/\n/g, '<br>');
+                // 남은 마크다운 텍스트를 HTML로 변환하여 출력
+                document.getElementById('aiResult').innerHTML = aiText
+                    .replace(/### (.*?)\n/g, '<h3 class="text-lg font-extrabold text-slate-800 mt-4 mb-2">$1</h3>')
+                    .replace(/## (.*?)\n/g, '<h2 class="text-xl font-extrabold text-slate-900 mt-5 mb-2 border-b pb-1">$1</h2>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-purple-100/60 px-1 rounded">$1</strong>')
+                    .replace(/\n/g, '<br>');
             } catch (error) {
                 document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-lg">❌ AI 분석 호출 실패: ${error.message}</div>`;
             }
@@ -518,7 +530,7 @@
 
         function reRunAiAnalysis() {
             if (!lastFetchedData) return;
-            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 심층 리포트를 다시 작성 중입니다...</span>";
+            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 목표주가 산출 및 근거를 다시 작성 중입니다...</span>";
             runGeminiAnalysisOnly(lastFetchedData.corpName, lastFetchedData.ticker, lastFetchedData.price, lastFetchedData.targetPrice, lastFetchedData.changeRate, lastFetchedData.marketCap, lastFetchedData.foreignRate, lastFetchedData.per, lastFetchedData.pbr, lastFetchedData.dividend);
         }
     </script>
