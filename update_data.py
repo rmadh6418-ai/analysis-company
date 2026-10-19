@@ -49,13 +49,11 @@ def fetch_stock_data(name, ticker):
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
     
-    # 1. 모바일 API 통신
-    try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
+    # 1. API 데이터 요청
+    try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=3).json()
     except: res_basic = {}
-    try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
+    try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=3).json()
     except: res_integ = {}
-    try: res_cns = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/consensus", timeout=5).json()
-    except: res_cns = {}
 
     # 2. 기본 주가 데이터
     try:
@@ -68,74 +66,59 @@ def fetch_stock_data(name, ticker):
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
     except: pass
 
-    # 3. 1차 정보 추출 (basic)
+    # 3. 주요 투자 지표 1차 추출 (API)
     try:
-        if res_basic.get("cnsTargetPrice"): stock_info["targetPrice"] = f"{int(res_basic['cnsTargetPrice']):,}"
         if res_basic.get("dividendYield"): stock_info["dividend"] = str(res_basic["dividendYield"]) + "%"
         if res_basic.get("marketSum"): stock_info["marketCap"] = str(res_basic["marketSum"])
         if res_basic.get("foreignRatio"): stock_info["foreignRate"] = str(res_basic["foreignRatio"]) + "%"
         if res_basic.get("per"): stock_info["per"] = str(res_basic["per"])
         if res_basic.get("pbr"): stock_info["pbr"] = str(res_basic["pbr"])
-    except: pass
-
-    # 4. 2차 정보 추출 (integration)
-    try:
-        if stock_info["targetPrice"] == "-" and res_integ.get("opinion", {}).get("targetPrice"):
-            tp = str(res_integ["opinion"]["targetPrice"])
-            if tp.isdigit() and int(tp) > 0: stock_info["targetPrice"] = f"{int(tp):,}"
-
+        
         for info in res_integ.get("totalInfos", []):
             val = str(info.get("value", "-")).strip()
             if val == "-" or not val: continue
+            n = str(info.get("name", "")).lower()
+            k = str(info.get("key", "")).lower()
             
-            comb = str(info.get("name", "")).lower() + " " + str(info.get("key", "")).lower() + " " + str(info.get("title", "")).lower()
-
-            if ("시가총액" in comb or "시총" in comb) and stock_info["marketCap"] == "-": stock_info["marketCap"] = val
-            elif ("외인" in comb or "외국인" in comb) and stock_info["foreignRate"] == "-": stock_info["foreignRate"] = val
-            elif ("추정per" in comb or "cnsper" in comb): stock_info["fwdPer"] = val.replace("배", "")
-            elif ("per" in comb and "추정" not in comb) and stock_info["per"] == "-": stock_info["per"] = val.replace("배", "")
-            elif ("pbr" in comb) and stock_info["pbr"] == "-": stock_info["pbr"] = val.replace("배", "")
-            elif ("배당" in comb) and stock_info["dividend"] == "-": stock_info["dividend"] = val if "%" in val else f"{val}%"
+            if ("시가총액" in n or "시총" in n or "market" in k) and stock_info["marketCap"] == "-": stock_info["marketCap"] = val
+            elif ("외인" in n or "외국인" in n or "foreign" in k) and stock_info["foreignRate"] == "-": stock_info["foreignRate"] = val
+            elif ("추정per" in n or "cnsper" in k): stock_info["fwdPer"] = val.replace("배", "")
+            elif ("per" in k and "추정" not in n) and stock_info["per"] == "-": stock_info["per"] = val.replace("배", "")
+            elif ("pbr" in k) and stock_info["pbr"] == "-": stock_info["pbr"] = val.replace("배", "")
+            elif ("배당" in n or "dividend" in k) and stock_info["dividend"] == "-": stock_info["dividend"] = val if "%" in val else f"{val}%"
     except: pass
 
-    # 5. 🔥 최후의 절대 방어선: PC 웹사이트 직접 정밀 타격 (누락 100% 방지) 🔥
-    try:
-        html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
+    # 4. 🔥 무적의 목표주가 강제 추출 로직 (API -> 네이버웹 -> FnGuide웹) 🔥
+    def get_tp(val):
+        if not val: return None
+        digits = "".join(filter(str.isdigit, str(val)))
+        if digits and int(digits) > 100: return f"{int(digits):,}"
+        return None
 
-        def extract_naver_em(keyword, html_text):
-            idx = html_text.find(keyword)
-            if idx != -1:
-                sub_html = html_text[idx:idx+300]
-                # <td> 태그 안에 있는 <em> 태그(숫자)를 무조건 추출하는 정규식
-                match = re.search(r'<td[^>]*>\s*<em[^>]*>([\d,.]+)</em>', sub_html)
-                if match: return match.group(1)
-            return None
+    tp = None
+    # 4-1. API 시도
+    if not tp: tp = get_tp(res_basic.get("cnsTargetPrice"))
+    if not tp: tp = get_tp(res_integ.get("opinion", {}).get("targetPrice"))
+    
+    # 4-2. 네이버 PC 웹 크롤링 시도 (HD현대중공업 등 API 누락 종목 방어)
+    if not tp:
+        try:
+            html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=3).text
+            match = re.search(r'목표주가.*?<td[^>]*>.*?<em[^>]*>([\d,]+)</em>', html, re.DOTALL | re.IGNORECASE)
+            if match: tp = get_tp(match.group(1))
+        except: pass
 
-        # 목표주가가 여전히 '-'라면 정밀 타격
-        if stock_info["targetPrice"] == "-":
-            tp_val = extract_naver_em('목표주가', html)
-            if tp_val:
-                clean_val = tp_val.replace(',', '')
-                if clean_val.isdigit() and int(clean_val) > 0:
-                    stock_info["targetPrice"] = f"{int(clean_val):,}"
+    # 4-3. FnGuide 원본 서버 크롤링 시도 (최후의 보루)
+    if not tp:
+        try:
+            fng_html = session.get(f"https://comp.fnguide.com/SVO2/ASP/SVD_Consensus.asp?pGB=1&gicode=A{ticker}", timeout=3).text
+            match = re.search(r'적정주가.*?<td[^>]*>\s*([\d,]+)\s*</td>', fng_html, re.DOTALL | re.IGNORECASE)
+            if match: tp = get_tp(match.group(1))
+        except: pass
 
-        # 배당수익률 정밀 타격
-        if stock_info["dividend"] == "-":
-            div_val = extract_naver_em('배당수익률', html)
-            if div_val: stock_info["dividend"] = div_val + "%"
-            
-        # PER, PBR 정밀 타격
-        if stock_info["per"] == "-":
-            per_val = extract_naver_em('PER', html)
-            if per_val: stock_info["per"] = per_val
-        if stock_info["pbr"] == "-":
-            pbr_val = extract_naver_em('PBR', html)
-            if pbr_val: stock_info["pbr"] = pbr_val
-            
-    except Exception as e:
-        print(f"HTML 크롤링 에러 ({name}): {e}")
+    if tp: stock_info["targetPrice"] = tp
 
-    # 6. 재무제표 
+    # 5. 재무제표 
     try:
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
@@ -158,7 +141,7 @@ def fetch_stock_data(name, ticker):
             stock_info["finance"]["epss"] = get_fin("EPS")
     except: pass
     
-    # 7. PEG 계산
+    # 6. PEG 계산
     try:
         per_val = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
         per_float = float(str(per_val).replace(',', ''))
