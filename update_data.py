@@ -38,6 +38,53 @@ TARGET_STOCKS = {}
 for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companies)
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
+def extract_number(val_str):
+    if not val_str: return None
+    digits = "".join(filter(str.isdigit, str(val_str)))
+    if digits and int(digits) > 0: return int(digits)
+    return None
+
+# 재귀적으로 JSON 구조에서 목표주가, 시총 등 키워드를 찾아내는 함수
+def find_info_recursive(data, result_dict):
+    if isinstance(data, dict):
+        for k, v in data.items():
+            k_lower = str(k).lower()
+            
+            # 목표주가 찾기
+            if k_lower in ["cnstargetprice", "targetprice", "target_price", "목표주가"]:
+                if result_dict["targetPrice"] == "-":
+                    num = extract_number(v)
+                    if num and num > 100: result_dict["targetPrice"] = f"{num:,}"
+            elif k_lower == "title" and "목표" in str(v):
+                if result_dict["targetPrice"] == "-":
+                    num = extract_number(data.get("value", ""))
+                    if num and num > 100: result_dict["targetPrice"] = f"{num:,}"
+
+            # 시가총액 찾기
+            if k_lower in ["marketsum", "marketvalue", "시가총액"]:
+                if result_dict["marketCap"] == "-":
+                    val = str(v).strip()
+                    if val.isdigit(): result_dict["marketCap"] = f"{int(val):,}억"
+                    elif val: result_dict["marketCap"] = val
+                    
+            # 외인소진율 찾기
+            if k_lower in ["foreignratio", "foreignrate", "외국인소진율"]:
+                if result_dict["foreignRate"] == "-":
+                    val = str(v).strip()
+                    if val: result_dict["foreignRate"] = val + "%" if "%" not in val else val
+
+            # 배당수익률 찾기
+            if k_lower in ["dividendyield", "배당수익률", "배당"]:
+                if result_dict["dividend"] == "-":
+                    val = str(v).strip()
+                    if val and val != "0" and val != "0.0": 
+                        result_dict["dividend"] = val + "%" if "%" not in val else val
+
+            find_info_recursive(v, result_dict)
+    elif isinstance(data, list):
+        for item in data:
+            find_info_recursive(item, result_dict)
+
 def fetch_stock_data(name, ticker):
     stock_info = {
         "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
@@ -47,17 +94,27 @@ def fetch_stock_data(name, ticker):
     }
     
     session = requests.Session()
-    session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+    session.headers.update({"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"})
     
-    # 1. API 데이터 통신
+    # 1. 🔥 궁극의 필살기: 네이버 모바일 웹 페이지의 <script id="__NEXT_DATA__"> 파싱 🔥
+    # API가 막히거나 구조가 바뀌어도 화면을 그리기 위한 기초 데이터는 무조건 여기에 들어있습니다.
+    try:
+        html = session.get(f"https://m.stock.naver.com/domestic/stock/{ticker}/total", timeout=5).text
+        match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', html, re.DOTALL)
+        if match:
+            json_data = json.loads(match.group(1))
+            # JSON 전체를 재귀 함수로 샅샅이 뒤져서 값 세팅
+            find_info_recursive(json_data, stock_info)
+    except Exception as e:
+        print(f"NEXT_DATA 파싱 에러 ({name}): {e}")
+
+    # 2. 보조 API 통신 (만약 NEXT_DATA에서 못 찾은 게 있다면 여기서 보완)
     try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
     except: res_basic = {}
     try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
     except: res_integ = {}
-    try: res_cns = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/consensus", timeout=5).json()
-    except: res_cns = {}
 
-    # 2. 실시간 주가
+    # 3. 기본 주가 데이터 설정
     try:
         raw_price_str = "".join(filter(str.isdigit, str(res_basic.get("closePrice", "0"))))
         stock_info["rawPrice"] = int(raw_price_str) if raw_price_str else 0
@@ -68,18 +125,22 @@ def fetch_stock_data(name, ticker):
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
     except: pass
 
-    # 3. API 1차 추출 (데이터 종합 방어)
+    # 4. 보조 지표 1차 추출 (API)
     try:
-        # 목표주가 API 추출
-        if res_basic.get("cnsTargetPrice"): stock_info["targetPrice"] = f"{int(res_basic['cnsTargetPrice']):,}"
-        elif res_cns.get("targetPrice"): stock_info["targetPrice"] = f"{int(res_cns['targetPrice']):,}"
-        
-        if res_basic.get("dividendYield"): stock_info["dividend"] = str(res_basic["dividendYield"]) + "%"
-        if res_basic.get("marketSum"): stock_info["marketCap"] = str(res_basic["marketSum"])
-        if res_basic.get("foreignRatio"): stock_info["foreignRate"] = str(res_basic["foreignRatio"]) + "%"
-        if res_basic.get("per"): stock_info["per"] = str(res_basic["per"])
-        if res_basic.get("pbr"): stock_info["pbr"] = str(res_basic["pbr"])
-        
+        if stock_info["targetPrice"] == "-" and res_basic.get("cnsTargetPrice"): 
+            stock_info["targetPrice"] = f"{int(res_basic['cnsTargetPrice']):,}"
+        if stock_info["dividend"] == "-" and res_basic.get("dividendYield"): 
+            stock_info["dividend"] = str(res_basic["dividendYield"]) + "%"
+        if stock_info["marketCap"] == "-" and res_basic.get("marketSum"): 
+            stock_info["marketCap"] = str(res_basic["marketSum"])
+        if stock_info["foreignRate"] == "-" and res_basic.get("foreignRatio"): 
+            stock_info["foreignRate"] = str(res_basic["foreignRatio"]) + "%"
+        if stock_info["per"] == "-" and res_basic.get("per"): 
+            stock_info["per"] = str(res_basic["per"])
+        if stock_info["pbr"] == "-" and res_basic.get("pbr"): 
+            stock_info["pbr"] = str(res_basic["pbr"])
+            
+        # Integration API 보조 탐색
         for info in res_integ.get("totalInfos", []):
             val = str(info.get("value", "-")).strip()
             if val == "-" or not val: continue
@@ -87,7 +148,7 @@ def fetch_stock_data(name, ticker):
             n = str(info.get("name", "")).lower()
             k = str(info.get("key", "")).lower()
             
-            if ("시가총액" in n or "시총" in n or "market" in k) and stock_info["marketCap"] == "-": stock_info["marketCap"] = val
+            if ("시가총액" in n or "market" in k) and stock_info["marketCap"] == "-": stock_info["marketCap"] = val
             elif ("외인" in n or "외국인" in n or "foreign" in k) and stock_info["foreignRate"] == "-": stock_info["foreignRate"] = val
             elif ("추정per" in n or "cnsper" in k): stock_info["fwdPer"] = val.replace("배", "")
             elif ("per" in k and "추정" not in n) and stock_info["per"] == "-": stock_info["per"] = val.replace("배", "")
@@ -95,61 +156,7 @@ def fetch_stock_data(name, ticker):
             elif ("배당" in n or "dividend" in k) and stock_info["dividend"] == "-": stock_info["dividend"] = val if "%" in val else f"{val}%"
     except: pass
 
-    # 4. 🔥 최후의 절대 방어선: 인코딩(euc-kr) 버그 수정된 웹 직접 크롤링 🔥
-    try:
-        pc_res = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5)
-        # 이 한 줄이 빠져서 외계어로 인식되고 모두 실패했던 것입니다.
-        pc_res.encoding = 'euc-kr' 
-        html = pc_res.text
-        
-        # 1) 목표주가
-        if stock_info["targetPrice"] == "-":
-            idx = html.find('목표주가')
-            if idx != -1:
-                sub_html = html[idx:idx+200]
-                nums = re.findall(r'[\d,]{4,}', sub_html)
-                for n in nums:
-                    clean_n = n.replace(',', '')
-                    if clean_n.isdigit() and int(clean_n) > 100:  # 100원 이상 정상 목표가 찾기
-                        stock_info["targetPrice"] = f"{int(clean_n):,}"
-                        break
-        
-        # 2) 시가총액
-        if stock_info["marketCap"] == "-":
-            idx = html.find('시가총액')
-            if idx != -1:
-                m = re.search(r'<em[^>]*>([\d,]+)</em>', html[idx:idx+200])
-                if m: stock_info["marketCap"] = m.group(1) + "억"
-
-        # 3) 배당수익률
-        if stock_info["dividend"] == "-":
-            idx = html.find('배당수익률')
-            if idx != -1:
-                m = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
-                if m: stock_info["dividend"] = m.group(1) + "%"
-
-        # 4) 외국인소진율
-        if stock_info["foreignRate"] == "-":
-            idx = html.find('외국인소진율')
-            if idx != -1:
-                m = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
-                if m: stock_info["foreignRate"] = m.group(1) + "%"
-                
-        # 5) PER, PBR
-        if stock_info["per"] == "-":
-            idx = html.find('PER')
-            if idx != -1:
-                m = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
-                if m: stock_info["per"] = m.group(1)
-        if stock_info["pbr"] == "-":
-            idx = html.find('PBR')
-            if idx != -1:
-                m = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
-                if m: stock_info["pbr"] = m.group(1)
-    except Exception as e:
-        print(f"HTML 크롤링 에러 ({name}): {e}")
-
-    # 5. 재무제표 수집
+    # 5. 재무제표 
     try:
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
