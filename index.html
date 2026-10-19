@@ -142,7 +142,7 @@
                         <p id="fnPbr" class="text-2xl font-extrabold text-slate-800">-</p>
                         <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
-                    <!-- 3. 배당수익률 -->
+                    <!-- 3. 배당수익률 (PEG와 위치 바뀜) -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">배당수익률</p>
                         <p id="fnDiv" class="text-2xl font-extrabold text-indigo-600">-</p>
@@ -385,7 +385,6 @@
             document.getElementById('fnPer').textContent = data.per !== "-" ? `${data.per}배` : "N/A";
             document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
             document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
-            
             document.getElementById('fnDiv').textContent = data.dividend !== "-" ? data.dividend : "N/A";
 
             if (data.rawPrice && data.rawPrice > 0) {
