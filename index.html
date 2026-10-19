@@ -15,7 +15,6 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
 
-    <!-- 안드로이드 Play 프로텍트 호환성 향상을 위해 id, description 추가된 인라인 매니페스트 -->
     <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22id%22%3A%22%2F%22%2C%22name%22%3A%22AI%20%EC%A3%BC%EC%8B%9D%20%EC%BD%B4%ED%8A%B8%20Pro%22%2C%22short_name%22%3A%22AI%EC%BD%B4%ED%8A%B8%22%2C%22description%22%3A%22AI%20Quant%20Dashboard%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f1f5f9%22%2C%22theme_color%22%3A%22%231e293b%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2933%2F2933116.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
     <title>AI 주식 퀀트 대시보드 Pro (개인 맞춤형 트레이딩 완결판)</title>
@@ -40,9 +39,9 @@
             <button onclick="checkPassword()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md">접속하기</button>
             <p id="lockError" class="text-red-500 text-sm font-bold mt-4 hidden">비밀번호가 일치하지 않습니다.</p>
         </div>
-        </div>
+    </div>
 
-    <!-- 📈 메인 대시보드 컨텐츠 (초기에는 숨김 처리) -->
+    <!-- 📈 메인 대시보드 컨텐츠 -->
     <div id="mainContent" class="hidden max-w-6xl mx-auto space-y-6 p-4 md:p-6">
         <!-- 헤더 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -59,14 +58,13 @@
             </div>
         </div>
 
-        <!-- 검색 영역 (새로고침 버튼 추가됨) -->
+        <!-- 검색 영역 -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
             <div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-2 relative">
                 <div class="flex-1 relative flex">
                     <input type="text" id="tickerInput" oninput="showSuggestions()" onkeypress="if(event.key==='Enter') fetchDashboardData()" placeholder="기업명(예: 삼성전자) 또는 종목코드" class="border-2 border-blue-600 p-3 rounded-lg w-full text-base md:text-lg text-center font-medium focus:outline-none" autocomplete="off">
                     <div id="suggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-64 overflow-y-auto text-left"></div>
                 </div>
-                <!-- 모바일 환경을 고려한 버튼 그룹 -->
                 <div class="flex gap-2 w-full md:w-auto">
                     <button onclick="fetchDashboardData()" class="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-blue-700 transition shrink-0">분석</button>
                     <button onclick="window.location.reload()" class="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-slate-200 transition shrink-0" title="화면 초기화/새로고침">🔄</button>
@@ -86,11 +84,11 @@
                 </summary>
                 <div class="mt-4 space-y-4 pt-3 border-t border-slate-100">
                     <div>
-                        <h4 class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">🔥 KOSPI 200 (HD현대마린엔진 추가됨)</h4>
+                        <h4 class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">🔥 KOSPI 200</h4>
                         <div id="kospiQuickBtns" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"></div>
                     </div>
                     <div class="border-t pt-3">
-                        <h4 class="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">⚡ KOSDAQ 150 (씨엠티엑스 추가됨)</h4>
+                        <h4 class="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">⚡ KOSDAQ 150</h4>
                         <div id="kosdaqQuickBtns" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"></div>
                     </div>
                 </div>
@@ -114,49 +112,61 @@
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">현재가</p>
                         <p id="naverPrice" class="text-2xl font-extrabold text-slate-800">-</p>
-                        <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
-                    
                     <div class="bg-purple-50 p-4 rounded-xl shadow-sm border border-purple-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-bold text-purple-800 mb-1">AI 적정 목표주가</p>
                         <p id="aiTargetPrice" class="text-xl font-extrabold text-slate-800">분석 대기중</p>
                         <p id="targetUpside" class="text-xs font-bold mt-1 text-slate-500">-</p>
                     </div>
-
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">전일대비 등락률</p>
                         <p id="naverChange" class="text-2xl font-extrabold text-slate-800">-</p>
-                        <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">시가총액</p>
                         <p id="naverMarketCap" class="text-2xl font-extrabold text-slate-700">-</p>
-                        <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">외국인 소진율</p>
                         <p id="naverForeign" class="text-2xl font-extrabold text-slate-700">-</p>
-                        <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
                 </div>
             </div>
 
             <!-- AI 실전 트레이딩 타점 -->
             <div>
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-3 gap-3">
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-3 gap-3">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 flex items-center">
                         🎯 AI 실전 트레이딩 전략
                         <span id="strategyBase" class="ml-2 px-2 py-0.5 bg-rose-100 text-rose-700 text-xs rounded-full font-semibold"></span>
                     </h2>
                     
-                    <!-- 모드 선택 및 평단가 입력 영역 -->
-                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                        <select id="analysisModeSelect" onchange="toggleAvgPriceInput()" class="flex-1 md:flex-none border-2 border-rose-300 bg-white px-2 py-1.5 rounded-lg text-sm font-bold text-rose-700 focus:outline-none focus:border-rose-500 cursor-pointer">
-                            <option value="current">신규 진입 (현재가 기준)</option>
-                            <option value="average">기존 보유 (평단가 기준)</option>
+                    <!-- 입력 컨트롤 영역 (평단가 + 투자금액) -->
+                    <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto bg-white p-2 rounded-lg border shadow-sm">
+                        <select id="analysisModeSelect" onchange="toggleAvgPriceInput()" class="flex-1 md:flex-none border-2 border-slate-300 bg-white px-2 py-1.5 rounded-lg text-sm font-bold text-slate-700 focus:outline-none focus:border-rose-500 cursor-pointer">
+                            <option value="current">신규 진입 (현재가)</option>
+                            <option value="average">기존 보유 (평단가)</option>
                         </select>
-                        <input type="number" id="myAvgPriceInput" placeholder="내 평단가 입력" class="hidden flex-1 md:flex-none border-2 border-rose-300 bg-rose-50 px-3 py-1.5 rounded-lg w-full md:w-36 text-sm text-center font-bold text-rose-700 focus:outline-none focus:border-rose-500" autocomplete="off" onkeypress="if(event.key==='Enter') reRunAiAnalysis()">
-                        <button onclick="reRunAiAnalysis()" class="bg-rose-500 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-rose-600 transition shrink-0 shadow-sm w-full md:w-auto mt-1 md:mt-0">분석 실행</button>
+                        <input type="number" id="myAvgPriceInput" placeholder="내 평단가(원)" class="hidden flex-1 md:flex-none border-2 border-rose-300 bg-rose-50 px-3 py-1.5 rounded-lg w-full md:w-32 text-sm text-center font-bold text-rose-700 focus:outline-none focus:border-rose-500" autocomplete="off" onkeypress="if(event.key==='Enter') reRunAiAnalysis()">
+                        <button onclick="reRunAiAnalysis()" class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-700 transition shrink-0 mr-2">타점 재분석</button>
+                        
+                        <div class="h-6 w-px bg-slate-300 mx-1 hidden md:block"></div>
+                        
+                        <!-- 🚀 신규 추가: 매수 금액 입력 -->
+                        <span class="text-sm font-bold text-emerald-700 hidden md:block">💰</span>
+                        <input type="number" id="investAmountInput" placeholder="총 투자 금액 입력(원)" oninput="calculateInvestment()" class="flex-1 md:flex-none border-2 border-emerald-400 bg-emerald-50 px-3 py-1.5 rounded-lg w-full md:w-44 text-sm text-center font-bold text-emerald-800 focus:outline-none focus:border-emerald-600" autocomplete="off">
+                    </div>
+                </div>
+                
+                <!-- 🚀 신규 추가: 예상 수익률/금액 배너 -->
+                <div id="expectedReturnBox" class="hidden mb-4 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl shadow-sm flex flex-col md:flex-row items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-emerald-600 mb-1">💡 시뮬레이션 결과 (AI 목표가 도달 시)</p>
+                        <p class="text-sm text-slate-700">총 투자금 <span id="simTotalInvest" class="font-bold text-slate-900">0</span>원에 대한 예상 수익</p>
+                    </div>
+                    <div class="text-right mt-2 md:mt-0">
+                        <p id="simProfitRate" class="text-2xl font-extrabold text-emerald-600">0.00%</p>
+                        <p id="simProfitMoney" class="text-sm font-bold text-emerald-800 bg-emerald-200/50 px-2 py-0.5 rounded mt-1">+0원</p>
                     </div>
                 </div>
                 
@@ -165,60 +175,67 @@
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-rose-200">
                         <h3 class="text-sm font-bold text-rose-800 mb-3 flex items-center gap-1">📥 분할 매수 타점 <span class="text-xs font-normal text-rose-600 ml-1">(하락 시 매수 / 상승 시 돌파매수)</span></h3>
                         <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-                            <div class="bg-rose-50 p-3 rounded-lg border border-rose-100 text-center">
+                            <!-- 매수 1~6 -->
+                            <div class="bg-rose-50 p-2 rounded-lg border border-rose-100 text-center relative">
                                 <p id="labelBuyDown1" class="text-[11px] font-bold text-rose-700 mb-1">신규 하락매수 1차</p>
-                                <p id="aiBuyDown1" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiBuyDown1" class="text-base font-extrabold text-slate-800">대기중</p>
+                                <div id="calc_aiBuyDown1" class="text-[11px] font-bold text-emerald-700 mt-1 hidden bg-white/60 rounded py-1 px-1 border border-emerald-100 leading-tight"></div>
                             </div>
-                            <div class="bg-rose-100 p-3 rounded-lg border border-rose-200 text-center">
+                            <div class="bg-rose-100 p-2 rounded-lg border border-rose-200 text-center relative">
                                 <p id="labelBuyDown2" class="text-[11px] font-bold text-rose-800 mb-1">신규 하락매수 2차</p>
-                                <p id="aiBuyDown2" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiBuyDown2" class="text-base font-extrabold text-slate-800">대기중</p>
+                                <div id="calc_aiBuyDown2" class="text-[11px] font-bold text-emerald-700 mt-1 hidden bg-white/60 rounded py-1 px-1 border border-emerald-100 leading-tight"></div>
                             </div>
-                            <div class="bg-rose-200 p-3 rounded-lg border border-rose-300 text-center">
+                            <div class="bg-rose-200 p-2 rounded-lg border border-rose-300 text-center relative">
                                 <p id="labelBuyDown3" class="text-[11px] font-bold text-rose-900 mb-1">신규 하락매수 3차</p>
-                                <p id="aiBuyDown3" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiBuyDown3" class="text-base font-extrabold text-slate-800">대기중</p>
+                                <div id="calc_aiBuyDown3" class="text-[11px] font-bold text-emerald-700 mt-1 hidden bg-white/60 rounded py-1 px-1 border border-emerald-100 leading-tight"></div>
                             </div>
-                            <div class="bg-orange-50 p-3 rounded-lg border border-orange-100 text-center">
+                            <div class="bg-orange-50 p-2 rounded-lg border border-orange-100 text-center relative">
                                 <p id="labelBuyUp1" class="text-[11px] font-bold text-orange-700 mb-1">신규 돌파매수 1차</p>
-                                <p id="aiBuyUp1" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiBuyUp1" class="text-base font-extrabold text-slate-800">대기중</p>
+                                <div id="calc_aiBuyUp1" class="text-[11px] font-bold text-emerald-700 mt-1 hidden bg-white/60 rounded py-1 px-1 border border-emerald-100 leading-tight"></div>
                             </div>
-                            <div class="bg-orange-100 p-3 rounded-lg border border-orange-200 text-center">
+                            <div class="bg-orange-100 p-2 rounded-lg border border-orange-200 text-center relative">
                                 <p id="labelBuyUp2" class="text-[11px] font-bold text-orange-800 mb-1">신규 돌파매수 2차</p>
-                                <p id="aiBuyUp2" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiBuyUp2" class="text-base font-extrabold text-slate-800">대기중</p>
+                                <div id="calc_aiBuyUp2" class="text-[11px] font-bold text-emerald-700 mt-1 hidden bg-white/60 rounded py-1 px-1 border border-emerald-100 leading-tight"></div>
                             </div>
-                            <div class="bg-orange-200 p-3 rounded-lg border border-orange-300 text-center">
+                            <div class="bg-orange-200 p-2 rounded-lg border border-orange-300 text-center relative">
                                 <p id="labelBuyUp3" class="text-[11px] font-bold text-orange-900 mb-1">신규 돌파매수 3차</p>
-                                <p id="aiBuyUp3" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiBuyUp3" class="text-base font-extrabold text-slate-800">대기중</p>
+                                <div id="calc_aiBuyUp3" class="text-[11px] font-bold text-emerald-700 mt-1 hidden bg-white/60 rounded py-1 px-1 border border-emerald-100 leading-tight"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 매도 타점 -->
+                    <!-- 매도 타점 (매도 측은 금액 배정 대신 보유수량 대비 비율로 안내) -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-200">
                         <h3 class="text-sm font-bold text-blue-800 mb-3 flex items-center gap-1">📤 분할 매도 타점 <span class="text-xs font-normal text-blue-600 ml-1">(상승 시 익절 / 하락 시 손절)</span></h3>
                         <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-                            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-center">
+                            <div class="bg-blue-50 p-2 rounded-lg border border-blue-100 text-center relative">
                                 <p class="text-[11px] font-bold text-blue-700 mb-1">상승 익절 1차</p>
-                                <p id="aiSellProfit1" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiSellProfit1" class="text-base font-extrabold text-slate-800">대기중</p>
                             </div>
-                            <div class="bg-blue-100 p-3 rounded-lg border border-blue-200 text-center">
+                            <div class="bg-blue-100 p-2 rounded-lg border border-blue-200 text-center relative">
                                 <p class="text-[11px] font-bold text-blue-800 mb-1">상승 익절 2차</p>
-                                <p id="aiSellProfit2" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiSellProfit2" class="text-base font-extrabold text-slate-800">대기중</p>
                             </div>
-                            <div class="bg-blue-200 p-3 rounded-lg border border-blue-300 text-center">
+                            <div class="bg-blue-200 p-2 rounded-lg border border-blue-300 text-center relative">
                                 <p class="text-[11px] font-bold text-blue-900 mb-1">상승 익절 3차</p>
-                                <p id="aiSellProfit3" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiSellProfit3" class="text-base font-extrabold text-slate-800">대기중</p>
                             </div>
-                            <div class="bg-slate-100 p-3 rounded-lg border border-slate-200 text-center">
+                            <div class="bg-slate-100 p-2 rounded-lg border border-slate-200 text-center relative">
                                 <p class="text-[11px] font-bold text-slate-600 mb-1">하락 손절 1차</p>
-                                <p id="aiSellLoss1" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiSellLoss1" class="text-base font-extrabold text-slate-800">대기중</p>
                             </div>
-                            <div class="bg-slate-200 p-3 rounded-lg border border-slate-300 text-center">
+                            <div class="bg-slate-200 p-2 rounded-lg border border-slate-300 text-center relative">
                                 <p class="text-[11px] font-bold text-slate-700 mb-1">하락 손절 2차</p>
-                                <p id="aiSellLoss2" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiSellLoss2" class="text-base font-extrabold text-slate-800">대기중</p>
                             </div>
-                            <div class="bg-slate-300 p-3 rounded-lg border border-slate-400 text-center">
+                            <div class="bg-slate-300 p-2 rounded-lg border border-slate-400 text-center relative">
                                 <p class="text-[11px] font-bold text-slate-800 mb-1">하락 손절 3차</p>
-                                <p id="aiSellLoss3" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                                <p id="aiSellLoss3" class="text-base font-extrabold text-slate-800">대기중</p>
                             </div>
                         </div>
                     </div>
@@ -237,7 +254,6 @@
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PBR (주가순자산비율)</p>
                         <p id="fnPbr" class="text-2xl font-extrabold text-slate-800">-</p>
-                        <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PEG (주가수익성장비율)</p>
@@ -247,7 +263,6 @@
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">배당수익률</p>
                         <p id="fnDiv" class="text-2xl font-extrabold text-indigo-600">-</p>
-                        <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
                     <!-- 모닝스타 해자 -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-300 bg-amber-50/30 text-center flex flex-col justify-center items-center h-full">
@@ -283,7 +298,7 @@
                 </div>
             </div>
 
-            <!-- AI 분석 -->
+            <!-- AI 분석 리포트 -->
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 맞춤형 AI 트레이딩 심층 분석 리포트</h2>
@@ -299,15 +314,13 @@
     </div>
 
     <script>
-        // ================= 비밀번호 잠금 로직 (비트연산 적용) ================= //
-        // 4203 ^ 1024 = 5227
+        // ================= 비밀번호 잠금 로직 ================= //
         function checkPassword() {
             const pin = document.getElementById('lockPin').value;
             const errorMsg = document.getElementById('lockError');
             const numPin = parseInt(pin, 10);
             
-            // 입력값을 1024와 비트 XOR 연산했을 때 5227이 나오면 정답 (원래 비밀번호: 4203)
-            if (!isNaN(numPin) && (numPin ^ 1024) === 5227) {
+            if (!isNaN(numPin) && (numPin ^ 1024) === 5227) { // 4203
                 sessionStorage.setItem('aiQuantUnlocked', 'true');
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').classList.remove('hidden');
@@ -318,7 +331,7 @@
             }
         }
 
-        // ================= KOSPI 200 전체 종목 분류 ================= //
+        // 기업 데이터 (이전과 동일)
         const KOSPI200_COMPANIES = {
             "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
             "이차전지·소재": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "삼성SDI": "006400", "포스코퓨처엠": "003670", "에코프로머티": "450080", "엘앤에프": "066970", "코스모신소재": "005070", "코스모화학": "005420", "솔루스첨단소재": "336370", "금양": "001570", "더블유씨피": "393890", "롯데에너지머티리얼즈": "020150", "SK아이이테크놀로지": "361610"},
@@ -338,7 +351,6 @@
             "음식료·유통·엔터": {"KT&G": "033780", "CJ제일제당": "097950", "삼양식품": "003230", "오리온": "271560", "농심": "004370", "롯데웰푸드": "280360", "하이트진로": "000080", "대상": "001680", "오뚜기": "007310", "롯데칠성": "005300", "동원F&B": "049770", "이마트": "139480", "BGF리테일": "282330", "GS리테일": "007070", "신세계": "004170", "롯데쇼핑": "023530", "현대백화점": "069960", "호텔신라": "008770", "강원랜드": "035250", "GKL": "114090", "현대홈쇼핑": "057050", "빙그레": "005180", "현대그린푸드": "453340"}
         };
 
-        // ================= KOSDAQ 150 전체 종목 분류 ================= //
         const KOSDAQ150_COMPANIES = {
             "반도체·장비 (IT H/W)": {"씨엠티엑스": "388210", "리노공업": "058470", "HPSP": "403870", "이오테크닉스": "039030", "주성엔지니어링": "036930", "솔브레인": "357780", "동진쎄미켐": "005290", "하나머티리얼즈": "166090", "원익IPS": "240810", "테크윙": "089030", "ISC": "095340", "심텍": "222800", "대덕전자": "353200", "파크시스템스": "140860", "티씨케이": "064760", "원익QnC": "074600", "두산테스나": "131970", "유진테크": "084370", "SFA반도체": "036540", "네오셈": "253590", "덕산네오룩스": "213420", "피에스케이": "031980", "고영": "098460", "제주반도체": "080220", "테스": "095610", "원익홀딩스": "030530", "에스티아이": "039440", "아이쓰리시스템": "214430", "하나마이크론": "067310", "에스앤에스텍": "101490", "티에스이": "131290", "코미코": "183300", "와이씨": "232140", "퀄리타스반도체": "432720", "어보브반도체": "102120", "가온칩스": "399720", "오픈엣지테크놀로지": "394280", "에이직랜드": "445090", "텔레칩스": "054450", "넥스틴": "348210", "파두": "440110"},
             "이차전지·소재": {"에코프로비엠": "247540", "에코프로": "086520", "대주전자재료": "078600", "엔켐": "348370", "나노신소재": "121600", "피엔티": "137400", "동화기업": "025900", "성일하이텍": "365340", "더블유씨피": "393890", "윤성에프앤씨": "372170", "천보": "278280", "에코프로에이치엔": "383310", "새빗켐": "107600", "씨아이에스": "222080", "신성델타테크": "065350", "레이크머티리얼즈": "281740", "포스코엠텍": "009520", "이녹스첨단소재": "272290", "유진테크놀로지": "439370", "탑머티리얼": "360070", "제이오": "418550", "신성에스티": "416180"},
@@ -363,8 +375,11 @@
         let globalQuantData = null;
         let myChart = null;
 
+        // 🚀 신규 추가: 계산을 위한 전역 변수
+        let aiParsedStrategy = {}; // 추출된 가격, 비중 저장
+        let parsedAiTargetPrice = 0; // 추출된 AI 목표가
+
         window.onload = async () => {
-            // 세션 스토리지 검사하여 잠금해제 상태면 락스크린 숨김
             if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').classList.remove('hidden');
@@ -375,7 +390,6 @@
             const savedKey = localStorage.getItem('geminiApiKey');
             if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
 
-            // 퀵버튼 생성
             generateQuickButtons('kospiQuickBtns', KOSPI200_COMPANIES, 'bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-800 border-blue-200');
             generateQuickButtons('kosdaqQuickBtns', KOSDAQ150_COMPANIES, 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border-emerald-200');
             
@@ -437,7 +451,6 @@
             alert('Gemini API Key가 안전하게 저장되었습니다.');
         }
 
-        // 평단가 입력 인풋 보이기/숨기기
         function toggleAvgPriceInput() {
             const mode = document.getElementById('analysisModeSelect').value;
             const avgInput = document.getElementById('myAvgPriceInput');
@@ -447,6 +460,7 @@
             } else {
                 avgInput.classList.add('hidden');
             }
+            calculateInvestment(); // 모드 변경 시 수익률 재계산
         }
 
         async function fetchDashboardData() {
@@ -458,7 +472,6 @@
             let myAvgPrice = avgPriceInputEl.value.trim();
             let ticker = "", corpName = "";
 
-            // 보유자 모드인데 평단가 입력을 안 한 경우 체크
             if (mode === 'average' && (!myAvgPrice || isNaN(myAvgPrice) || Number(myAvgPrice) <= 0)) {
                 alert("기존 보유(평단가 기준) 분석을 위해 보유 평단가를 입력해주세요.");
                 avgPriceInputEl.focus();
@@ -485,9 +498,9 @@
 
             const data = globalQuantData[ticker];
             
-            // UI 초기화
             document.getElementById('statusBox').classList.remove('hidden');
             document.getElementById('dashboardArea').classList.remove('hidden');
+            document.getElementById('expectedReturnBox').classList.add('hidden'); // 분석 전 숨기기
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>로컬 데이터를 기반으로 사용자 맞춤형 AI 심층 리포트 및 타점을 산출 중...</span>";
 
             document.getElementById('aiTargetPrice').textContent = "분석 대기중";
@@ -497,7 +510,9 @@
             document.getElementById('moatRating').textContent = "AI 분석 대기중";
             document.getElementById('moatRating').className = "text-base font-extrabold text-slate-500 my-0";
 
-            // AI 매매 타점 박스 초기화 (12개 필드)
+            // 변수 및 타점 박스 초기화
+            aiParsedStrategy = {};
+            parsedAiTargetPrice = 0;
             const aiFields = [
                 'aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3',
                 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3',
@@ -506,7 +521,9 @@
             ];
             aiFields.forEach(id => {
                 document.getElementById(id).textContent = "대기중";
-                document.getElementById(id).className = "text-base md:text-lg font-bold text-slate-400";
+                document.getElementById(id).className = "text-base font-bold text-slate-400";
+                const calcDiv = document.getElementById('calc_' + id);
+                if(calcDiv) calcDiv.classList.add('hidden');
             });
 
             document.getElementById('corpNameTitle').textContent = data.name;
@@ -615,7 +632,6 @@
                 return;
             }
 
-            // UI 라벨 동적 업데이트 (모드에 따라 분리)
             if (mode === 'current') {
                 document.getElementById('labelBuyDown1').textContent = "신규 하락매수 1차";
                 document.getElementById('labelBuyDown2').textContent = "신규 하락매수 2차";
@@ -634,44 +650,39 @@
                 document.getElementById('strategyBase').textContent = `기준: 평단가 ${Number(myAvgPrice).toLocaleString()}원`;
             }
 
-            // 분석 기준이 되는 프롬프트 컨텍스트 분리
             let avgPriceContext = "";
-            let buyStrategyText = "";
             if (mode === 'average') {
                 avgPriceContext = `[분석 모드: 기존 보유자] 현재 사용자의 보유 평단가: ${Number(myAvgPrice).toLocaleString()}원. 이 평단가를 '최우선 기준' 정하여 현재 수익/손실 상태를 파악해 타점을 계산하세요.`;
-                buyStrategyText = "'평단가' 대비 하락 시 물타기 1~3차 분할 매수 타점 근거, 평단가 이상 상승 시 불타기 1~3차 분할 매수 타점 설정 근거 제시.";
             } else {
                 avgPriceContext = `[분석 모드: 신규 진입] 현재 사용자는 주식을 보유하고 있지 않습니다. 현재가(${price})를 '최우선 기준'으로 신규 진입 타점을 계산하세요.`;
-                buyStrategyText = "'현재가' 대비 하락 시 신규 분할매수 1~3차 타점 근거, 주요 저항선 돌파 및 상승 시 돌파매수 1~3차 타점 설정 근거 제시.";
             }
 
-            // 프롬프트 구성
+            // 🚀 프롬프트 수정: 시스템이 자동 계산하기 쉽도록 금액과 비중 형식을 고정함
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트이자 실전 트레이더입니다. 한국 상장기업 [${corpName} (${ticker})]에 대한 데이터 및 기업가치를 바탕으로 심층 리포트를 검색 날짜 기준으로 작성해주세요.
             
 현재가:${price}원, (참고용)증권사 평균 목표가:${targetPrice}원, 등락률:${changeRate}, 시가총액:${marketCap}, 외국인소진율:${foreignRate}, PER:${per}배, PBR:${pbr}배, 배당수익률:${dividend}.
 **중요 정보:** ${avgPriceContext}
 
-[작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 첫 줄부터 정확히 출력하세요.
+[작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 첫 줄부터 정확히 출력하세요. 타점은 금액과 배정 비중(%)을 '금액 / 비중%' 형태로 작성하세요. (비중은 1,2,3차 합산 시 100%가 되도록 분배)
 MOAT_RATING: [Wide/Narrow/None 중 택1]
 AI_TARGET_PRICE: [금액]원
-BUY_DOWN_1: [금액]원
-BUY_DOWN_2: [금액]원
-BUY_DOWN_3: [금액]원
-BUY_UP_1: [금액]원
-BUY_UP_2: [금액]원
-BUY_UP_3: [금액]원
-SELL_PROFIT_1: [금액]원
-SELL_PROFIT_2: [금액]원
-SELL_PROFIT_3: [금액]원
-SELL_LOSS_1: [금액]원
-SELL_LOSS_2: [금액]원
-SELL_LOSS_3: [금액]원
+BUY_DOWN_1: [금액]원 / [비중]%
+BUY_DOWN_2: [금액]원 / [비중]%
+BUY_DOWN_3: [금액]원 / [비중]%
+BUY_UP_1: [금액]원 / [비중]%
+BUY_UP_2: [금액]원 / [비중]%
+BUY_UP_3: [금액]원 / [비중]%
+SELL_PROFIT_1: [금액]원 / [비중]%
+SELL_PROFIT_2: [금액]원 / [비중]%
+SELL_PROFIT_3: [금액]원 / [비중]%
+SELL_LOSS_1: [금액]원 / [비중]%
+SELL_LOSS_2: [금액]원 / [비중]%
+SELL_LOSS_3: [금액]원 / [비중]%
 
 위의 14줄을 적은 후, 그 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가가 제대로 나오게 반영)
-​2. 맞춤형 실전 매수 전략: ${buyStrategyText}, 1~3차 각각 매수 비중 표시.
-3. 맞춤형 실전 매도 전략: 수익 발생 시 익절(Sell Profit) 1~3차 저항선 목표가 근거 제시 및 매도 비중 표시, 하락 시 리스크 관리를 위한 손절(Sell Loss) 1~3차 지지선 이탈 근거 제시 및 매도 비중 표시.
-4. 배당 투자 매력도 및 모든 것을 고려하였을 때 실전 매수매도 전략 중 더 효과적인 방법 선택과 총평`;
+2. 맞춤형 실전 매수/매도 전략 요약 및 근거 설명
+3. 배당 투자 매력도 및 종합 총평`;
             
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
@@ -707,18 +718,18 @@ SELL_LOSS_3: [금액]원
                     aiText = result.remainingText;
                 }
 
-                // 2. AI 목표주가 추출
+                // 2. AI 목표주가 추출 및 수익률 UI 표시용 저장
                 result = extractAndClean(/AI_TARGET_PRICE:\s*(.+)/i, aiText);
                 if (result.val) {
                     document.getElementById('aiTargetPrice').textContent = result.val;
                     document.getElementById('aiTargetPrice').className = "text-2xl font-extrabold text-purple-700";
                     
+                    parsedAiTargetPrice = parseInt(result.val.replace(/,/g, '').replace(/원/g, '')) || 0;
                     const currentP = parseInt(String(price).replace(/,/g, '').replace(/원/g, ''));
-                    const targetP = parseInt(result.val.replace(/,/g, '').replace(/원/g, ''));
                     const targetUpsideEl = document.getElementById('targetUpside');
                     
-                    if (!isNaN(currentP) && currentP > 0 && !isNaN(targetP) && targetP > 0) {
-                        const diffRate = ((targetP - currentP) / currentP) * 100;
+                    if (!isNaN(currentP) && currentP > 0 && parsedAiTargetPrice > 0) {
+                        const diffRate = ((parsedAiTargetPrice - currentP) / currentP) * 100;
                         if (diffRate > 0) {
                             targetUpsideEl.textContent = `현재가 대비 상승 여력: +${diffRate.toFixed(1)}%`;
                             targetUpsideEl.className = "text-xs font-bold mt-1 text-red-600";
@@ -730,7 +741,7 @@ SELL_LOSS_3: [금액]원
                     aiText = result.remainingText;
                 }
 
-                // 3. AI 매수/매도 추출 (12개 타점)
+                // 3. AI 매수/매도 12개 타점 추출 및 데이터 파싱
                 const tradeFields = [
                     'BUY_DOWN_1', 'BUY_DOWN_2', 'BUY_DOWN_3',
                     'BUY_UP_1', 'BUY_UP_2', 'BUY_UP_3',
@@ -748,8 +759,19 @@ SELL_LOSS_3: [금액]원
                     const regex = new RegExp(`${tradeFields[i]}:\\s*(.+)`, 'i');
                     const m = aiText.match(regex);
                     if(m) {
-                        document.getElementById(tradeIds[i]).textContent = m[1].replace(/\*/g, '').trim();
-                        document.getElementById(tradeIds[i]).className = "text-base md:text-lg font-extrabold text-slate-800";
+                        const rawStr = m[1].replace(/\*/g, '').trim(); // e.g. "50,000원 / 30%"
+                        document.getElementById(tradeIds[i]).textContent = rawStr;
+                        document.getElementById(tradeIds[i]).className = "text-base font-extrabold text-slate-800";
+                        
+                        // 숫자만 추출해서 객체에 저장 (계산용)
+                        const numbers = rawStr.match(/[\d,]+/g);
+                        if (numbers && numbers.length >= 1) {
+                            const parsedPrice = parseInt(numbers[0].replace(/,/g, ''));
+                            // 비중이 없으면 기본 33% 적용
+                            const parsedWeight = numbers.length >= 2 ? parseInt(numbers[1].replace(/,/g, '')) : 33; 
+                            aiParsedStrategy[tradeIds[i]] = { price: parsedPrice, weight: parsedWeight };
+                        }
+                        
                         aiText = aiText.replace(regex, '').trim();
                     }
                 }
@@ -760,6 +782,9 @@ SELL_LOSS_3: [금액]원
                     .replace(/## (.*?)\n/g, '<h2 class="text-xl font-extrabold text-slate-900 mt-5 mb-2 border-b pb-1">$1</h2>')
                     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-yellow-100/60 px-1 rounded">$1</strong>')
                     .replace(/\n/g, '<br>');
+
+                // AI 호출이 끝난 후 금액이 입력되어 있다면 즉시 계산 수행
+                calculateInvestment();
 
             } catch (error) {
                 document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-lg">❌ AI 분석 호출 실패: ${error.message}</div>`;
@@ -781,20 +806,9 @@ SELL_LOSS_3: [금액]원
 
             lastFetchedData.myAvgPrice = newAvgPrice;
             lastFetchedData.mode = mode;
-
-            // 12개 타점 초기화
-            const aiFields = [
-                'aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3',
-                'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3',
-                'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3',
-                'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'
-            ];
-            aiFields.forEach(id => {
-                document.getElementById(id).textContent = "대기중";
-                document.getElementById(id).className = "text-base font-bold text-slate-400";
-            });
-
+            
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>분석 모드에 맞춘 트레이딩 심층 리포트를 다시 작성 중입니다...</span>";
+            document.getElementById('expectedReturnBox').classList.add('hidden'); // 분석 중 숨김
             
             runGeminiAnalysisOnly(
                 lastFetchedData.corpName, lastFetchedData.ticker, lastFetchedData.price, 
@@ -802,6 +816,84 @@ SELL_LOSS_3: [금액]원
                 lastFetchedData.foreignRate, lastFetchedData.per, lastFetchedData.pbr, 
                 lastFetchedData.dividend, newAvgPrice, mode
             );
+        }
+        
+        // 🚀 신규 추가: 매수 금액에 따른 수량/필요금액 및 예상 수익률 자동 계산 로직
+        function calculateInvestment() {
+            const investStr = document.getElementById('investAmountInput').value;
+            const investAmt = parseInt(investStr);
+            const returnBox = document.getElementById('expectedReturnBox');
+            
+            // 유효한 금액이 없으면 계산 영역 숨기기
+            if (isNaN(investAmt) || investAmt <= 0) {
+                returnBox.classList.add('hidden');
+                // 모든 계산 하위 Div 숨기기
+                const ids = ['aiBuyDown1','aiBuyDown2','aiBuyDown3','aiBuyUp1','aiBuyUp2','aiBuyUp3'];
+                ids.forEach(id => {
+                    const el = document.getElementById('calc_' + id);
+                    if (el) el.classList.add('hidden');
+                });
+                return;
+            }
+
+            // 1. 각 매수 타점 별 주식 수 및 금액 계산 및 UI 업데이트 (매수 구간 6개만 해당)
+            const buyIds = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3'];
+            buyIds.forEach(id => {
+                const data = aiParsedStrategy[id];
+                const calcDiv = document.getElementById('calc_' + id);
+                
+                if (data && data.price > 0 && calcDiv) {
+                    // 할당 금액 = 총 투자금 * (비중 / 100)
+                    const allocatedMoney = investAmt * (data.weight / 100);
+                    // 매수 가능 주식 수 (내림)
+                    const shares = Math.floor(allocatedMoney / data.price);
+                    // 실제 소요 금액
+                    const actualUsedMoney = shares * data.price;
+                    
+                    if(shares > 0) {
+                        calcDiv.innerHTML = `${shares.toLocaleString()}주<br><span class="font-normal text-slate-500">(${actualUsedMoney.toLocaleString()}원)</span>`;
+                        calcDiv.classList.remove('hidden');
+                    } else {
+                        calcDiv.innerHTML = `금액 부족`;
+                        calcDiv.classList.remove('hidden');
+                    }
+                }
+            });
+
+            // 2. 전체 예상 수익률 & 수익금 계산
+            // 기준가 설정 (신규진입이면 현재가, 기존보유면 평단가)
+            if (lastFetchedData && parsedAiTargetPrice > 0) {
+                const mode = document.getElementById('analysisModeSelect').value;
+                let basePrice = 0;
+                
+                if (mode === 'current') {
+                    basePrice = parseInt(String(lastFetchedData.price).replace(/,/g, ''));
+                } else if (mode === 'average') {
+                    basePrice = parseInt(document.getElementById('myAvgPriceInput').value);
+                }
+                
+                if (!isNaN(basePrice) && basePrice > 0) {
+                    const profitRate = ((parsedAiTargetPrice - basePrice) / basePrice) * 100;
+                    const expectedProfitMoney = Math.floor(investAmt * (profitRate / 100));
+
+                    document.getElementById('simTotalInvest').textContent = investAmt.toLocaleString();
+                    const rateEl = document.getElementById('simProfitRate');
+                    const moneyEl = document.getElementById('simProfitMoney');
+                    
+                    rateEl.textContent = profitRate > 0 ? `+${profitRate.toFixed(2)}%` : `${profitRate.toFixed(2)}%`;
+                    moneyEl.textContent = profitRate > 0 ? `+${expectedProfitMoney.toLocaleString()}원` : `${expectedProfitMoney.toLocaleString()}원`;
+                    
+                    if (profitRate > 0) {
+                        rateEl.className = "text-2xl font-extrabold text-emerald-600";
+                        moneyEl.className = "text-sm font-bold text-emerald-800 bg-emerald-200/50 px-2 py-0.5 rounded mt-1 inline-block";
+                    } else {
+                        rateEl.className = "text-2xl font-extrabold text-blue-600";
+                        moneyEl.className = "text-sm font-bold text-blue-800 bg-blue-200/50 px-2 py-0.5 rounded mt-1 inline-block";
+                    }
+                    
+                    returnBox.classList.remove('hidden');
+                }
+            }
         }
     </script>
 </body>
