@@ -73,7 +73,7 @@
                 <span class="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full font-semibold">데이터 연동 완료</span>
             </div>
 
-            <!-- 요약 지표 (높이 강제 교정) -->
+            <!-- 요약 지표 -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-500 pl-3 mb-3">현재가 및 수급 현황</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -83,8 +83,9 @@
                         <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
                     
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-200 bg-amber-50 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-semibold text-amber-700 mb-1">목표주가(컨센서스)</p>
+                    <!-- AI 목표주가 영역 -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-purple-300 bg-purple-50 text-center flex flex-col justify-center h-full">
+                        <p class="text-xs font-semibold text-purple-700 mb-1">AI 적정 목표주가 ✨</p>
                         <p id="naverTargetPrice" class="text-2xl font-extrabold text-slate-800">-</p>
                         <p id="targetUpside" class="text-xs font-bold mt-1 text-slate-500">-</p>
                     </div>
@@ -126,7 +127,7 @@
                 </div>
             </div>
 
-            <!-- 밸류에이션 (PER -> PBR -> 배당수익률 -> PEG -> 모닝스타) -->
+            <!-- 밸류에이션 (PER -> PBR -> 배당수익률 -> PEG -> 모닝스타 순서 교체 완료) -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & 모닝스타 경제적 해자</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -142,7 +143,7 @@
                         <p id="fnPbr" class="text-2xl font-extrabold text-slate-800">-</p>
                         <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
-                    <!-- 3. 배당수익률 (PEG 앞으로 이동) -->
+                    <!-- 3. 배당수익률 -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">배당수익률</p>
                         <p id="fnDiv" class="text-2xl font-extrabold text-indigo-600">-</p>
@@ -260,7 +261,6 @@
             });
 
             try {
-                // 수동 새로고침시 캐시 파괴
                 const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' });
                 if(res.ok) globalQuantData = await res.json();
             } catch(e) { console.warn("JSON 파일 로드 실패", e); }
@@ -338,44 +338,22 @@
             const data = globalQuantData[ticker];
             document.getElementById('statusBox').classList.remove('hidden');
             document.getElementById('dashboardArea').classList.remove('hidden');
-            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>로컬 데이터를 기반으로 AI 심층 리포트 작성 중...</span>";
+            
+            // 🤖 AI 목표주가 초기화 세팅
+            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI가 종목 데이터를 바탕으로 적정 목표주가를 실시간으로 산출하고 있습니다...</span>";
+            document.getElementById('naverTargetPrice').textContent = "AI 산출중 🤖";
+            document.getElementById('naverTargetPrice').className = "text-xl font-extrabold text-slate-400 animate-pulse";
+            document.getElementById('targetUpside').textContent = "분석 대기중";
+            document.getElementById('targetUpside').className = "text-xs font-bold mt-1 text-slate-400";
 
             document.getElementById('corpNameTitle').textContent = data.name;
             document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
             document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
             const priceEl = document.getElementById('naverPrice');
-            const targetPriceEl = document.getElementById('naverTargetPrice');
-            const targetUpsideEl = document.getElementById('targetUpside');
             const changeEl = document.getElementById('naverChange');
             
             priceEl.textContent = data.price !== "N/A" ? `${data.price}원` : "N/A";
-            
-            let targetPriceStr = data.targetPrice && data.targetPrice !== "-" ? data.targetPrice : null;
-            if (targetPriceStr) {
-                targetPriceEl.textContent = targetPriceStr + "원";
-                
-                const currentP = data.rawPrice;
-                const targetP = parseInt(targetPriceStr.replace(/,/g, ''));
-                
-                if (currentP > 0 && targetP > 0) {
-                    const diffRate = ((targetP - currentP) / currentP) * 100;
-                    if (diffRate > 0) {
-                        targetUpsideEl.textContent = `상승 여력: +${diffRate.toFixed(1)}%`;
-                        targetUpsideEl.className = "text-xs font-bold mt-1 text-red-600";
-                    } else {
-                        targetUpsideEl.textContent = `현재가 초과: ${diffRate.toFixed(1)}%`;
-                        targetUpsideEl.className = "text-xs font-bold mt-1 text-blue-600";
-                    }
-                } else {
-                    targetUpsideEl.textContent = "-";
-                }
-            } else {
-                targetPriceEl.textContent = "N/A";
-                targetUpsideEl.textContent = "증권사 리포트 없음";
-                targetUpsideEl.className = "text-xs font-medium mt-1 text-slate-400";
-            }
-            
             changeEl.textContent = data.changeRate;
             priceEl.className = `text-2xl font-extrabold ${data.direction === "UP" ? "text-red-600" : (data.direction === "DOWN" ? "text-blue-600" : "text-slate-800")}`;
             changeEl.className = `text-2xl font-extrabold ${data.direction === "UP" ? "text-red-600" : (data.direction === "DOWN" ? "text-blue-600" : "text-slate-800")}`;
@@ -385,8 +363,6 @@
             document.getElementById('fnPer').textContent = data.per !== "-" ? `${data.per}배` : "N/A";
             document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
             document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
-            
-            // 배당수익률 업데이트
             document.getElementById('fnDiv').textContent = data.dividend !== "-" ? data.dividend : "N/A";
 
             if (data.rawPrice && data.rawPrice > 0) {
@@ -435,8 +411,8 @@
             renderChart(data.finance.years, data.finance.ops);
             document.getElementById('statusBox').classList.add('hidden');
 
-            lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, pbr: data.pbr, dividend: data.dividend };
-            await runGeminiAnalysisOnly(data.name, ticker, data.price, data.targetPrice, data.changeRate, data.marketCap, data.foreignRate, data.per, data.pbr, data.dividend);
+            lastFetchedData = { corpName: data.name, ticker, rawPrice: data.rawPrice, price: data.price, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, pbr: data.pbr, dividend: data.dividend };
+            await runGeminiAnalysisOnly(data.name, ticker, data.rawPrice, data.price, data.changeRate, data.marketCap, data.foreignRate, data.per, data.pbr, data.dividend);
         }
 
         function renderChart(labels, dataArr) {
@@ -476,14 +452,22 @@
             });
         }
 
-        async function runGeminiAnalysisOnly(corpName, ticker, price, targetPrice, changeRate, marketCap, foreignRate, per, pbr, dividend) {
+        async function runGeminiAnalysisOnly(corpName, ticker, rawPrice, price, changeRate, marketCap, foreignRate, per, pbr, dividend) {
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
                 document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 심층 분석 리포트가 출력됩니다.</div>`;
                 return;
             }
 
-            const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. 한국 상장기업 [${corpName} (${ticker})]에 대한 데이터를 바탕으로 심층 리포트를 작성해주세요. 현재가:${price}원, 목표주가:${targetPrice}원, 등락률:${changeRate}, 시총:${marketCap}, 외인소진율:${foreignRate}, PER:${per}배, PBR:${pbr}배, 배당수익률:${dividend}. 반드시 첫 줄에 모닝스타(Morningstar) 방법론을 엄격하게 적용한 경제적 해자 평가인 "MOAT_RATING: [Wide/Narrow/None]"을 적고, 그 아래 3단락으로 마크다운 굵은글씨(**)를 사용해 작성해주세요. 배당 투자 관점의 매력도도 한 문장으로 포함해주세요.`;
+            const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. 한국 상장기업 [${corpName} (${ticker})]에 대한 다음 데이터를 바탕으로 적정 목표주가를 산출하고 심층 리포트를 작성해주세요.
+현재가: ${price}원, 시가총액: ${marketCap}, 외인소진율: ${foreignRate}, PER: ${per}배, PBR: ${pbr}배, 배당수익률: ${dividend}.
+
+반드시 응답의 첫 두 줄은 다음과 같은 엄격한 형식으로 작성해야 합니다:
+MOAT_RATING: [Wide/Narrow/None]
+TARGET_PRICE: [산출한 목표주가를 숫자만 입력, 예: 105000]
+
+그 아래에 마크다운 굵은글씨(**)를 사용하여 3단락으로 심층 분석을 작성해주세요. 
+분석 내용에는 1) AI가 산출한 목표주가의 구체적인 계산 근거, 2) 밸류에이션 및 수급 분석, 3) 배당 투자 관점의 매력도를 반드시 포함해주세요.`;
             
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
@@ -501,11 +485,39 @@
                 const data = await response.json();
                 let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "분석 완료";
                 
+                // 모닝스타 추출
                 const moatMatch = aiText.match(/MOAT_RATING:\s*(.+)/i);
                 if (moatMatch) {
                     document.getElementById('moatRating').textContent = moatMatch[1].replace(/\*/g, '').trim();
                     document.getElementById('moatRating').className = "text-lg font-extrabold text-amber-700 my-0";
                     aiText = aiText.replace(/MOAT_RATING:\s*(.+)\n?/i, '');
+                }
+
+                // 🔥 AI 산출 목표주가 추출 및 UI 업데이트 🔥
+                const tpMatch = aiText.match(/TARGET_PRICE:\s*([\d,]+)/i);
+                if (tpMatch) {
+                    const targetP_str = tpMatch[1].replace(/,/g, '');
+                    const targetP = parseInt(targetP_str);
+                    
+                    document.getElementById('naverTargetPrice').textContent = targetP.toLocaleString() + "원";
+                    document.getElementById('naverTargetPrice').className = "text-2xl font-extrabold text-purple-600";
+                    
+                    if (rawPrice > 0 && targetP > 0) {
+                        const diffRate = ((targetP - rawPrice) / rawPrice) * 100;
+                        const targetUpsideEl = document.getElementById('targetUpside');
+                        if (diffRate > 0) {
+                            targetUpsideEl.textContent = `AI 상승 여력: +${diffRate.toFixed(1)}%`;
+                            targetUpsideEl.className = "text-xs font-bold mt-1 text-red-600";
+                        } else {
+                            targetUpsideEl.textContent = `AI 하락 여력: ${diffRate.toFixed(1)}%`;
+                            targetUpsideEl.className = "text-xs font-bold mt-1 text-blue-600";
+                        }
+                    }
+                    aiText = aiText.replace(/TARGET_PRICE:\s*([\d,]+)\n?/i, '');
+                } else {
+                    document.getElementById('naverTargetPrice').textContent = "산출 실패";
+                    document.getElementById('naverTargetPrice').className = "text-xl font-extrabold text-slate-800";
+                    document.getElementById('targetUpside').textContent = "-";
                 }
 
                 document.getElementById('aiResult').innerHTML = aiText.replace(/### (.*?)\n/g, '<h3 class="text-lg font-extrabold text-slate-800 mt-4 mb-2">$1</h3>').replace(/## (.*?)\n/g, '<h2 class="text-xl font-extrabold text-slate-900 mt-5 mb-2 border-b pb-1">$1</h2>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-yellow-100/60 px-1 rounded">$1</strong>').replace(/\n/g, '<br>');
@@ -516,8 +528,13 @@
 
         function reRunAiAnalysis() {
             if (!lastFetchedData) return;
-            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 심층 리포트를 다시 작성 중입니다...</span>";
-            runGeminiAnalysisOnly(lastFetchedData.corpName, lastFetchedData.ticker, lastFetchedData.price, lastFetchedData.targetPrice, lastFetchedData.changeRate, lastFetchedData.marketCap, lastFetchedData.foreignRate, lastFetchedData.per, lastFetchedData.pbr, lastFetchedData.dividend);
+            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI가 목표주가를 재산출하고 있습니다...</span>";
+            document.getElementById('naverTargetPrice').textContent = "AI 산출중 🤖";
+            document.getElementById('naverTargetPrice').className = "text-xl font-extrabold text-slate-400 animate-pulse";
+            document.getElementById('targetUpside').textContent = "분석 대기중";
+            document.getElementById('targetUpside').className = "text-xs font-bold mt-1 text-slate-400";
+            
+            runGeminiAnalysisOnly(lastFetchedData.corpName, lastFetchedData.ticker, lastFetchedData.rawPrice, lastFetchedData.price, lastFetchedData.changeRate, lastFetchedData.marketCap, lastFetchedData.foreignRate, lastFetchedData.per, lastFetchedData.pbr, lastFetchedData.dividend);
         }
     </script>
 </body>
