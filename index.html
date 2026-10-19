@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 주식 퀀트 대시보드 Pro (트레이딩 완결판)</title>
+    <title>AI 주식 퀀트 대시보드 Pro (개인 맞춤형 트레이딩 완결판)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -22,7 +22,7 @@
                 <span class="text-3xl">📈</span>
                 <div>
                     <h1 class="text-xl md:text-2xl font-extrabold text-slate-800">AI 주식 퀀트 대시보드</h1>
-                    <p class="text-xs text-slate-500">Auto Scraper Engine · Gemini AI · Trading Strategy</p>
+                    <p class="text-xs text-slate-500">Auto Scraper Engine · Gemini AI · Personalized Trading</p>
                 </div>
             </div>
             <div class="flex space-x-2 w-full md:w-auto">
@@ -31,12 +31,15 @@
             </div>
         </div>
 
-        <!-- 검색 영역 -->
+        <!-- 검색 영역 (내 평단가 입력 추가) -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
-            <div class="relative max-w-xl mx-auto flex">
-                <input type="text" id="tickerInput" oninput="showSuggestions()" onkeypress="if(event.key==='Enter') fetchDashboardData()" placeholder="기업명(예: 삼성전자) 또는 종목코드 6자리" class="border-2 border-blue-600 p-3 rounded-l-lg w-full text-base md:text-lg text-center font-medium focus:outline-none" autocomplete="off">
-                <button onclick="fetchDashboardData()" class="bg-blue-600 text-white px-6 py-3 rounded-r-lg text-base md:text-lg font-bold hover:bg-blue-700 transition shrink-0">분석</button>
-                <div id="suggestionBox" class="absolute left-0 right-24 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-64 overflow-y-auto text-left"></div>
+            <div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-2 relative">
+                <div class="flex-1 relative flex">
+                    <input type="text" id="tickerInput" oninput="showSuggestions()" onkeypress="if(event.key==='Enter') fetchDashboardData()" placeholder="기업명(예: 삼성전자) 또는 종목코드 6자리" class="border-2 border-blue-600 p-3 rounded-lg w-full text-base md:text-lg text-center font-medium focus:outline-none" autocomplete="off">
+                    <div id="suggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-64 overflow-y-auto text-left"></div>
+                </div>
+                <input type="number" id="myAvgPriceInput" onkeypress="if(event.key==='Enter') fetchDashboardData()" placeholder="내 평단가(선택)" class="border-2 border-rose-400 bg-rose-50 p-3 rounded-lg w-full md:w-48 text-base md:text-lg text-center font-bold text-rose-700 focus:outline-none focus:border-rose-600" autocomplete="off">
+                <button onclick="fetchDashboardData()" class="bg-blue-600 text-white px-8 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-blue-700 transition shrink-0">분석</button>
             </div>
             <div id="statusBox" class="hidden mt-4">
                 <p class="text-blue-600 font-semibold text-sm animate-pulse">자동 수집된 퀀트 데이터를 불러오는 중...</p>
@@ -107,9 +110,12 @@
                 </div>
             </div>
 
-            <!-- AI 실전 트레이딩 타점 (신규 추가된 부분) -->
+            <!-- AI 실전 트레이딩 타점 (맞춤형 평단가 적용) -->
             <div>
-                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 mb-3">🎯 AI 실전 트레이딩 전략 (분할 매수/매도 타점)</h2>
+                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 mb-3 flex items-center">
+                    🎯 AI 실전 트레이딩 전략
+                    <span id="strategyBase" class="ml-2 px-2 py-0.5 bg-rose-100 text-rose-700 text-xs rounded-full font-semibold"></span>
+                </h2>
                 <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
                     <!-- 매수 타점 -->
                     <div class="bg-rose-50 p-4 rounded-xl shadow-sm border border-rose-200 text-center flex flex-col justify-center h-full">
@@ -164,7 +170,7 @@
                         <p id="fnDiv" class="text-2xl font-extrabold text-indigo-600">-</p>
                         <p class="text-xs mt-1 invisible">spacer</p>
                     </div>
-                    <!-- 기존 모닝스타 해자 영역 복구 -->
+                    <!-- 모닝스타 해자 -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-300 bg-amber-50/30 text-center flex flex-col justify-center items-center h-full">
                         <p class="text-xs font-semibold text-amber-800 mb-1">경제적 해자 (Morningstar)</p>
                         <p id="moatRating" class="text-base font-extrabold text-slate-800 my-0">AI 분석 대기중</p>
@@ -201,12 +207,12 @@
             <!-- AI 분석 -->
             <div>
                 <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 AI 퀀트 & 트레이딩 심층 분석 리포트</h2>
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 맞춤형 AI 트레이딩 심층 분석 리포트</h2>
                     <button onclick="reRunAiAnalysis()" class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700 font-semibold transition">🔄 AI 분석 다시 실행</button>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div id="aiResult" class="text-slate-700 leading-relaxed space-y-2 text-sm md:text-base">
-                        우측 상단에 Gemini API Key를 입력하고 종목을 검색하면 AI의 목표주가 및 매수/매도 전략 리포트가 이곳에 출력됩니다.
+                        우측 상단에 Gemini API Key를 입력하고 종목(과 평단가)을 검색하면 맞춤형 심층 리포트가 이곳에 출력됩니다.
                     </div>
                 </div>
             </div>
@@ -325,7 +331,10 @@
 
         async function fetchDashboardData() {
             const inputEl = document.getElementById('tickerInput');
+            const avgPriceInputEl = document.getElementById('myAvgPriceInput');
+            
             let inputRaw = inputEl.value.trim();
+            let myAvgPrice = avgPriceInputEl.value.trim();
             let ticker = "", corpName = "";
 
             if (inputEl.dataset.selectedCode && /^\d{6}$/.test(inputEl.dataset.selectedCode)) {
@@ -351,8 +360,16 @@
             // UI 초기화
             document.getElementById('statusBox').classList.remove('hidden');
             document.getElementById('dashboardArea').classList.remove('hidden');
-            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>로컬 데이터를 기반으로 AI 심층 리포트 작성 및 목표/매매 타점을 산출 중...</span>";
+            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>로컬 데이터를 기반으로 사용자 맞춤형 AI 심층 리포트 및 타점을 산출 중...</span>";
             
+            // 기준 텍스트 설정 (평단가 여부)
+            const strategyBaseEl = document.getElementById('strategyBase');
+            if(myAvgPrice && !isNaN(myAvgPrice) && Number(myAvgPrice) > 0) {
+                strategyBaseEl.textContent = `기준: 평단가 ${Number(myAvgPrice).toLocaleString()}원`;
+            } else {
+                strategyBaseEl.textContent = "기준: 신규 진입 (현재가)";
+            }
+
             document.getElementById('aiTargetPrice').textContent = "분석 대기중";
             document.getElementById('aiTargetPrice').className = "text-xl font-bold text-slate-500 mt-1";
             document.getElementById('targetUpside').textContent = "AI가 적정 주가를 산출합니다";
@@ -363,7 +380,7 @@
             // AI 매매 타점 박스 초기화
             const aiFields = ['aiBuy1', 'aiBuy2', 'aiBuy3', 'aiSell1', 'aiSell2', 'aiSell3'];
             aiFields.forEach(id => {
-                document.getElementById(id).textContent = "분석 대기중";
+                document.getElementById(id).textContent = "대기중";
                 document.getElementById(id).className = "text-lg font-bold text-slate-400";
             });
 
@@ -420,9 +437,13 @@
             renderChart(data.finance.years, data.finance.ops);
             document.getElementById('statusBox').classList.add('hidden');
 
-            lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, pbr: data.pbr, dividend: data.dividend };
+            lastFetchedData = { 
+                corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, 
+                changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, 
+                per: data.per, pbr: data.pbr, dividend: data.dividend, myAvgPrice: myAvgPrice 
+            };
             
-            await runGeminiAnalysisOnly(data.name, ticker, data.price, data.targetPrice, data.changeRate, data.marketCap, data.foreignRate, data.per, data.pbr, data.dividend);
+            await runGeminiAnalysisOnly(data.name, ticker, data.price, data.targetPrice, data.changeRate, data.marketCap, data.foreignRate, data.per, data.pbr, data.dividend, myAvgPrice);
         }
 
         function renderChart(labels, dataArr) {
@@ -462,19 +483,25 @@
             });
         }
 
-        async function runGeminiAnalysisOnly(corpName, ticker, price, targetPrice, changeRate, marketCap, foreignRate, per, pbr, dividend) {
+        async function runGeminiAnalysisOnly(corpName, ticker, price, targetPrice, changeRate, marketCap, foreignRate, per, pbr, dividend, myAvgPrice) {
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
                 document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 심층 분석 리포트가 출력됩니다.</div>`;
                 return;
             }
 
-            // 트레이딩 전략(불타기/물타기/익절)을 명확하게 뽑아내기 위한 프롬프트 최적화
+            // 평단가 정보 텍스트 구성
+            const avgPriceContext = (myAvgPrice && !isNaN(myAvgPrice) && Number(myAvgPrice) > 0) 
+                ? `현재 사용자의 보유 평단가: ${Number(myAvgPrice).toLocaleString()}원 (이 평단가를 기준으로 수익/손실 상태를 파악하여, 물타기/불타기 및 익절/손절 매도 타점을 맞춤형으로 계산하세요.)`
+                : `현재 사용자의 보유 평단가 정보 없음 (신규 진입을 가정하여 현재가를 기준으로 매수/매도 타점을 계산하세요.)`;
+
+            // 평단가 반영 프롬프트
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트이자 실전 트레이더입니다. 한국 상장기업 [${corpName} (${ticker})]에 대한 데이터를 바탕으로 심층 리포트를 작성해주세요.
             
 현재가:${price}원, (참고용)증권사 평균 목표가:${targetPrice}원, 등락률:${changeRate}, 시가총액:${marketCap}, 외국인소진율:${foreignRate}, PER:${per}배, PBR:${pbr}배, 배당수익률:${dividend}.
+**중요 정보:** ${avgPriceContext}
 
-[작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 정확히 출력하세요.
+[작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 첫 줄부터 정확히 출력하세요.
 MOAT_RATING: [Wide/Narrow/None 중 택1]
 AI_TARGET_PRICE: [금액]원
 BUY_1: [금액]원
@@ -485,9 +512,9 @@ SELL_2: [금액]원
 SELL_3: [금액]원
 
 위의 8줄을 적은 후, 그 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
-1. AI 목표주가 산출 근거 (영업이익 트렌드 및 PEG, 밸류에이션, 증권사 평균 목표가와 차이 등 반영)
-2. 분할 매수 타점에 대한 '물타기(하락 시 추가매수)' 또는 '불타기(상승 시 추가매수)' 실전 전략 및 타점 설정 근거
-3. 분할 매도(1~3차 익절) 타점 설정 근거 및 저항선 분석
+1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션 등 반영)
+2. 분할 매수 타점에 대한 맞춤형 실전 전략 ('평단가' 대비 현재가가 낮으면 물타기, 높으면 불타기 전략 제시. 평단가가 없으면 신규 진입 전략) 및 타점 설정 근거
+3. 분할 매도(1~3차 익절 또는 손절) 타점 설정 근거 및 저항/지지선 분석
 4. 배당 투자 매력도 및 총평`;
             
             try {
@@ -538,7 +565,7 @@ SELL_3: [금액]원
                     if (!isNaN(currentP) && currentP > 0 && !isNaN(targetP) && targetP > 0) {
                         const diffRate = ((targetP - currentP) / currentP) * 100;
                         if (diffRate > 0) {
-                            targetUpsideEl.textContent = `상승 여력: +${diffRate.toFixed(1)}%`;
+                            targetUpsideEl.textContent = `현재가 대비 상승 여력: +${diffRate.toFixed(1)}%`;
                             targetUpsideEl.className = "text-xs font-bold mt-1 text-red-600";
                         } else {
                             targetUpsideEl.textContent = `현재가 초과: ${diffRate.toFixed(1)}%`;
@@ -557,7 +584,7 @@ SELL_3: [금액]원
                     const m = aiText.match(regex);
                     if(m) {
                         document.getElementById(tradeIds[i]).textContent = m[1].replace(/\*/g, '').trim();
-                        document.getElementById(tradeIds[i]).className = "text-lg font-extrabold text-slate-800";
+                        document.getElementById(tradeIds[i]).className = "text-xl font-extrabold text-slate-800";
                         aiText = aiText.replace(regex, '').trim();
                     }
                 }
@@ -576,8 +603,13 @@ SELL_3: [금액]원
 
         function reRunAiAnalysis() {
             if (!lastFetchedData) return;
-            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 트레이딩 심층 리포트를 다시 작성 중입니다...</span>";
-            runGeminiAnalysisOnly(lastFetchedData.corpName, lastFetchedData.ticker, lastFetchedData.price, lastFetchedData.targetPrice, lastFetchedData.changeRate, lastFetchedData.marketCap, lastFetchedData.foreignRate, lastFetchedData.per, lastFetchedData.pbr, lastFetchedData.dividend);
+            document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>맞춤형 AI 트레이딩 심층 리포트를 다시 작성 중입니다...</span>";
+            runGeminiAnalysisOnly(
+                lastFetchedData.corpName, lastFetchedData.ticker, lastFetchedData.price, 
+                lastFetchedData.targetPrice, lastFetchedData.changeRate, lastFetchedData.marketCap, 
+                lastFetchedData.foreignRate, lastFetchedData.per, lastFetchedData.pbr, 
+                lastFetchedData.dividend, lastFetchedData.myAvgPrice
+            );
         }
     </script>
 </body>
