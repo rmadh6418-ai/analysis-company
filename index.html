@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- [추가됨] PWA 및 모바일 전체화면 (앱처럼 실행) 설정 -->
+    <!-- PWA 및 모바일 전체화면 (앱처럼 실행) 설정 -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AI 퀀트">
     <meta name="theme-color" content="#1e293b">
     
-    <!-- [추가됨] 앱 아이콘 설정 -->
+    <!-- 앱 아이콘 설정 -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
 
-    <!-- [추가됨] 인라인 매니페스트 (별도 파일 없이 단일 HTML로 PWA 설치 가능하게 함) -->
-    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22AI%20%EC%A3%BC%EC%8B%9D%20%EC%BD%B4%ED%8A%B8%20Pro%22%2C%22short_name%22%3A%22AI%EC%BD%B4%ED%8A%B8%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f1f5f9%22%2C%22theme_color%22%3A%22%231e293b%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2933%2F2933116.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <!-- 안드로이드 Play 프로텍트 호환성 향상을 위해 id, description 추가된 인라인 매니페스트 -->
+    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22id%22%3A%22%2F%22%2C%22name%22%3A%22AI%20%EC%A3%BC%EC%8B%9D%20%EC%BD%B4%ED%8A%B8%20Pro%22%2C%22short_name%22%3A%22AI%EC%BD%B4%ED%8A%B8%22%2C%22description%22%3A%22AI%20Quant%20Dashboard%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f1f5f9%22%2C%22theme_color%22%3A%22%231e293b%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2933%2F2933116.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
     <title>AI 주식 퀀트 대시보드 Pro (개인 맞춤형 트레이딩 완결판)</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,9 +28,22 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 md:p-6 font-sans">
+<body class="bg-slate-100 min-h-screen font-sans">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+    <!-- 🔒 암호 입력 잠금 화면 -->
+    <div id="lockScreen" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col justify-center items-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-[90%]">
+            <div class="text-5xl mb-5">🔐</div>
+            <h2 class="text-2xl font-extrabold text-slate-800 mb-2">시스템 접속 제한</h2>
+            <p class="text-sm text-slate-500 mb-6">인가된 사용자만 접근할 수 있습니다.<br>비밀번호를 입력하세요.</p>
+            <input type="password" id="lockPin" onkeypress="if(event.key==='Enter') checkPassword()" inputmode="numeric" class="w-full border-2 border-slate-300 p-3 rounded-lg text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:border-blue-600 mb-4" placeholder="••••" autocomplete="off">
+            <button onclick="checkPassword()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md">접속하기</button>
+            <p id="lockError" class="text-red-500 text-sm font-bold mt-4 hidden">비밀번호가 일치하지 않습니다.</p>
+        </div>
+    </div>
+
+    <!-- 📈 메인 대시보드 컨텐츠 (초기에는 숨김 처리) -->
+    <div id="mainContent" class="hidden max-w-6xl mx-auto space-y-6 p-4 md:p-6">
         <!-- 헤더 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
@@ -46,7 +59,7 @@
             </div>
         </div>
 
-        <!-- 검색 영역 -->
+        <!-- 검색 영역 (새로고침 버튼 추가됨) -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
             <div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-2 relative">
                 <div class="flex-1 relative flex">
@@ -56,7 +69,6 @@
                 <!-- 모바일 환경을 고려한 버튼 그룹 -->
                 <div class="flex gap-2 w-full md:w-auto">
                     <button onclick="fetchDashboardData()" class="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-blue-700 transition shrink-0">분석</button>
-                    <!-- 터치하기 쉬운 직관적인 새로고침 버튼 -->
                     <button onclick="window.location.reload()" class="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-slate-200 transition shrink-0" title="화면 초기화/새로고침">🔄</button>
                 </div>
             </div>
@@ -287,6 +299,25 @@
     </div>
 
     <script>
+        // ================= 비밀번호 잠금 로직 (비트연산 적용) ================= //
+        // 4203 ^ 1024 = 5227
+        function checkPassword() {
+            const pin = document.getElementById('lockPin').value;
+            const errorMsg = document.getElementById('lockError');
+            const numPin = parseInt(pin, 10);
+            
+            // 입력값을 1024와 비트 XOR 연산했을 때 5227이 나오면 정답 (원래 비밀번호: 4203)
+            if (!isNaN(numPin) && (numPin ^ 1024) === 5227) {
+                sessionStorage.setItem('aiQuantUnlocked', 'true');
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('mainContent').classList.remove('hidden');
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('lockPin').value = '';
+                document.getElementById('lockPin').focus();
+            }
+        }
+
         // ================= KOSPI 200 전체 종목 분류 ================= //
         const KOSPI200_COMPANIES = {
             "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320"},
@@ -333,6 +364,14 @@
         let myChart = null;
 
         window.onload = async () => {
+            // 세션 스토리지 검사하여 잠금해제 상태면 락스크린 숨김
+            if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('mainContent').classList.remove('hidden');
+            } else {
+                document.getElementById('lockPin').focus();
+            }
+
             const savedKey = localStorage.getItem('geminiApiKey');
             if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
 
