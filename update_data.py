@@ -49,13 +49,15 @@ def fetch_stock_data(name, ticker):
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
     
-    # 1. API 데이터 요청
-    try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=3).json()
+    # 1. API 데이터 통신
+    try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
     except: res_basic = {}
-    try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=3).json()
+    try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
     except: res_integ = {}
+    try: res_cns = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/consensus", timeout=5).json()
+    except: res_cns = {}
 
-    # 2. 기본 주가 데이터
+    # 2. 실시간 주가
     try:
         raw_price_str = "".join(filter(str.isdigit, str(res_basic.get("closePrice", "0"))))
         stock_info["rawPrice"] = int(raw_price_str) if raw_price_str else 0
@@ -66,8 +68,12 @@ def fetch_stock_data(name, ticker):
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
     except: pass
 
-    # 3. 주요 투자 지표 1차 추출 (API)
+    # 3. API 1차 추출 (데이터 종합 방어)
     try:
+        # 목표주가 API 추출
+        if res_basic.get("cnsTargetPrice"): stock_info["targetPrice"] = f"{int(res_basic['cnsTargetPrice']):,}"
+        elif res_cns.get("targetPrice"): stock_info["targetPrice"] = f"{int(res_cns['targetPrice']):,}"
+        
         if res_basic.get("dividendYield"): stock_info["dividend"] = str(res_basic["dividendYield"]) + "%"
         if res_basic.get("marketSum"): stock_info["marketCap"] = str(res_basic["marketSum"])
         if res_basic.get("foreignRatio"): stock_info["foreignRate"] = str(res_basic["foreignRatio"]) + "%"
@@ -77,6 +83,7 @@ def fetch_stock_data(name, ticker):
         for info in res_integ.get("totalInfos", []):
             val = str(info.get("value", "-")).strip()
             if val == "-" or not val: continue
+            
             n = str(info.get("name", "")).lower()
             k = str(info.get("key", "")).lower()
             
@@ -88,37 +95,61 @@ def fetch_stock_data(name, ticker):
             elif ("배당" in n or "dividend" in k) and stock_info["dividend"] == "-": stock_info["dividend"] = val if "%" in val else f"{val}%"
     except: pass
 
-    # 4. 🔥 무적의 목표주가 강제 추출 로직 (API -> 네이버웹 -> FnGuide웹) 🔥
-    def get_tp(val):
-        if not val: return None
-        digits = "".join(filter(str.isdigit, str(val)))
-        if digits and int(digits) > 100: return f"{int(digits):,}"
-        return None
+    # 4. 🔥 최후의 절대 방어선: 인코딩(euc-kr) 버그 수정된 웹 직접 크롤링 🔥
+    try:
+        pc_res = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5)
+        # 이 한 줄이 빠져서 외계어로 인식되고 모두 실패했던 것입니다.
+        pc_res.encoding = 'euc-kr' 
+        html = pc_res.text
+        
+        # 1) 목표주가
+        if stock_info["targetPrice"] == "-":
+            idx = html.find('목표주가')
+            if idx != -1:
+                sub_html = html[idx:idx+200]
+                nums = re.findall(r'[\d,]{4,}', sub_html)
+                for n in nums:
+                    clean_n = n.replace(',', '')
+                    if clean_n.isdigit() and int(clean_n) > 100:  # 100원 이상 정상 목표가 찾기
+                        stock_info["targetPrice"] = f"{int(clean_n):,}"
+                        break
+        
+        # 2) 시가총액
+        if stock_info["marketCap"] == "-":
+            idx = html.find('시가총액')
+            if idx != -1:
+                m = re.search(r'<em[^>]*>([\d,]+)</em>', html[idx:idx+200])
+                if m: stock_info["marketCap"] = m.group(1) + "억"
 
-    tp = None
-    # 4-1. API 시도
-    if not tp: tp = get_tp(res_basic.get("cnsTargetPrice"))
-    if not tp: tp = get_tp(res_integ.get("opinion", {}).get("targetPrice"))
-    
-    # 4-2. 네이버 PC 웹 크롤링 시도 (HD현대중공업 등 API 누락 종목 방어)
-    if not tp:
-        try:
-            html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=3).text
-            match = re.search(r'목표주가.*?<td[^>]*>.*?<em[^>]*>([\d,]+)</em>', html, re.DOTALL | re.IGNORECASE)
-            if match: tp = get_tp(match.group(1))
-        except: pass
+        # 3) 배당수익률
+        if stock_info["dividend"] == "-":
+            idx = html.find('배당수익률')
+            if idx != -1:
+                m = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
+                if m: stock_info["dividend"] = m.group(1) + "%"
 
-    # 4-3. FnGuide 원본 서버 크롤링 시도 (최후의 보루)
-    if not tp:
-        try:
-            fng_html = session.get(f"https://comp.fnguide.com/SVO2/ASP/SVD_Consensus.asp?pGB=1&gicode=A{ticker}", timeout=3).text
-            match = re.search(r'적정주가.*?<td[^>]*>\s*([\d,]+)\s*</td>', fng_html, re.DOTALL | re.IGNORECASE)
-            if match: tp = get_tp(match.group(1))
-        except: pass
+        # 4) 외국인소진율
+        if stock_info["foreignRate"] == "-":
+            idx = html.find('외국인소진율')
+            if idx != -1:
+                m = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
+                if m: stock_info["foreignRate"] = m.group(1) + "%"
+                
+        # 5) PER, PBR
+        if stock_info["per"] == "-":
+            idx = html.find('PER')
+            if idx != -1:
+                m = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
+                if m: stock_info["per"] = m.group(1)
+        if stock_info["pbr"] == "-":
+            idx = html.find('PBR')
+            if idx != -1:
+                m = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
+                if m: stock_info["pbr"] = m.group(1)
+    except Exception as e:
+        print(f"HTML 크롤링 에러 ({name}): {e}")
 
-    if tp: stock_info["targetPrice"] = tp
-
-    # 5. 재무제표 
+    # 5. 재무제표 수집
     try:
         res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
         fin_info = res_fin.get("financeInfo", {})
