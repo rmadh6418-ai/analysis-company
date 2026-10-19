@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import re
 from concurrent.futures import ThreadPoolExecutor
 
 KOSPI200_SECTORS = {
@@ -39,7 +40,7 @@ for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(compani
 
 def fetch_stock_data(name, ticker):
     stock_info = {
-        "name": name, "price": "N/A", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
+        "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "dividend": "-",
         "peg": "N/A", "pegDesc": "EPS 부족",
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
@@ -48,13 +49,15 @@ def fetch_stock_data(name, ticker):
     session = requests.Session()
     session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
     
-    # 1. API 데이터 통신
+    # 1. API 데이터 요청 (에러 방어)
     try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
     except: res_basic = {}
     try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
     except: res_integ = {}
+    try: res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
+    except: res_fin = {}
 
-    # 2. 실시간 현재가
+    # 2. 기본 주가 데이터
     try:
         raw_price_str = "".join(filter(str.isdigit, str(res_basic.get("closePrice", "0"))))
         stock_info["rawPrice"] = int(raw_price_str) if raw_price_str else 0
@@ -65,84 +68,137 @@ def fetch_stock_data(name, ticker):
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
     except: pass
 
-    # 3. 완벽한 시가총액/외인소진율/투자지표 추출 로직
+    # 3. 목표주가 및 지표 1차 추출 (모바일 API)
     try:
-        # Integration API 우선 검색
-        for info in res_integ.get("totalInfos", []):
-            val = str(info.get("value", "-")).strip()
-            if val == "-" or not val: continue
+        if res_basic.get("cnsTargetPrice"):
+            digits = "".join(filter(str.isdigit, str(res_basic["cnsTargetPrice"])))
+            if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
             
-            k = str(info.get("key", "")).lower()
-            n = str(info.get("name", "")).lower()
-            
-            if k == "marketvalue" or "시가총액" in n: stock_info["marketCap"] = val
-            elif k in ["foreignratio", "foreignrate"] or "소진율" in n: stock_info["foreignRate"] = val
-            elif k == "per" and "추정" not in n: stock_info["per"] = val.replace("배", "")
-            elif k == "cnsper" or "추정per" in n: stock_info["fwdPer"] = val.replace("배", "")
-            elif k == "pbr": stock_info["pbr"] = val.replace("배", "")
-            elif k == "dividendyield" or "배당" in n: stock_info["dividend"] = val if "%" in val else f"{val}%"
+        opinion = res_integ.get("opinion")
+        if isinstance(opinion, dict) and stock_info["targetPrice"] == "-":
+            tp_val = str(opinion.get("targetPrice", ""))
+            digits = "".join(filter(str.isdigit, tp_val))
+            if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
 
-        # Integration에서 실패했을 경우 Basic API에서 2차 강제 복구
-        if stock_info["marketCap"] == "-" and res_basic.get("marketSum"):
-            ms = res_basic["marketSum"]
-            try:
-                ms_int = int(str(ms).replace(',', ''))
-                jo, eok = ms_int // 10000, ms_int % 10000
-                if jo > 0: stock_info["marketCap"] = f"{jo:,}조 {eok:,}억원" if eok > 0 else f"{jo:,}조원"
-                else: stock_info["marketCap"] = f"{eok:,}억원"
-            except: pass
+        for info in res_integ.get("totalInfos", []):
+            k = str(info.get("key", "")).lower()
+            c = str(info.get("code", "")).lower()
+            n = str(info.get("name", "")).lower()
+            t = str(info.get("title", "")).lower()
+            val = str(info.get("value", "-")).strip()
             
-        if stock_info["foreignRate"] == "-" and res_basic.get("foreignRatio"):
-            stock_info["foreignRate"] = str(res_basic["foreignRatio"]) + "%"
-        if stock_info["dividend"] == "-" and res_basic.get("dividendYield"):
-            stock_info["dividend"] = str(res_basic["dividendYield"]) + "%"
-        if stock_info["per"] == "-" and res_basic.get("per"):
-            stock_info["per"] = str(res_basic["per"])
-        if stock_info["pbr"] == "-" and res_basic.get("pbr"):
-            stock_info["pbr"] = str(res_basic["pbr"])
+            if val == "-" or not val: continue
+            comb = f"{k} {c} {n} {t}"
+            
+            if any(x in comb for x in ["marketvalue", "marketsum", "시가총액", "시총"]) and stock_info["marketCap"] == "-":
+                stock_info["marketCap"] = val
+            elif any(x in comb for x in ["foreign", "외국인", "외인"]) and stock_info["foreignRate"] == "-":
+                stock_info["foreignRate"] = val
+            elif any(x in comb for x in ["cnsper", "추정per"]):
+                stock_info["fwdPer"] = val.replace("배", "")
+            elif "per" in comb and not any(x in comb for x in ["cns", "추정", "fwd"]) and stock_info["per"] == "-":
+                stock_info["per"] = val.replace("배", "")
+            elif "pbr" in comb and stock_info["pbr"] == "-":
+                stock_info["pbr"] = val.replace("배", "")
+            elif ("dividend" in comb or "배당" in comb) and stock_info["dividend"] == "-":
+                stock_info["dividend"] = val if "%" in val else f"{val}%"
+            elif ("target" in comb or "목표" in comb) and stock_info["targetPrice"] == "-":
+                digits = "".join(filter(str.isdigit, val))
+                if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
     except: pass
 
-    # 4. 재무제표 수집
+    # 4. 🔥 무조건 찾아내는 PC 웹 크롤링 (목표주가 2차 방어선) 🔥
     try:
-        res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
+        html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
+        
+        # 목표주가 강제 추출
+        if stock_info["targetPrice"] == "-":
+            idx = html.find('목표주가')
+            if idx != -1:
+                sub_html = html[idx:idx+200]
+                nums = re.findall(r'[\d,]{4,}', sub_html)
+                for n in nums:
+                    clean_n = n.replace(',', '').strip()
+                    if clean_n.isdigit() and int(clean_n) > 0:
+                        stock_info["targetPrice"] = f"{int(clean_n):,}"
+                        break
+
+        # 배당수익률 강제 추출
+        if stock_info["dividend"] == "-":
+            idx = html.find('배당수익률')
+            if idx != -1:
+                sub_html = html[idx:idx+200]
+                nums = re.findall(r'>\s*([\d.]+)\s*<', sub_html)
+                for n in nums:
+                    if n.replace('.', '', 1).isdigit():
+                        stock_info["dividend"] = n + "%"
+                        break
+                        
+        if stock_info["per"] == "-":
+            idx = html.find('PER')
+            if idx != -1:
+                match = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
+                if match: stock_info["per"] = match.group(1)
+                
+        if stock_info["pbr"] == "-":
+            idx = html.find('PBR')
+            if idx != -1:
+                match = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
+                if match: stock_info["pbr"] = match.group(1)
+    except: pass
+
+    # 5. 재무제표 
+    try:
         fin_info = res_fin.get("financeInfo", {})
         if fin_info and "trTitleList" in fin_info and "rowList" in fin_info:
-            keys = [item.get("key", "") for item in fin_info["trTitleList"][-5:]]
-            years = [item.get("title", "") + ("(E)" if item.get("isConsensus")=="Y" and "(E)" not in item.get("title", "") else "") for item in fin_info["trTitleList"][-5:]]
+            tr_list = fin_info["trTitleList"]
+            r_list = fin_info["rowList"]
+            valid_cols = tr_list[-5:]
+            keys = [item.get("key", "") for item in valid_cols]
+            years = []
+            for item in valid_cols:
+                y_text = item.get("title", "")
+                if item.get("isConsensus") == "Y" and "(E)" not in y_text: y_text += "(E)"
+                years.append(y_text)
             stock_info["finance"]["years"] = years
             
-            def get_fin(keyword):
-                for row in fin_info["rowList"]:
+            def get_fin_valid(keyword):
+                for row in r_list:
                     if keyword in row.get("title", ""):
-                        return [str(row.get("columns", {}).get(k, {}).get("value", "-")) for k in keys]
+                        cols = row.get("columns", {})
+                        return [str(cols.get(k, {}).get("value", "-")) for k in keys]
                 return ["-"] * len(keys)
 
-            stock_info["finance"]["revs"] = get_fin("매출액")
-            stock_info["finance"]["ops"] = get_fin("영업이익")
-            stock_info["finance"]["opMs"] = get_fin("영업이익률")
-            stock_info["finance"]["npMs"] = get_fin("순이익률")
-            stock_info["finance"]["debts"] = get_fin("부채비율")
-            stock_info["finance"]["epss"] = get_fin("EPS")
+            stock_info["finance"]["revs"] = get_fin_valid("매출액")
+            stock_info["finance"]["ops"] = get_fin_valid("영업이익")
+            stock_info["finance"]["opMs"] = get_fin_valid("영업이익률")
+            stock_info["finance"]["npMs"] = get_fin_valid("순이익률")
+            stock_info["finance"]["debts"] = get_fin_valid("부채비율")
+            stock_info["finance"]["epss"] = get_fin_valid("EPS")
     except: pass
-    
-    # 5. PEG 계산
+
+    # 6. PEG 계산
     try:
-        per_val = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
-        per_float = float(str(per_val).replace(',', ''))
-        
-        eps_valid = [float(str(e).replace(',','')) for e in stock_info["finance"]["epss"] if str(e).replace(',','').replace('.','').replace('-','').isdigit() and str(e) != "-"]
-        
+        target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
+        per_float = float(str(target_per).replace(',', ''))
+        eps_valid = []
+        for e in stock_info["finance"]["epss"]:
+            clean_e = str(e).replace(',', '').strip()
+            if clean_e and clean_e != "-":
+                try: eps_valid.append(float(clean_e))
+                except: pass
+            
         if per_float > 0 and len(eps_valid) >= 2:
-            eps_c, eps_p = eps_valid[-1], eps_valid[-2]
-            if eps_c > 0 and eps_p > 0:
-                growth = ((eps_c - eps_p) / eps_p) * 100
+            eps_current, eps_prev = eps_valid[-1], eps_valid[-2]
+            if eps_current > 0 and eps_prev > 0:
+                growth = ((eps_current - eps_prev) / eps_prev) * 100
                 if growth > 0:
                     stock_info["peg"] = f"{per_float / growth:.2f}배"
                     stock_info["pegDesc"] = f"EPS 성장률(+{growth:.1f}%) 반영"
                 else: stock_info["pegDesc"] = "EPS 역성장"
             else: stock_info["pegDesc"] = "적자지속/흑자전환"
     except: pass
-    
+
     return ticker, stock_info
 
 quant_data = {}
