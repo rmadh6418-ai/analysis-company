@@ -122,30 +122,67 @@
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-                    <div class="bg-rose-50 p-4 rounded-xl shadow-sm border border-rose-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-bold text-rose-800 mb-1">1차 매수가</p>
-                        <p id="aiBuy1" class="text-lg font-extrabold text-slate-800">분석 대기중</p>
+                <div class="space-y-4">
+                    <!-- 매수 타점 (물타기 & 불타기) -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-rose-200">
+                        <h3 class="text-sm font-bold text-rose-800 mb-3 flex items-center gap-1">📥 분할 매수 타점 (신규/물타기 vs 불타기)</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                            <div class="bg-rose-50 p-3 rounded-lg border border-rose-100 text-center">
+                                <p class="text-[11px] font-bold text-rose-700 mb-1">물타기(신규) 1차</p>
+                                <p id="aiBuyDown1" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-rose-100 p-3 rounded-lg border border-rose-200 text-center">
+                                <p class="text-[11px] font-bold text-rose-800 mb-1">물타기(신규) 2차</p>
+                                <p id="aiBuyDown2" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-rose-200 p-3 rounded-lg border border-rose-300 text-center">
+                                <p class="text-[11px] font-bold text-rose-900 mb-1">물타기(신규) 3차</p>
+                                <p id="aiBuyDown3" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-orange-50 p-3 rounded-lg border border-orange-100 text-center">
+                                <p class="text-[11px] font-bold text-orange-700 mb-1">불타기(돌파) 1차</p>
+                                <p id="aiBuyUp1" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-orange-100 p-3 rounded-lg border border-orange-200 text-center">
+                                <p class="text-[11px] font-bold text-orange-800 mb-1">불타기(돌파) 2차</p>
+                                <p id="aiBuyUp2" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-orange-200 p-3 rounded-lg border border-orange-300 text-center">
+                                <p class="text-[11px] font-bold text-orange-900 mb-1">불타기(돌파) 3차</p>
+                                <p id="aiBuyUp3" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-rose-100 p-4 rounded-xl shadow-sm border border-rose-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-bold text-rose-800 mb-1">2차 매수가</p>
-                        <p id="aiBuy2" class="text-lg font-extrabold text-slate-800">분석 대기중</p>
-                    </div>
-                    <div class="bg-rose-200 p-4 rounded-xl shadow-sm border border-rose-300 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-bold text-rose-900 mb-1">3차 매수가</p>
-                        <p id="aiBuy3" class="text-lg font-extrabold text-slate-800">분석 대기중</p>
-                    </div>
-                    <div class="bg-blue-50 p-4 rounded-xl shadow-sm border border-blue-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-bold text-blue-800 mb-1">1차 매도가</p>
-                        <p id="aiSell1" class="text-lg font-extrabold text-slate-800">분석 대기중</p>
-                    </div>
-                    <div class="bg-blue-100 p-4 rounded-xl shadow-sm border border-blue-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-bold text-blue-800 mb-1">2차 매도가</p>
-                        <p id="aiSell2" class="text-lg font-extrabold text-slate-800">분석 대기중</p>
-                    </div>
-                    <div class="bg-blue-200 p-4 rounded-xl shadow-sm border border-blue-300 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-bold text-blue-900 mb-1">3차 매도가</p>
-                        <p id="aiSell3" class="text-lg font-extrabold text-slate-800">분석 대기중</p>
+
+                    <!-- 매도 타점 (익절 & 손절) -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-200">
+                        <h3 class="text-sm font-bold text-blue-800 mb-3 flex items-center gap-1">📤 분할 매도 타점 (상승 익절 vs 하락 손절)</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-center">
+                                <p class="text-[11px] font-bold text-blue-700 mb-1">상승 익절 1차</p>
+                                <p id="aiSellProfit1" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-lg border border-blue-200 text-center">
+                                <p class="text-[11px] font-bold text-blue-800 mb-1">상승 익절 2차</p>
+                                <p id="aiSellProfit2" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-blue-200 p-3 rounded-lg border border-blue-300 text-center">
+                                <p class="text-[11px] font-bold text-blue-900 mb-1">상승 익절 3차</p>
+                                <p id="aiSellProfit3" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-slate-100 p-3 rounded-lg border border-slate-200 text-center">
+                                <p class="text-[11px] font-bold text-slate-600 mb-1">하락 손절 1차</p>
+                                <p id="aiSellLoss1" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-slate-200 p-3 rounded-lg border border-slate-300 text-center">
+                                <p class="text-[11px] font-bold text-slate-700 mb-1">하락 손절 2차</p>
+                                <p id="aiSellLoss2" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                            <div class="bg-slate-300 p-3 rounded-lg border border-slate-400 text-center">
+                                <p class="text-[11px] font-bold text-slate-800 mb-1">하락 손절 3차</p>
+                                <p id="aiSellLoss3" class="text-base md:text-lg font-extrabold text-slate-800">대기중</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -384,11 +421,16 @@
             document.getElementById('moatRating').textContent = "AI 분석 대기중";
             document.getElementById('moatRating').className = "text-base font-extrabold text-slate-500 my-0";
 
-            // AI 매매 타점 박스 초기화
-            const aiFields = ['aiBuy1', 'aiBuy2', 'aiBuy3', 'aiSell1', 'aiSell2', 'aiSell3'];
+            // AI 매매 타점 박스 초기화 (12개 필드)
+            const aiFields = [
+                'aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3',
+                'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3',
+                'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3',
+                'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'
+            ];
             aiFields.forEach(id => {
                 document.getElementById(id).textContent = "대기중";
-                document.getElementById(id).className = "text-lg font-bold text-slate-400";
+                document.getElementById(id).className = "text-base font-bold text-slate-400";
             });
 
             document.getElementById('corpNameTitle').textContent = data.name;
@@ -502,7 +544,7 @@
                 ? `현재 사용자의 보유 평단가: ${Number(myAvgPrice).toLocaleString()}원 (이 평단가를 기준으로 수익/손실 상태를 파악하여, 물타기/불타기 및 익절/손절 매도 타점을 맞춤형으로 계산하세요.)`
                 : `현재 사용자의 보유 평단가 정보 없음 (신규 진입을 가정하여 현재가를 기준으로 매수/매도 타점을 계산하세요.)`;
 
-            // 평단가 반영 프롬프트
+            // 평단가 및 12개 타점 반영 프롬프트
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트이자 실전 트레이더입니다. 한국 상장기업 [${corpName} (${ticker})]에 대한 데이터를 바탕으로 심층 리포트를 작성해주세요.
             
 현재가:${price}원, (참고용)증권사 평균 목표가:${targetPrice}원, 등락률:${changeRate}, 시가총액:${marketCap}, 외국인소진율:${foreignRate}, PER:${per}배, PBR:${pbr}배, 배당수익률:${dividend}.
@@ -511,17 +553,23 @@
 [작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 첫 줄부터 정확히 출력하세요.
 MOAT_RATING: [Wide/Narrow/None 중 택1]
 AI_TARGET_PRICE: [금액]원
-BUY_1: [금액]원
-BUY_2: [금액]원
-BUY_3: [금액]원
-SELL_1: [금액]원
-SELL_2: [금액]원
-SELL_3: [금액]원
+BUY_DOWN_1: [금액]원
+BUY_DOWN_2: [금액]원
+BUY_DOWN_3: [금액]원
+BUY_UP_1: [금액]원
+BUY_UP_2: [금액]원
+BUY_UP_3: [금액]원
+SELL_PROFIT_1: [금액]원
+SELL_PROFIT_2: [금액]원
+SELL_PROFIT_3: [금액]원
+SELL_LOSS_1: [금액]원
+SELL_LOSS_2: [금액]원
+SELL_LOSS_3: [금액]원
 
-위의 8줄을 적은 후, 그 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
+위의 14줄을 적은 후, 그 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가가 얼마인지 명시 등 반영)
-2. 분할 매수 타점에 대한 맞춤형 실전 전략 (검색하는 날짜를 기준으로 기업가치의 훼손 여부를 확인하고 '평단가' 대비 현재가가 낮으면 물타기, 높으면 불타기 전략 제시. 평단가가 없으면 신규 진입 전략) 및 타점 설정 근거
-3. 검색하는 날짜를 기준으로 분할 매도(1~3차 익절 또는 손절) 타점 설정 근거 및 저항/지지선 분석
+2. 맞춤형 실전 매수 전략: 현재가 및 평단가 대비 하락 시 '신규/물타기(Buy Down)' 1~3차 분할 매수 타점 근거, 상승 및 돌파 시 '불타기(Buy Up)' 1~3차 분할 매수 타점 설정 근거 제시.
+3. 맞춤형 실전 매도 전략: 수익 발생 시 '익절(Sell Profit)' 1~3차 저항선 및 목표가 근거, 하락 시 리스크 관리를 위한 '손절(Sell Loss)' 1~3차 지지선 이탈 근거 제시.
 4. 배당 투자 매력도 및 총평`;
             
             try {
@@ -582,16 +630,26 @@ SELL_3: [금액]원
                     aiText = result.remainingText;
                 }
 
-                // 3. AI 분할 매수/매도 추출
-                const tradeFields = ['BUY_1', 'BUY_2', 'BUY_3', 'SELL_1', 'SELL_2', 'SELL_3'];
-                const tradeIds = ['aiBuy1', 'aiBuy2', 'aiBuy3', 'aiSell1', 'aiSell2', 'aiSell3'];
+                // 3. AI 분할 매수/매도 추출 (12개 타점)
+                const tradeFields = [
+                    'BUY_DOWN_1', 'BUY_DOWN_2', 'BUY_DOWN_3',
+                    'BUY_UP_1', 'BUY_UP_2', 'BUY_UP_3',
+                    'SELL_PROFIT_1', 'SELL_PROFIT_2', 'SELL_PROFIT_3',
+                    'SELL_LOSS_1', 'SELL_LOSS_2', 'SELL_LOSS_3'
+                ];
+                const tradeIds = [
+                    'aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3',
+                    'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3',
+                    'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3',
+                    'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'
+                ];
                 
                 for(let i=0; i<tradeFields.length; i++) {
                     const regex = new RegExp(`${tradeFields[i]}:\\s*(.+)`, 'i');
                     const m = aiText.match(regex);
                     if(m) {
                         document.getElementById(tradeIds[i]).textContent = m[1].replace(/\*/g, '').trim();
-                        document.getElementById(tradeIds[i]).className = "text-xl font-extrabold text-slate-800";
+                        document.getElementById(tradeIds[i]).className = "text-base md:text-lg font-extrabold text-slate-800";
                         aiText = aiText.replace(regex, '').trim();
                     }
                 }
@@ -622,10 +680,16 @@ SELL_3: [금액]원
                 strategyBaseEl.textContent = "기준: 신규 진입 (현재가)";
             }
 
-            const aiFields = ['aiBuy1', 'aiBuy2', 'aiBuy3', 'aiSell1', 'aiSell2', 'aiSell3'];
+            // 12개 타점 초기화
+            const aiFields = [
+                'aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3',
+                'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3',
+                'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3',
+                'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'
+            ];
             aiFields.forEach(id => {
                 document.getElementById(id).textContent = "대기중";
-                document.getElementById(id).className = "text-lg font-bold text-slate-400";
+                document.getElementById(id).className = "text-base font-bold text-slate-400";
             });
 
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>맞춤형 AI 트레이딩 심층 리포트를 다시 작성 중입니다...</span>";
