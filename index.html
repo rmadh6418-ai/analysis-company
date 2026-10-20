@@ -167,11 +167,11 @@
                             <input type="number" id="myAvgPriceInput" placeholder="예: 75000" oninput="calculateInvestment()" class="border-2 border-rose-300 px-3 py-1.5 rounded-md text-sm font-bold text-rose-900 focus:outline-none">
                         </div>
                         <div class="flex flex-col w-full md:w-auto">
-                            <label class="text-[11px] font-bold text-rose-700 mb-1">현재 투자금액 (원)</label>
+                            <label class="text-[11px] font-bold text-rose-700 mb-1">현재 투입금액 (원)</label>
                             <input type="number" id="currentInvestInput" placeholder="예: 5000000" oninput="calculateInvestment()" class="border-2 border-rose-300 px-3 py-1.5 rounded-md text-sm font-bold text-rose-900 focus:outline-none">
                         </div>
                         <div class="flex flex-col w-full md:w-auto">
-                            <label class="text-[11px] font-bold text-blue-700 mb-1">물타기용 대기자금 (원)</label>
+                            <label class="text-[11px] font-bold text-blue-700 mb-1">투입 대기자금 (원)</label>
                             <input type="number" id="standbyCashInput" placeholder="예: 3000000" oninput="calculateInvestment()" class="border-2 border-blue-300 px-3 py-1.5 rounded-md text-sm font-bold text-blue-900 focus:outline-none bg-blue-50">
                         </div>
                     </div>
@@ -199,7 +199,7 @@
                             <!-- 기존보유(물타기)용 뷰 -->
                             <div id="simAverageView" class="hidden space-y-2">
                                 <div class="flex justify-between text-sm"><span class="text-slate-500">기존 평단가:</span> <span id="simOldAvgPrice" class="font-semibold text-slate-700">-</span></div>
-                                <div class="flex justify-between text-sm"><span class="text-slate-500">물타기 투입:</span> <span id="simInvestedStandby" class="font-semibold text-blue-600">-</span></div>
+                                <div class="flex justify-between text-sm"><span class="text-slate-500">대기자금 투입:</span> <span id="simInvestedStandby" class="font-semibold text-blue-600">-</span></div>
                                 <div class="border-t border-slate-200 my-2"></div>
                                 <div class="flex justify-between text-[15px] font-bold text-rose-600 bg-rose-50 p-1.5 rounded">
                                     <span>물타기 후 예상 평단가:</span> <span id="simNewAvgPrice">-</span>
@@ -384,7 +384,7 @@
             const errorMsg = document.getElementById('lockError');
             const numPin = parseInt(pin, 10);
             
-            if (!isNaN(numPin) && (numPin ^ 1024) === 5227) { // 비번: 4203
+            if (!isNaN(numPin) && (numPin ^ 1024) === 5227) { 
                 sessionStorage.setItem('aiQuantUnlocked', 'true');
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').classList.remove('hidden');
@@ -594,7 +594,7 @@
             theadHtml += `</tr>`;
             document.getElementById('financeTableHead').innerHTML = theadHtml;
 
-            // 🚀 순이익률, 부채, EPS 6개 항목 모두 표시되도록 복구
+            // 재무제표 6개 항목 모두 표시
             const rowsData = [
                 { label: "매출(억)", data: data.finance.revs, bold: true },
                 { label: "영익(억)", data: data.finance.ops, bold: false },
@@ -683,20 +683,26 @@
                 document.getElementById('strategyBase').textContent = `기준: 평단가 ${avg ? Number(avg).toLocaleString() + '원' : '미입력'}`;
             }
 
+            // 🚀 사용자의 자금 상황(투입금, 대기자금 등)을 컨텍스트로 생성하여 AI에게 전달
             let avgPriceContext = "";
+            let actionPlanContext = "";
+            
             if (mode === 'average') {
                 const a = document.getElementById('myAvgPriceInput').value || 0;
                 const c = document.getElementById('currentInvestInput').value || 0;
                 const s = document.getElementById('standbyCashInput').value || 0;
                 avgPriceContext = `[분석 모드: 기존 보유자] 평단가: ${a}원, 현재 투입금액: ${c}원, 물타기 대기금액: ${s}원. 이 평단가와 대기금을 기준으로 물타기/불타기/매도 타점을 계산하세요.`;
+                actionPlanContext = `사용자는 이 종목에 이미 ${c}원을 투입했고, ${s}원의 대기자금을 가지고 있습니다. 현재 주가와 평단가를 비교하여, 이 대기자금을 지금 전액 투입하는 것이 맞는지, 분할 투입해야 하는지, 혹은 현금으로 관망하는 것이 리스크 관리 차원에서 유리한지 '최적의 자금 배분 시나리오'를 반드시 분석해 주어야 합니다.`;
             } else {
-                avgPriceContext = `[분석 모드: 신규 진입] 현재가(${ld.price})를 기준으로 신규 진입 타점을 계산하세요.`;
+                const inv = document.getElementById('investAmountInput').value || 0;
+                avgPriceContext = `[분석 모드: 신규 진입] 현재가(${ld.price})를 기준으로 신규 진입 타점을 계산하세요. 총 투자 준비금: ${inv}원.`;
+                actionPlanContext = `사용자는 이 종목에 신규로 ${inv}원을 투입하려고 합니다. 현재가 기준으로 이 금액을 한 번에 진입하는 것이 좋은지, 아니면 분할 매수나 관망 후 진입이 안전한지 '최적의 진입 시나리오'를 분석해 주어야 합니다.`;
             }
 
-            // 🚀 프롬프트 수정: 전략 선택 근거(물타기 vs 불타기)와 익절/손절 근거를 구체적으로 제시하도록 강조
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
 현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
 **중요:** ${avgPriceContext}
+${actionPlanContext}
 
 [작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 첫 줄부터 출력하세요. 타점은 '금액 / 비중%' 형태로 작성. (하락매수 1~3차의 합 100%, 돌파매수 합 100%, 익절 합 100%, 손절 합 100%가 되도록 비중 분배)
 MOAT_RATING: [Wide/Narrow/None 중 택1]
@@ -716,9 +722,10 @@ SELL_LOSS_3: [금액]원 / [비중]%
 
 위 14줄 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션 등 반영)
-2. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정한 기술적/기본적 이유를 상세히 설명하세요.
-3. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차(저항선, 밸류에이션 등) 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차(지지선 이탈 등) 설정 근거를 구체적으로 제시하세요.
-4. 배당 투자 매력도 및 종합 총평`;
+2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
+3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정한 기술적/기본적 이유를 상세히 설명하세요.
+4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차(저항선, 밸류에이션 등) 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차(지지선 이탈 등) 설정 근거를 구체적으로 제시하세요.
+5. 배당 투자 매력도 및 종합 총평`;
             
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
@@ -754,6 +761,19 @@ SELL_LOSS_3: [금액]원 / [비중]%
                     document.getElementById('aiTargetPrice').textContent = result.val;
                     document.getElementById('aiTargetPrice').className = "text-2xl font-extrabold text-purple-700";
                     parsedAiTargetPrice = parseInt(result.val.replace(/,/g, '').replace(/원/g, '')) || 0;
+                    
+                    const currentP = parseInt(String(ld.price).replace(/,/g, '').replace(/원/g, ''));
+                    const targetUpsideEl = document.getElementById('targetUpside');
+                    if (!isNaN(currentP) && currentP > 0 && parsedAiTargetPrice > 0) {
+                        const diffRate = ((parsedAiTargetPrice - currentP) / currentP) * 100;
+                        if (diffRate > 0) {
+                            targetUpsideEl.textContent = `현재가 대비 상승 여력: +${diffRate.toFixed(1)}%`;
+                            targetUpsideEl.className = "text-xs font-bold mt-1 text-red-600";
+                        } else {
+                            targetUpsideEl.textContent = `현재가 초과: ${diffRate.toFixed(1)}%`;
+                            targetUpsideEl.className = "text-xs font-bold mt-1 text-blue-600";
+                        }
+                    }
                     aiText = result.remainingText;
                 }
 
