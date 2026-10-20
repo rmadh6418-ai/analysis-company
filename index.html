@@ -257,38 +257,7 @@
                 </div>
             </div>
 
-            <!-- 🔥 2. 세력 수급 & 기술적 지표 (새로 추가된 영역) -->
-            <div>
-                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 mb-3">🔥 세력 수급 동향 및 기술적 지표 (자동 수집)</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <!-- 외국인 -->
-                    <div class="bg-rose-50 p-4 rounded-xl shadow-sm border border-rose-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-[11px] font-bold text-rose-800 mb-1">외국인 수급 트렌드</p>
-                        <p id="trendForeign" class="text-lg font-extrabold text-slate-800">분석중</p>
-                        <p id="trendForeignDesc" class="text-xs text-rose-600 mt-1 font-semibold">-</p>
-                    </div>
-                    <!-- 기관 -->
-                    <div class="bg-indigo-50 p-4 rounded-xl shadow-sm border border-indigo-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-[11px] font-bold text-indigo-800 mb-1">기관(연기금 등) 수급</p>
-                        <p id="trendInstitution" class="text-lg font-extrabold text-slate-800">분석중</p>
-                        <p id="trendInstitutionDesc" class="text-xs text-indigo-600 mt-1 font-semibold">-</p>
-                    </div>
-                    <!-- RSI -->
-                    <div class="bg-amber-50 p-4 rounded-xl shadow-sm border border-amber-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-[11px] font-bold text-amber-800 mb-1">RSI (14일 상대강도지수)</p>
-                        <p id="indicatorRsi" class="text-2xl font-extrabold text-slate-800">-</p>
-                        <p id="indicatorRsiDesc" class="text-xs font-bold mt-1 text-slate-500">-</p>
-                    </div>
-                    <!-- MACD -->
-                    <div class="bg-emerald-50 p-4 rounded-xl shadow-sm border border-emerald-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-[11px] font-bold text-emerald-800 mb-1">MACD (12, 26, 9)</p>
-                        <p id="indicatorMacd" class="text-lg font-extrabold text-slate-800">-</p>
-                        <p id="indicatorMacdDesc" class="text-xs font-bold mt-1 text-slate-500">-</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. 타점 및 개별 시뮬레이터 -->
+            <!-- 2. 타점 및 개별 시뮬레이터 -->
             <div>
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-3 gap-3">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-amber-500 pl-3 flex items-center">
@@ -449,7 +418,7 @@
                 </div>
             </div>
 
-            <!-- 4. 밸류에이션 -->
+            <!-- 3. 밸류에이션 -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & 모닝스타 경제적 해자</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -479,7 +448,7 @@
                 </div>
             </div>
 
-            <!-- 5. 재무제표 영역 -->
+            <!-- 4. 재무제표 영역 -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2">
                     <div class="flex justify-between items-end mb-3">
@@ -502,7 +471,7 @@
                 </div>
             </div>
 
-            <!-- 6. 개별 종목 AI 분석 리포트 -->
+            <!-- 5. 개별 종목 AI 분석 리포트 -->
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 맞춤형 AI 트레이딩 심층 분석 리포트</h2>
@@ -534,14 +503,7 @@
             }
         }
 
-        /* 
-        ===================================================================
-        🔥 구글 Apps Script 웹 앱 URL 입력 영역 🔥
-        - 1단계에서 발급받은 웹 앱 URL을 아래 큰따옴표("") 안에 붙여넣으세요.
-        ===================================================================
-        */
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxaxvLXEw7HTVEXDig_zWA5UhXU7s5fTxtvVrjlZLiUGd5yX-GwycVpxPLaRBHtS5v9/exec";
-        // ===================================================================
 
         // 네이버 실시간 주가 JSONP 우회
         function fetchNaverDirectJsonp(queryStr) {
@@ -593,166 +555,6 @@
             }
         }
 
-        // ==============================================================
-        // 🚀 기술적 지표 (RSI, MACD) 및 세력 수급 동향 자동 수집 함수
-        // ==============================================================
-        async function fetchTechAndInvestorData(ticker) {
-            try {
-                // 1. OHLCV 차트 데이터 (RSI, MACD 계산용 - 과거 60일치)
-                const fchartUrl = `https://fchart.stock.naver.com/sise.nhn?symbol=${ticker}&timeframe=day&count=60&requestType=0`;
-                const proxyChartUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(fchartUrl)}&_nocache=${Date.now()}`;
-                const resChart = await fetch(proxyChartUrl);
-                const dataChart = await resChart.json();
-                
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(dataChart.contents, "text/xml");
-                const items = xmlDoc.getElementsByTagName("item");
-                
-                let closePrices = [];
-                for(let i=0; i<items.length; i++) {
-                    const parts = items[i].getAttribute("data").split("|");
-                    closePrices.push(parseInt(parts[4])); // 종가
-                }
-
-                // RSI (14일) 계산
-                let rsiVal = "-", rsiDesc = "-", rsiColor = "text-slate-500";
-                if(closePrices.length >= 15) {
-                    let gains = 0, losses = 0;
-                    for(let i=1; i<=14; i++) {
-                        let diff = closePrices[i] - closePrices[i-1];
-                        if(diff > 0) gains += diff;
-                        else losses -= diff;
-                    }
-                    let avgGain = gains / 14;
-                    let avgLoss = losses / 14;
-                    for(let i=15; i<closePrices.length; i++) {
-                        let diff = closePrices[i] - closePrices[i-1];
-                        let gain = diff > 0 ? diff : 0;
-                        let loss = diff < 0 ? -diff : 0;
-                        avgGain = (avgGain * 13 + gain) / 14;
-                        avgLoss = (avgLoss * 13 + loss) / 14;
-                    }
-                    let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-                    let rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + rs));
-                    rsiVal = rsi.toFixed(1);
-                    
-                    if(rsi <= 30) { rsiDesc = "📉 과매도 (반등/매수 기회)"; rsiColor = "text-rose-600"; }
-                    else if(rsi >= 70) { rsiDesc = "📈 과매수 (과열/익절 경계)"; rsiColor = "text-blue-600"; }
-                    else { rsiDesc = "중립 (안정 추세)"; rsiColor = "text-slate-600"; }
-                }
-
-                // MACD 계산 (12, 26, 9)
-                let macdText = "-", macdDesc = "-", macdColor = "text-slate-500";
-                if(closePrices.length >= 35) {
-                    const getEMA = (data, days) => {
-                        let k = 2 / (days + 1);
-                        let emaArr = [data[0]];
-                        for(let i=1; i<data.length; i++) {
-                            emaArr.push(data[i] * k + emaArr[i-1] * (1-k));
-                        }
-                        return emaArr;
-                    };
-                    let ema12 = getEMA(closePrices, 12);
-                    let ema26 = getEMA(closePrices, 26);
-                    let macdLine = [];
-                    for(let i=0; i<closePrices.length; i++) {
-                        macdLine.push(ema12[i] - ema26[i]);
-                    }
-                    let signalLine = getEMA(macdLine, 9);
-                    
-                    let currentMacd = macdLine[macdLine.length-1];
-                    let currentSignal = signalLine[signalLine.length-1];
-                    let prevMacd = macdLine[macdLine.length-2];
-                    let prevSignal = signalLine[signalLine.length-2];
-
-                    macdText = `${currentMacd.toFixed(0)} / Sig: ${currentSignal.toFixed(0)}`;
-                    
-                    if(prevMacd < prevSignal && currentMacd >= currentSignal) {
-                        macdDesc = "🔥 골든크로스 (상승 전환/매수)"; macdColor = "text-rose-600";
-                    } else if(prevMacd > prevSignal && currentMacd <= currentSignal) {
-                        macdDesc = "❄️ 데드크로스 (하락 전환/매도)"; macdColor = "text-blue-600";
-                    } else if(currentMacd > currentSignal) {
-                        macdDesc = "상승 추세 유지 중"; macdColor = "text-rose-500";
-                    } else {
-                        macdDesc = "하락/조정 추세 유지 중"; macdColor = "text-blue-500";
-                    }
-                }
-
-                document.getElementById('indicatorRsi').textContent = rsiVal;
-                document.getElementById('indicatorRsiDesc').textContent = rsiDesc;
-                document.getElementById('indicatorRsiDesc').className = `text-xs font-bold mt-1 ${rsiColor}`;
-                
-                document.getElementById('indicatorMacd').textContent = macdText;
-                document.getElementById('indicatorMacdDesc').textContent = macdDesc;
-                document.getElementById('indicatorMacdDesc').className = `text-xs font-bold mt-1 ${macdColor}`;
-
-                // 2. 투자자별 매매동향 (세력 수급: 최근 10일 기준 연속성 파악)
-                const invUrl = `https://m.stock.naver.com/api/stock/${ticker}/investor/days`;
-                const proxyInvUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(invUrl)}&_nocache=${Date.now()}`;
-                const resInv = await fetch(proxyInvUrl);
-                const dataInvRaw = await resInv.json();
-                const dataInv = JSON.parse(dataInvRaw.contents);
-                
-                let fCnt = 0, fSum = 0;
-                let iCnt = 0, iSum = 0;
-
-                if(dataInv && dataInv.length > 0) {
-                    // 외국인 연속 매수/매도 체크
-                    let firstFor = parseFloat(dataInv[0].foreignVolume.replace(/,/g,'')) || 0;
-                    let isFBuy = firstFor > 0;
-                    for(let i=0; i<Math.min(dataInv.length, 10); i++) {
-                        let vol = parseFloat(dataInv[i].foreignVolume.replace(/,/g,'')) || 0;
-                        if(isFBuy && vol > 0) { fCnt++; fSum += vol; }
-                        else if(!isFBuy && vol < 0) { fCnt++; fSum += vol; }
-                        else break; // 연속성 끊김
-                    }
-
-                    // 기관 연속 매수/매도 체크
-                    let firstInst = parseFloat(dataInv[0].institutionVolume.replace(/,/g,'')) || 0;
-                    let isIBuy = firstInst > 0;
-                    for(let i=0; i<Math.min(dataInv.length, 10); i++) {
-                        let vol = parseFloat(dataInv[i].institutionVolume.replace(/,/g,'')) || 0;
-                        if(isIBuy && vol > 0) { iCnt++; iSum += vol; }
-                        else if(!isIBuy && vol < 0) { iCnt++; iSum += vol; }
-                        else break; // 연속성 끊김
-                    }
-
-                    const formatVol = (v) => {
-                        if(Math.abs(v) >= 1000) return (v/1000).toFixed(1) + "K주";
-                        return v.toLocaleString() + "주";
-                    };
-
-                    const fEl = document.getElementById('trendForeign');
-                    const fDesc = document.getElementById('trendForeignDesc');
-                    if(fCnt > 0) {
-                        fEl.textContent = `${fCnt}일 연속 ${isFBuy ? '순매수' : '순매도'}`;
-                        fEl.className = `text-lg font-extrabold ${isFBuy ? 'text-rose-600' : 'text-blue-600'}`;
-                        fDesc.textContent = `누적 합계: ${isFBuy?'+':''}${formatVol(fSum)}`;
-                    } else {
-                        fEl.textContent = "방향성 혼조세"; fEl.className = "text-lg font-extrabold text-slate-700"; fDesc.textContent = "뚜렷한 방향 없음";
-                    }
-
-                    const iEl = document.getElementById('trendInstitution');
-                    const iDesc = document.getElementById('trendInstitutionDesc');
-                    if(iCnt > 0) {
-                        iEl.textContent = `${iCnt}일 연속 ${isIBuy ? '순매수' : '순매도'}`;
-                        iEl.className = `text-lg font-extrabold ${isIBuy ? 'text-rose-600' : 'text-blue-600'}`;
-                        iDesc.textContent = `누적 합계: ${isIBuy?'+':''}${formatVol(iSum)}`;
-                    } else {
-                        iEl.textContent = "방향성 혼조세"; iEl.className = "text-lg font-extrabold text-slate-700"; iDesc.textContent = "뚜렷한 방향 없음";
-                    }
-                }
-
-            } catch(e) {
-                console.warn("Tech & Investor API Error", e);
-                document.getElementById('trendForeign').textContent = "수집 불가";
-                document.getElementById('trendInstitution').textContent = "수집 불가";
-                document.getElementById('indicatorRsi').textContent = "-";
-                document.getElementById('indicatorMacd').textContent = "-";
-            }
-        }
-
-
         // 종목 리스트 데이터
         const KOSPI200_COMPANIES = {
             "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
@@ -802,7 +604,7 @@
         let userPortfolio = [];
         let selectedPortCode = '';
         let livePortfolioPrices = {};
-        let portfolioPieChart = null; // 포트폴리오 파이 차트 변수
+        let portfolioPieChart = null; 
 
         async function loadFromGoogleCloud() {
             if (GAS_URL === "여기에_구글_앱스스크립트_Web_App_URL을_넣으세요") {
@@ -890,10 +692,7 @@
                     renderPortfolioTable();
                     calculateInvestment();
                     
-                    // 새로고침 시 RSI 및 수급 데이터도 재호출
-                    await fetchTechAndInvestorData(ticker);
-
-                    statusBox.innerHTML = `<p class="text-emerald-600 font-semibold text-sm">✅ 실시간 데이터 전면 갱신 완료!</p>`;
+                    statusBox.innerHTML = `<p class="text-emerald-600 font-semibold text-sm">✅ 실시간 데이터 갱신 완료!</p>`;
                     setTimeout(() => statusBox.classList.add('hidden'), 2000);
                 } else throw new Error("Invalid data");
             } catch (e) {
@@ -1072,7 +871,6 @@
             document.getElementById('portTotalAssets').textContent = Math.floor(totalValue + standbyCash).toLocaleString() + '원';
         }
 
-        // 범례가 추가된 파이 차트
         function renderPortfolioPieChart() {
             const ctx = document.getElementById('portfolioPieChart').getContext('2d');
             const labels = []; const dataValues = [];
@@ -1199,10 +997,6 @@
             document.getElementById('expectedReturnBox').classList.add('hidden'); 
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 맞춤 심층 분석 및 타점을 생성 중입니다...</span>";
             
-            // UI 초기화 세팅
-            document.getElementById('trendForeign').textContent = "수집중..."; document.getElementById('trendInstitution').textContent = "수집중...";
-            document.getElementById('indicatorRsi').textContent = "-"; document.getElementById('indicatorMacd').textContent = "-";
-            
             aiParsedStrategy = {}; parsedAiTargetPrice = 0;
             const aiFields = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3', 'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3', 'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'];
             aiFields.forEach(id => {
@@ -1233,9 +1027,6 @@
             } catch (e) {}
 
             updateTopDashboardUI(lastFetchedData);
-
-            // RSI, MACD, 수급동향 가져오기
-            await fetchTechAndInvestorData(ticker);
 
             let theadHtml = `<tr><th class="table-cell table-header">재무 항목</th>`;
             data.finance.years.forEach(y => { theadHtml += `<th class="table-cell table-header ${y.includes('E') ? 'bg-indigo-50 text-indigo-700' : ''}">${y}</th>`; });
@@ -1348,20 +1139,8 @@ ${portfolioSummaryString}
                 actionPlanContext = `사용자는 이 종목에 신규로 ${inv}원을 투입하려고 합니다. 현재가 기준으로 이 금액을 한 번에 진입하는 것이 좋은지, 아니면 분할 매수나 관망 후 진입이 안전한지 '최적의 진입 시나리오'를 분석해 주어야 합니다.`;
             }
 
-            const rsiText = document.getElementById('indicatorRsi').textContent + " (" + document.getElementById('indicatorRsiDesc').textContent + ")";
-            const macdText = document.getElementById('indicatorMacd').textContent + " (" + document.getElementById('indicatorMacdDesc').textContent + ")";
-            const foreignText = document.getElementById('trendForeign').textContent + " " + document.getElementById('trendForeignDesc').textContent;
-            const instText = document.getElementById('trendInstitution').textContent + " " + document.getElementById('trendInstitutionDesc').textContent;
-
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
 현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
-
-[새로 추가된 세력 수급 및 기술적 지표]
-이 지표들을 분석에 적극 반영하여 매수/매도 타이밍을 더 정교하게 잡아주세요.
-- 세력(외국인) 매매동향: ${foreignText}
-- 세력(기관) 매매동향: ${instText}
-- 일봉 차트 RSI (14일): ${rsiText}
-- 일봉 차트 MACD: ${macdText}
 
 **중요:** ${avgPriceContext}
 ${actionPlanContext}
@@ -1383,10 +1162,11 @@ SELL_LOSS_2: [금액]원 / [비중]%
 SELL_LOSS_3: [금액]원 / [비중]%
 
 위 14줄 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
-1. 세력 수급 및 차트 기술적 분석 진단: 방금 제공한 외국인/기관 트렌드와 RSI/MACD 지표를 바탕으로 현재 이 주식이 매집 구간인지, 과열 구간인지 차트의 관점에서 상세히 진단하세요.
+1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션 등 반영)
 2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
-3. 맞춤형 실전 매수/매도 타점 근거: 위에서 지정한 매수 타점과 익절/손절 목표가의 가격적/기술적(차트) 근거를 구체적으로 설명하세요.
-4. 배당 투자 매력도 및 종합 총평`;
+3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정한 기술적/기본적 이유를 상세히 설명하세요.
+4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차(저항선, 밸류에이션 등) 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차(지지선 이탈 등) 설정 근거를 구체적으로 제시하세요.
+5. 배당 투자 매력도 및 종합 총평`;
             
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
