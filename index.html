@@ -14,8 +14,6 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
 
-    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22id%22%3A%22%2F%22%2C%22name%22%3A%22AI%20%EC%A3%BC%EC%8B%9D%20%EC%BD%B4%ED%8A%B8%20Pro%22%2C%22short_name%22%3A%22AI%EC%BD%B4%ED%8A%B8%22%2C%22description%22%3A%22AI%20Quant%20Dashboard%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f1f5f9%22%2C%22theme_color%22%3A%22%231e293b%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2933%2F2933116.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
-
     <title>AI 주식 퀀트 & 다종목 포트폴리오 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -527,13 +525,11 @@
         let lastFetchedData = null;
         let globalQuantData = null;
         let myChart = null;
+
         let aiParsedStrategy = {}; 
         let parsedAiTargetPrice = 0; 
         let livePortfolioPrices = {};
 
-        // ==============================================================
-        // 🚀 예외 처리 보강: 로컬 스토리지 안전 호출
-        // ==============================================================
         let userPortfolio = [];
         try {
             userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
@@ -598,18 +594,19 @@
         }
 
         // ==============================================================
-        // 🚀 실시간 주가 고속 조회 엔진 (초단위 체결가 + 캐시 강제 무효화)
+        // 🚀 실시간 주가 고속 조회 엔진 (초단위 체결가 + 강제 캐시 무력화)
         // ==============================================================
         async function fetchRealtimeStock(ticker) {
             const timestamp = Date.now();
+            // 네이버 실시간 체결 폴링 엔드포인트
             const targetUrl = `https://polling.finance.naver.com/api/realtime/domestic/stock/${ticker}?_t=${timestamp}`;
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&_nocache=${timestamp}`;
+            // 이중 캐시 파괴(Double Cache Busting)
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}&_nocache=${timestamp}`;
             
             const res = await fetch(proxyUrl, { cache: 'no-store' });
             if (!res.ok) throw new Error("네트워크 응답 오류");
             
-            const proxyData = await res.json();
-            const json = JSON.parse(proxyData.contents);
+            const json = await res.json();
             
             if (json && json.result && json.result.areas && json.result.areas[0] && json.result.areas[0].datas) {
                 const item = json.result.areas[0].datas[0];
