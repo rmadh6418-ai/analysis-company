@@ -173,7 +173,7 @@
             </div>
         </div>
 
-        <!-- 퀵 버튼 영역 -->
+        <!-- 퀵 버튼 영역 (완벽 복구됨) -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
             <details class="group" open>
                 <summary class="flex justify-between items-center font-bold text-slate-800 cursor-pointer list-none focus:outline-none">
@@ -463,6 +463,9 @@
     </div>
 
     <script>
+        // ==============================================================
+        // 비밀번호 확인
+        // ==============================================================
         function checkPassword() {
             const pin = document.getElementById('lockPin').value;
             const errorMsg = document.getElementById('lockError');
@@ -483,6 +486,9 @@
             }
         }
 
+        // ==============================================================
+        // 종목 데이터
+        // ==============================================================
         const KOSPI200_COMPANIES = {
             "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
             "이차전지·소재": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "삼성SDI": "006400", "포스코퓨처엠": "003670", "에코프로머티": "450080", "엘앤에프": "066970", "코스모신소재": "005070", "코스모화학": "005420", "솔루스첨단소재": "336370", "금양": "001570", "더블유씨피": "393890", "롯데에너지머티리얼즈": "020150", "SK아이이테크놀로지": "361610"},
@@ -594,30 +600,46 @@
         }
 
         // ==============================================================
-        // 🚀 실시간 주가 고속 조회 엔진 (초단위 체결가 + 강제 캐시 무력화)
+        // 🚀 실시간 주가 초고속 JSONP 다이렉트 통신 (캐시 완전 무력화)
         // ==============================================================
+        function fetchNaverDirectJsonp(queryStr) {
+            return new Promise((resolve) => {
+                const cbName = "__nv_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+                const script = document.createElement("script");
+                const timer = setTimeout(() => { cleanup(); resolve(null); }, 3000);
+
+                function cleanup() {
+                    clearTimeout(timer);
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                    try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+                }
+
+                window[cbName] = function(res) {
+                    cleanup();
+                    if (res && res.result && Array.isArray(res.result.areas)) {
+                        resolve(res.result.areas);
+                    } else { resolve(null); }
+                };
+
+                script.onerror = function() { cleanup(); resolve(null); };
+                script.charset = "euc-kr";
+                script.src = `https://polling.finance.naver.com/api/realtime?query=${encodeURIComponent(queryStr)}&_callback=${cbName}&_=${Date.now()}`;
+                document.head.appendChild(script);
+            });
+        }
+
         async function fetchRealtimeStock(ticker) {
-            const timestamp = Date.now();
-            // 네이버 실시간 체결 폴링 엔드포인트
-            const targetUrl = `https://polling.finance.naver.com/api/realtime/domestic/stock/${ticker}?_t=${timestamp}`;
-            // 이중 캐시 파괴(Double Cache Busting)
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}&_nocache=${timestamp}`;
-            
-            const res = await fetch(proxyUrl, { cache: 'no-store' });
-            if (!res.ok) throw new Error("네트워크 응답 오류");
-            
-            const json = await res.json();
-            
-            if (json && json.result && json.result.areas && json.result.areas[0] && json.result.areas[0].datas) {
-                const item = json.result.areas[0].datas[0];
+            const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
+            if (areas && areas.length > 0 && areas[0].datas && areas[0].datas.length > 0) {
+                const item = areas[0].datas[0];
                 return {
                     price: Number(item.nv).toLocaleString(),
                     changeRate: (item.cr > 0 ? '+' : '') + item.cr + '%',
-                    direction: item.rf === "2" ? "UP" : (item.rf === "5" ? "DOWN" : "FLAT"),
+                    direction: item.rf === "2" || item.rf === "1" ? "UP" : (item.rf === "4" || item.rf === "5" ? "DOWN" : "FLAT"),
                     rawPrice: Number(item.nv)
                 };
             }
-            throw new Error("데이터 파싱 실패");
+            throw new Error("No data");
         }
 
         async function refreshRealTimePrice() {
@@ -667,15 +689,17 @@
             btn.disabled = true;
 
             try {
-                const promises = userPortfolio.map(async (item) => {
-                    try {
-                        const data = await fetchRealtimeStock(item.ticker);
-                        livePortfolioPrices[item.ticker] = data.price;
-                    } catch(err) {
-                        console.warn(`[${item.corpName}] 주가 조회 실패:`, err);
+                const tickers = userPortfolio.map(p => p.ticker).join(',');
+                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${tickers}`);
+                if (areas) {
+                    for (const area of areas) {
+                        for (const st of (area.datas || [])) {
+                            if (st.cd && st.nv) {
+                                livePortfolioPrices[st.cd] = Number(st.nv).toLocaleString();
+                            }
+                        }
                     }
-                });
-                await Promise.all(promises);
+                }
             } catch(e) {
                 console.warn("Portfolio fetch error", e);
             }
@@ -1044,16 +1068,13 @@ ${portfolioSummaryString}
                 per: data.per, pbr: data.pbr, dividend: data.dividend, direction: data.direction
             };
 
-            // 🚀 실시간 주가 1차 수신 시도 (사용자가 검색하자마자 즉시 최신화)
             try {
                 const live = await fetchRealtimeStock(ticker);
                 lastFetchedData.price = live.price;
                 lastFetchedData.changeRate = live.changeRate;
                 lastFetchedData.direction = live.direction;
                 livePortfolioPrices[ticker] = live.price;
-            } catch (e) {
-                console.warn("실시간 폴링 생략, 로컬 데이터 사용");
-            }
+            } catch (e) {}
 
             updateTopDashboardUI(lastFetchedData);
 
@@ -1235,7 +1256,7 @@ SELL_LOSS_3: [금액]원 / [비중]%
                             targetUpsideEl.textContent = `현재가 대비 상승 여력: +${diffRate.toFixed(1)}%`;
                             targetUpsideEl.className = "text-xs font-bold mt-1 text-red-600";
                         } else {
-                            targetUpsideEl.textContent = `현재가 초과: ${diffRate.toFixed(1)}%`;
+                            targetUpsideEl.textContent = `현재가 초 초과: ${diffRate.toFixed(1)}%`;
                             targetUpsideEl.className = "text-xs font-bold mt-1 text-blue-600";
                         }
                     }
