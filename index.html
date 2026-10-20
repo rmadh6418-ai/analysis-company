@@ -78,7 +78,6 @@
                 </div>
             </div>
 
-            <!-- 보유 종목 등록 폼 -->
             <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-2">
                 <div class="relative">
                     <input type="text" id="portSearchInput" oninput="showPortSuggestions()" placeholder="종목명(예: 삼성전자)" class="w-full border p-2 rounded text-sm font-medium focus:outline-none" autocomplete="off">
@@ -89,7 +88,6 @@
                 <button onclick="addPortfolioItem()" class="bg-emerald-600 text-white font-bold py-2 rounded text-sm hover:bg-emerald-700 transition shadow-sm">+ 종목 등록</button>
             </div>
 
-            <!-- 등록된 종목 목록 테이블 -->
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse">
                     <thead>
@@ -111,7 +109,6 @@
                 </table>
             </div>
 
-            <!-- 포트폴리오 요약 바 -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-900 text-white p-3 rounded-lg text-center text-xs">
                 <div>
                     <span class="text-slate-400 block mb-0.5">총 매수원금</span>
@@ -468,9 +465,6 @@
     </div>
 
     <script>
-        // ==============================================================
-        // 비밀번호 확인 함수 (저장소 예외처리 추가 완료)
-        // ==============================================================
         function checkPassword() {
             const pin = document.getElementById('lockPin').value;
             const errorMsg = document.getElementById('lockError');
@@ -491,9 +485,6 @@
             }
         }
 
-        // ==============================================================
-        // 종목 데이터 (100% 복구 완료)
-        // ==============================================================
         const KOSPI200_COMPANIES = {
             "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
             "이차전지·소재": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "삼성SDI": "006400", "포스코퓨처엠": "003670", "에코프로머티": "450080", "엘앤에프": "066970", "코스모신소재": "005070", "코스모화학": "005420", "솔루스첨단소재": "336370", "금양": "001570", "더블유씨피": "393890", "롯데에너지머티리얼즈": "020150", "SK아이이테크놀로지": "361610"},
@@ -536,7 +527,6 @@
         let lastFetchedData = null;
         let globalQuantData = null;
         let myChart = null;
-
         let aiParsedStrategy = {}; 
         let parsedAiTargetPrice = 0; 
         let livePortfolioPrices = {};
@@ -597,7 +587,7 @@
 
         function formatMarketCap(mvStr) {
             if (!mvStr) return '-';
-            const num = parseInt(mvStr.replace(/,/g, ''));
+            const num = parseInt(String(mvStr).replace(/,/g, ''));
             if (isNaN(num)) return mvStr + '억원';
             if (num >= 10000) {
                 const jo = Math.floor(num / 10000);
@@ -607,6 +597,9 @@
             return `${num.toLocaleString()}억원`;
         }
 
+        // ==============================================================
+        // 🚀 실시간 주가 고속 조회 엔진 (초단위 체결가 + 캐시 강제 무효화)
+        // ==============================================================
         async function fetchRealtimeStock(ticker) {
             const timestamp = Date.now();
             const targetUrl = `https://polling.finance.naver.com/api/realtime/domestic/stock/${ticker}?_t=${timestamp}`;
@@ -681,10 +674,14 @@
                     try {
                         const data = await fetchRealtimeStock(item.ticker);
                         livePortfolioPrices[item.ticker] = data.price;
-                    } catch(err) {}
+                    } catch(err) {
+                        console.warn(`[${item.corpName}] 주가 조회 실패:`, err);
+                    }
                 });
                 await Promise.all(promises);
-            } catch(e) {}
+            } catch(e) {
+                console.warn("Portfolio fetch error", e);
+            }
 
             renderPortfolioTable();
             btn.textContent = "실시간가 🔄";
@@ -959,55 +956,6 @@ ${portfolioSummaryString}
             }
         }
 
-        // ==============================================================
-        // 개별 종목 분석 기본 로직
-        // ==============================================================
-        function generateQuickButtons(targetId, companyData, btnClass) {
-            const container = document.getElementById(targetId);
-            let html = '';
-            for (const sector in companyData) {
-                html += `<div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80"><span class="text-xs font-extrabold text-slate-600 block mb-1.5">${sector}</span><div class="flex flex-wrap gap-1">`;
-                for (const [name, code] of Object.entries(companyData[sector])) {
-                    html += `<button onclick="selectCompany('${name}', '${code}')" class="text-xs px-2 py-0.5 rounded border ${btnClass} transition font-medium">${name}</button>`;
-                }
-                html += `</div></div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        function showSuggestions() {
-            const inputEl = document.getElementById('tickerInput');
-            inputEl.dataset.selectedCode = '';
-            const input = inputEl.value.trim().toLowerCase();
-            const box = document.getElementById('suggestionBox');
-            if (!input) { box.classList.add('hidden'); return; }
-
-            const matches = [];
-            for (const [name, code] of Object.entries(ALL_COMPANIES)) {
-                if (name.toLowerCase().includes(input) || code.includes(input)) matches.push({ name, code });
-            }
-
-            if (matches.length > 0) {
-                box.innerHTML = matches.map(m => `<div onclick="selectCompany('${m.name}', '${m.code}')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b text-sm"><span class="font-bold text-slate-800">${m.name}</span><span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">${m.code}</span></div>`).join('');
-                box.classList.remove('hidden');
-            } else { box.classList.add('hidden'); }
-        }
-
-        function selectCompany(name, code) {
-            const inputEl = document.getElementById('tickerInput');
-            inputEl.value = `${name} (${code})`;
-            inputEl.dataset.selectedCode = code;
-            document.getElementById('suggestionBox').classList.add('hidden');
-            fetchDashboardData();
-        }
-
-        function saveApiKey() {
-            const key = document.getElementById('apiKeyInput').value.trim();
-            if(!key) { alert('API Key를 입력해주세요.'); return; }
-            try { localStorage.setItem('geminiApiKey', key); } catch(e) { alert('브라우저 설정상 저장이 불가능합니다.'); return;}
-            alert('Gemini API Key가 안전하게 저장되었습니다.');
-        }
-
         function toggleInputs() {
             const mode = document.getElementById('analysisModeSelect').value;
             if (mode === 'current') {
@@ -1099,13 +1047,16 @@ ${portfolioSummaryString}
                 per: data.per, pbr: data.pbr, dividend: data.dividend, direction: data.direction
             };
 
+            // 🚀 실시간 주가 1차 수신 시도 (사용자가 검색하자마자 즉시 최신화)
             try {
                 const live = await fetchRealtimeStock(ticker);
                 lastFetchedData.price = live.price;
                 lastFetchedData.changeRate = live.changeRate;
                 lastFetchedData.direction = live.direction;
                 livePortfolioPrices[ticker] = live.price;
-            } catch (e) {}
+            } catch (e) {
+                console.warn("실시간 폴링 생략, 로컬 데이터 사용");
+            }
 
             updateTopDashboardUI(lastFetchedData);
 
