@@ -486,6 +486,61 @@
         }
 
         // ==============================================================
+        // 🚀 추가된 핵심 로직: 네이버 실시간 주가 JSONP 우회 & 상세정보 API
+        // ==============================================================
+        
+        // 1. CORS를 우회하여 0.1초 단위 실시간 주가를 가져오는 JSONP 함수
+        function fetchNaverDirectJsonp(queryStr) {
+            return new Promise((resolve) => {
+                const cbName = "__nv_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+                const script = document.createElement("script");
+                const timer = setTimeout(() => { cleanup(); resolve(null); }, 3500);
+
+                function cleanup() {
+                    clearTimeout(timer);
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                    try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+                }
+
+                window[cbName] = function(res) {
+                    cleanup();
+                    if (res && res.result && Array.isArray(res.result.areas)) resolve(res.result.areas);
+                    else resolve(null);
+                };
+
+                script.onerror = function() { cleanup(); resolve(null); };
+                script.charset = "euc-kr";
+                script.src = `https://polling.finance.naver.com/api/realtime?query=${encodeURIComponent(queryStr)}&_callback=${cbName}&_=${Date.now()}_${Math.random()}`;
+                document.head.appendChild(script);
+            });
+        }
+
+        // 2. 시가총액 및 외국인 소진율을 가져오는 Integration API 호출 함수
+        async function fetchStockDetails(ticker) {
+            try {
+                const url = `https://m.stock.naver.com/api/stock/${ticker}/integration`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&_nocache=${Date.now()}`;
+                const res = await fetch(proxyUrl);
+                const proxyData = await res.json();
+                const data = JSON.parse(proxyData.contents);
+                
+                let marketCap = "-";
+                let foreignRate = "-";
+
+                if(data && data.totalInfos) {
+                    data.totalInfos.forEach(info => {
+                        const comb = `${info.key} ${info.code} ${info.name} ${info.title}`.toLowerCase();
+                        if(comb.includes("marketvalue") || comb.includes("시가총액")) marketCap = info.value;
+                        if(comb.includes("foreign") || comb.includes("외국인")) foreignRate = info.value;
+                    });
+                }
+                return { marketCap, foreignRate };
+            } catch(e) { 
+                return { marketCap: "-", foreignRate: "-" }; 
+            }
+        }
+
+        // ==============================================================
         // 100% 완전 복구된 종목 데이터 (KOSPI 200: 16개 섹터 / KOSDAQ 150: 8개 섹터)
         // ==============================================================
         const KOSPI200_COMPANIES = {
@@ -572,21 +627,6 @@
             renderPortfolioTable();
         };
 
-        // ==============================================================
-        // 실시간 주가 API (네이버 금융 우회)
-        // ==============================================================
-        function formatMarketCap(mvStr) {
-            if (!mvStr) return '-';
-            const num = parseInt(mvStr.replace(/,/g, ''));
-            if (isNaN(num)) return mvStr + '억원';
-            if (num >= 10000) {
-                const jo = Math.floor(num / 10000);
-                const eok = num % 10000;
-                return eok > 0 ? `${jo.toLocaleString()}조 ${eok.toLocaleString()}억원` : `${jo.toLocaleString()}조원`;
-            }
-            return `${num.toLocaleString()}억원`;
-        }
-
         async function refreshRealTimePrice() {
             if (!lastFetchedData || !lastFetchedData.ticker) {
                 window.location.reload(); 
@@ -599,21 +639,18 @@
             statusBox.innerHTML = `<p class="text-blue-600 font-semibold text-sm animate-pulse">실시간 주가 데이터를 연동 중입니다...</p>`;
 
             try {
-                const url = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-                
-                const res = await fetch(proxyUrl);
-                const proxyData = await res.json();
-                const stockData = JSON.parse(proxyData.contents);
-                
-                if (stockData && stockData.closePrice) {
-                    lastFetchedData.price = stockData.closePrice;
-                    lastFetchedData.changeRate = stockData.fluctuationsRatio + '%';
-                    lastFetchedData.marketCap = formatMarketCap(stockData.marketValue);
-                    lastFetchedData.foreignRate = stockData.foreignRatio + '%';
-                    lastFetchedData.direction = parseFloat(stockData.fluctuationsRatio) > 0 ? 'UP' : (parseFloat(stockData.fluctuationsRatio) < 0 ? 'DOWN' : 'FLAT');
+                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
+                if (areas && areas[0] && areas[0].datas && areas[0].datas[0]) {
+                    const st = areas[0].datas[0];
+                    const rf = String(st.rf || "3");
+                    const isUp = ["1", "2"].includes(rf);
+                    const isDown = ["4", "5"].includes(rf);
                     
-                    livePortfolioPrices[ticker] = stockData.closePrice;
+                    lastFetchedData.price = Number(st.nv).toLocaleString();
+                    lastFetchedData.changeRate = (isDown ? "-" : (isUp ? "+" : "")) + Math.abs(parseFloat(st.cr || 0)).toFixed(2) + "%";
+                    lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
+                    
+                    livePortfolioPrices[ticker] = lastFetchedData.price;
                     
                     updateTopDashboardUI(lastFetchedData);
                     renderPortfolioTable();
@@ -642,22 +679,22 @@
             btn.disabled = true;
 
             try {
-                const promises = userPortfolio.map(async (item) => {
-                    const url = `https://m.stock.naver.com/api/stock/${item.ticker}/basic`;
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-                    const res = await fetch(proxyUrl);
-                    const proxyData = await res.json();
-                    const stockData = JSON.parse(proxyData.contents);
-                    if (stockData && stockData.closePrice) {
-                        livePortfolioPrices[item.ticker] = stockData.closePrice;
-                    }
-                });
-                await Promise.all(promises);
+                const tickers = userPortfolio.map(p => p.ticker).join(',');
+                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${tickers}`);
+                
+                if (areas && areas[0] && areas[0].datas) {
+                    areas[0].datas.forEach(st => {
+                        if(st.itemCode && st.nv) {
+                            livePortfolioPrices[st.itemCode] = Number(st.nv).toLocaleString();
+                        }
+                    });
+                }
             } catch(e) {
                 console.warn("Portfolio real-time fetch error", e);
             }
 
             renderPortfolioTable();
+            calculateInvestment();
             btn.textContent = "실시간가 🔄";
             btn.disabled = false;
         }
@@ -882,7 +919,7 @@
             });
 
             const prompt = `당신은 대한민국 최고의 퀀트 포트폴리오 매니저이자 실전 트레이딩 전문가입니다.
-사용자가 현재 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로, "어떻게 행동하는 것이 가장 합리적이고 손실을 최소화하며 수익을 극대화할 수 있는지"에 대한 명쾌한 종합 솔루션을 제시하세요.
+사용자가 현재 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로, "어떻게 행동하는 가장 합리적이고 손실을 최소화하며 수익을 극대화할 수 있는지"에 대한 명쾌한 종합 솔루션을 제시하세요.
 
 [사용자 전체 포트폴리오 데이터]
 - 투입 가능 대기자금: ${standbyCash.toLocaleString()}원
@@ -1070,24 +1107,30 @@ ${portfolioSummaryString}
                 per: data.per, pbr: data.pbr, dividend: data.dividend, direction: data.direction
             };
 
+            // 🚀 변경된 부분: 시가총액 & 외국인 소진율 가져오기
             try {
-                const url = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-                const res = await fetch(proxyUrl);
-                const proxyData = await res.json();
-                const stockData = JSON.parse(proxyData.contents);
-                
-                if (stockData && stockData.closePrice) {
-                    lastFetchedData.price = stockData.closePrice;
-                    lastFetchedData.changeRate = stockData.fluctuationsRatio + '%';
-                    lastFetchedData.marketCap = formatMarketCap(stockData.marketValue);
-                    lastFetchedData.foreignRate = stockData.foreignRatio + '%';
-                    lastFetchedData.direction = parseFloat(stockData.fluctuationsRatio) > 0 ? 'UP' : (parseFloat(stockData.fluctuationsRatio) < 0 ? 'DOWN' : 'FLAT');
+                const details = await fetchStockDetails(ticker);
+                if(details.marketCap !== "-") lastFetchedData.marketCap = details.marketCap;
+                if(details.foreignRate !== "-") lastFetchedData.foreignRate = details.foreignRate;
+            } catch (e) { console.warn("상세정보 로드 실패"); }
+
+            // 🚀 변경된 부분: 0.1초 단위 실시간 주가 덮어쓰기 (JSONP)
+            try {
+                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
+                if (areas && areas[0] && areas[0].datas && areas[0].datas[0]) {
+                    const st = areas[0].datas[0];
+                    const rf = String(st.rf || "3");
+                    const isUp = ["1", "2"].includes(rf);
+                    const isDown = ["4", "5"].includes(rf);
                     
-                    livePortfolioPrices[ticker] = stockData.closePrice;
+                    lastFetchedData.price = Number(st.nv).toLocaleString();
+                    lastFetchedData.changeRate = (isDown ? "-" : (isUp ? "+" : "")) + Math.abs(parseFloat(st.cr || 0)).toFixed(2) + "%";
+                    lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
+                    
+                    livePortfolioPrices[ticker] = lastFetchedData.price;
                 }
             } catch (e) {
-                console.warn("Real-time fetch skipped, using local data.");
+                console.warn("실시간 주가 로드 실패, 로컬 데이터 사용");
             }
 
             updateTopDashboardUI(lastFetchedData);
