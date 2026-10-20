@@ -141,7 +141,7 @@
                     </h2>
                 </div>
                 
-                <!-- 입력 컨트롤 영역 (신규 진입 vs 기존 보유 분리) -->
+                <!-- 입력 컨트롤 영역 -->
                 <div class="bg-white p-3 rounded-lg border shadow-sm mb-4">
                     <div class="flex flex-wrap items-center gap-3">
                         <select id="analysisModeSelect" onchange="toggleInputs()" class="border-2 border-slate-300 bg-white px-3 py-2 rounded-lg text-sm font-bold text-slate-700 focus:outline-none focus:border-rose-500 cursor-pointer">
@@ -160,7 +160,7 @@
                         <span class="text-xs text-emerald-600 self-center">* 입력 시 하단 타점별로 매수 수량이 자동 배분됩니다.</span>
                     </div>
 
-                    <!-- 기존 보유 시 입력창 (평단가, 현재투자금, 대기금 분리) -->
+                    <!-- 기존 보유 시 입력창 -->
                     <div id="averageModeInputs" class="hidden flex flex-wrap gap-3 mt-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
                         <div class="flex flex-col w-full md:w-auto">
                             <label class="text-[11px] font-bold text-rose-700 mb-1">내 평단가 (원)</label>
@@ -177,7 +177,7 @@
                     </div>
                 </div>
                 
-                <!-- 🚀 시뮬레이션 결과 배너 (입력값에 반응하여 실시간 계산) -->
+                <!-- 시뮬레이션 결과 배너 -->
                 <div id="expectedReturnBox" class="hidden mb-4 bg-white border border-slate-300 rounded-xl shadow-md overflow-hidden">
                     <div class="bg-slate-800 px-4 py-2 flex justify-between items-center">
                         <span class="font-bold text-white text-sm">💡 AI 트레이딩 실전 시뮬레이터</span>
@@ -407,7 +407,11 @@
             "제약·바이오": {"삼성바이오로직스": "207940", "셀트리온": "068270", "유한양행": "000100", "한미약품": "128940", "SK바이오팜": "326030", "SK바이오사이언스": "302440", "녹십자": "006280", "종근당": "185750", "대웅제약": "069620", "대원제약": "003220", "보령": "003850", "JW중외제약": "001060", "영진약품": "003520", "일동제약": "249420", "환인제약": "016580", "한올바이오파마": "009420", "신풍제약": "019170", "에스디바이오센서": "137310", "대웅": "003090", "바이오노트": "377740"},
             "화학·정유·에너지": {"LG화학": "051910", "SK이노베이션": "096770", "S-Oil": "010950", "한화솔루션": "009830", "롯데케미칼": "011170", "금호석유": "011780", "SKC": "011790", "효성첨단소재": "298050", "효성티앤씨": "298020", "OCI홀딩스": "010060", "대한유화": "006650", "한국가스공사": "036460", "SK가스": "018670", "롯데정밀화학": "004000", "애경케미칼": "161000", "태광산업": "003240", "후성": "093370", "케이카": "381970", "TKG휴켐스": "069260", "이수스페셜티케미컬": "457190", "PI첨단소재": "178920", "SK케미칼": "285130", "OCI": "456040"},
             "철강·비철금속·소재": {"고려아연": "010130", "현대제철": "004020", "동국제강": "460860", "세아제강": "306200", "세아베스틸지주": "001430", "KG모빌리티": "003620", "영풍": "000670", "동원산업": "006040", "포스코인터내셔널": "047050", "세아제강지주": "003030", "삼아알미늄": "006110"},
-            "금융·지주사": {"KB금융": "105560", "신한지주": "055550", "하나금융지주": "086790", "우리금융지주": "316140", "메리츠금융지주": "138040", "기업은행": "024110", "BNK금융지주": "138930", "DGB금융지주": "139130", "JB금융지주": "175330", "SK": "034730", "LG": "003550", "HD현대": "267250", "CJ": "001040", "LS": "006260", "한화": "000880", "GS": "078930", "삼성물산": "028260", "두산": "000150", "효성": "004800", "BGF": "027410"}
+            "금융·지주사": {"KB금융": "105560", "신한지주": "055550", "하나금융지주": "086790", "우리금융지주": "316140", "메리츠금융지주": "138040", "기업은행": "024110", "BNK금융지주": "138930", "DGB금융지주": "139130", "JB금융지주": "175330", "SK": "034730", "LG": "003550", "HD현대": "267250", "CJ": "001040", "LS": "006260", "한화": "000880", "GS": "078930", "삼성물산": "028260", "두산": "000150", "효성": "004800", "BGF": "027410"},
+            "증권·보험": {"삼성생명": "032830", "삼성화재": "000810", "DB손해보험": "005830", "현대해상": "001450", "한화생명": "088350", "한화손해보험": "000370", "롯데손해보험": "000400", "코리안리": "003690", "미래에셋증권": "006800", "한국금융지주": "071050", "NH투자증권": "005940", "삼성증권": "016360", "키움증권": "039490", "대신증권": "003540", "한화투자증권": "003530", "동양생명": "082640"},
+            "건설·건자재": {"현대건설": "000720", "GS건설": "006360", "대우건설": "047040", "DL이앤씨": "375500", "HDC현대산업개발": "294870", "삼성E&A": "028050", "쌍용C&E": "003410", "KCC": "002380", "아세아시멘트": "183190", "한일시멘트": "300720", "동서": "026960"},
+            "화장품·의류·소비재": {"아모레퍼시픽": "090430", "LG생활건강": "051900", "한국콜마": "161890", "코스맥스": "192820", "아모레G": "002790", "애경산업": "018250", "F&F": "383220", "영원무역": "111110", "한섬": "020000", "휠라홀딩스": "081660", "코웨이": "021240", "쿠쿠홈시스": "284740", "에이피알": "278470", "영원무역홀딩스": "009970", "신세계인터내셔날": "031430"},
+            "음식료·유통·엔터": {"KT&G": "033780", "CJ제일제당": "097950", "삼양식품": "003230", "오리온": "271560", "농심": "004370", "롯데웰푸드": "280360", "하이트진로": "000080", "대상": "001680", "오뚜기": "007310", "롯데칠성": "005300", "동원F&B": "049770", "이마트": "139480", "BGF리테일": "282330", "GS리테일": "007070", "신세계": "004170", "롯데쇼핑": "023530", "현대백화점": "069960", "호텔신라": "008770", "강원랜드": "035250", "GKL": "114090", "현대홈쇼핑": "057050", "빙그레": "005180", "현대그린푸드": "453340"}
         };
 
         const KOSDAQ150_COMPANIES = {
@@ -506,7 +510,6 @@
             alert('Gemini API Key가 안전하게 저장되었습니다.');
         }
 
-        // 입력창 모드 전환 (신규 진입 vs 기존 보유)
         function toggleInputs() {
             const mode = document.getElementById('analysisModeSelect').value;
             if (mode === 'current') {
@@ -591,10 +594,14 @@
             theadHtml += `</tr>`;
             document.getElementById('financeTableHead').innerHTML = theadHtml;
 
+            // 🚀 순이익률, 부채, EPS 6개 항목 모두 표시되도록 복구
             const rowsData = [
                 { label: "매출(억)", data: data.finance.revs, bold: true },
                 { label: "영익(억)", data: data.finance.ops, bold: false },
-                { label: "영익률(%)", data: data.finance.opMs, bold: true }
+                { label: "영익률(%)", data: data.finance.opMs, bold: true },
+                { label: "순익률(%)", data: data.finance.npMs, bold: true },
+                { label: "부채(%)", data: data.finance.debts, bold: false },
+                { label: "EPS(원)", data: data.finance.epss, bold: false }
             ];
 
             let tbodyHtml = "";
@@ -686,6 +693,7 @@
                 avgPriceContext = `[분석 모드: 신규 진입] 현재가(${ld.price})를 기준으로 신규 진입 타점을 계산하세요.`;
             }
 
+            // 🚀 프롬프트 수정: 전략 선택 근거(물타기 vs 불타기)와 익절/손절 근거를 구체적으로 제시하도록 강조
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
 현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
 **중요:** ${avgPriceContext}
@@ -706,10 +714,11 @@ SELL_LOSS_1: [금액]원 / [비중]%
 SELL_LOSS_2: [금액]원 / [비중]%
 SELL_LOSS_3: [금액]원 / [비중]%
 
-위 14줄 아래부터 마크다운 굵은글씨(**)를 사용하여 다음 리포트를 작성하세요.
-1. AI 목표주가 산출 근거
-2. 맞춤형 실전 매수/매도 전략 설명 (비중 배분 이유 포함)
-3. 종합 총평`;
+위 14줄 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
+1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션 등 반영)
+2. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정한 기술적/기본적 이유를 상세히 설명하세요.
+3. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차(저항선, 밸류에이션 등) 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차(지지선 이탈 등) 설정 근거를 구체적으로 제시하세요.
+4. 배당 투자 매력도 및 종합 총평`;
             
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
@@ -816,14 +825,12 @@ SELL_LOSS_3: [금액]원 / [비중]%
             runGeminiAnalysisOnly(mode);
         }
         
-        // 🚀 핵심: 매수 금액 수량 배분 & 평단가 시뮬레이션 & 익절/손절 시뮬레이션
         function calculateInvestment() {
             const mode = document.getElementById('analysisModeSelect').value;
             const returnBox = document.getElementById('expectedReturnBox');
             const simCurrentView = document.getElementById('simCurrentView');
             const simAverageView = document.getElementById('simAverageView');
             
-            // 모든 하위 calc 숨김
             const buyIds = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3'];
             buyIds.forEach(id => {
                 const el = document.getElementById('calc_' + id);
@@ -834,7 +841,6 @@ SELL_LOSS_3: [금액]원 / [비중]%
                 const investAmt = parseInt(document.getElementById('investAmountInput').value);
                 if (isNaN(investAmt) || investAmt <= 0) { returnBox.classList.add('hidden'); return; }
 
-                // 매수 수량 배분 (하락매수에 100% 배분 가정)
                 let totalShares = 0;
                 ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3'].forEach(id => {
                     const data = aiParsedStrategy[id];
@@ -850,7 +856,6 @@ SELL_LOSS_3: [금액]원 / [비중]%
                     }
                 });
 
-                // 돌파매수도 시각적 표시만
                 ['aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3'].forEach(id => {
                     const data = aiParsedStrategy[id];
                     const calcDiv = document.getElementById('calc_' + id);
@@ -870,15 +875,13 @@ SELL_LOSS_3: [금액]원 / [비중]%
                 document.getElementById('simTotalInvestNew').textContent = investAmt.toLocaleString() + '원';
                 document.getElementById('simTotalSharesNew').textContent = totalShares.toLocaleString() + '주 예상';
 
-                // 매도 시뮬레이션 (신규 진입 후 모든 타점 매수 성공 가정)
                 runSellSimulation(totalShares, investAmt);
                 returnBox.classList.remove('hidden');
 
             } else {
-                // 기존 보유 (물타기) 시뮬레이션
                 const avgPrice = parseInt(document.getElementById('myAvgPriceInput').value);
                 const currentInvest = parseInt(document.getElementById('currentInvestInput').value);
-                const standbyCash = parseInt(document.getElementById('standbyCashInput').value) || 0; // 대기금 없어도 0으로 계산
+                const standbyCash = parseInt(document.getElementById('standbyCashInput').value) || 0; 
 
                 if (isNaN(avgPrice) || isNaN(currentInvest) || avgPrice <= 0 || currentInvest <= 0) { 
                     returnBox.classList.add('hidden'); return; 
@@ -889,7 +892,6 @@ SELL_LOSS_3: [금액]원 / [비중]%
                 let addedShares = 0;
                 let actualStandbyUsed = 0;
 
-                // 대기금을 하락매수에 배분
                 ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3'].forEach(id => {
                     const data = aiParsedStrategy[id];
                     const calcDiv = document.getElementById('calc_' + id);
@@ -923,9 +925,7 @@ SELL_LOSS_3: [금액]원 / [비중]%
             }
         }
 
-        // 공통 매도 (익절/손절) 시뮬레이터 함수
         function runSellSimulation(totalShares, totalInvest) {
-            // 1. 익절 시나리오 계산
             let profitRevenue = 0;
             let profitCount = 0;
             ['aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3'].forEach(id => {
@@ -947,7 +947,6 @@ SELL_LOSS_3: [금액]원 / [비중]%
                 document.getElementById('simProfitMoney').textContent = "타점 데이터 부족";
             }
 
-            // 2. 손절 시나리오 계산
             let lossRevenue = 0;
             let lossCount = 0;
             ['aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'].forEach(id => {
@@ -959,7 +958,7 @@ SELL_LOSS_3: [금액]원 / [비중]%
             });
 
             if (lossCount > 0 && totalInvest > 0) {
-                const netLoss = lossRevenue - totalInvest; // 음수
+                const netLoss = lossRevenue - totalInvest; 
                 const lossRate = (netLoss / totalInvest) * 100;
                 
                 document.getElementById('simLossRate').textContent = `${lossRate.toFixed(2)}%`;
