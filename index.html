@@ -1042,12 +1042,16 @@ ${portfolioSummaryString}
             priceEl.className = `text-2xl font-extrabold ${colorCls}`;
             changeEl.className = `text-2xl font-extrabold ${colorCls}`;
             
-            document.getElementById('naverMarketCap').textContent = data.marketCap;
-            document.getElementById('naverForeign').textContent = data.foreignRate;
-            document.getElementById('fnPer').textContent = data.per !== "-" ? `${data.per}배` : "N/A";
-            document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
-            document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
-            document.getElementById('fnDiv').textContent = data.dividend !== "-" ? data.dividend : "N/A";
+            document.getElementById('naverMarketCap').textContent = data.marketCap || "-";
+            document.getElementById('naverForeign').textContent = data.foreignRate || "-";
+            document.getElementById('fnPer').textContent = data.per && data.per !== "-" ? `${data.per}배` : "N/A";
+            document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer && data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
+            document.getElementById('fnPbr').textContent = data.pbr && data.pbr !== "-" ? `${data.pbr}배` : "N/A";
+            document.getElementById('fnDiv').textContent = data.dividend && data.dividend !== "-" ? data.dividend : "N/A";
+
+            // 🚀 추가된 부분: PEG 데이터 및 텍스트 연동
+            document.getElementById('fnPeg').textContent = data.peg && data.peg !== "N/A" ? data.peg : "N/A";
+            document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
         async function fetchDashboardData() {
@@ -1101,10 +1105,12 @@ ${portfolioSummaryString}
             document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
             document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
+            // 🚀 변경된 부분: fwdPer, peg, pegDesc 항목 추가
             lastFetchedData = { 
                 corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, 
                 changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, 
-                per: data.per, pbr: data.pbr, dividend: data.dividend, direction: data.direction
+                per: data.per, fwdPer: data.fwdPer, pbr: data.pbr, dividend: data.dividend, direction: data.direction,
+                peg: data.peg, pegDesc: data.pegDesc
             };
 
             // 🚀 변경된 부분: 시가총액 & 외국인 소진율 가져오기
