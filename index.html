@@ -38,7 +38,7 @@
             <div class="text-5xl mb-5">🔐</div>
             <h2 class="text-2xl font-extrabold text-slate-800 mb-2">시스템 접속 제한</h2>
             <p class="text-sm text-slate-500 mb-6">인가된 사용자만 접근할 수 있습니다.<br>비밀번호를 입력하세요.</p>
-            <input type="password" id="lockPin" onkeypress="if(event.key==='Enter') checkPassword()" inputmode="numeric" class="w-full border-2 border-slate-300 p-3 rounded-lg text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:border-blue-600 mb-4" placeholder="••••" autocomplete="off">
+            <input type="password" id="lockPin" onkeypress="if(event.key==='Enter') checkPassword()" class="w-full border-2 border-slate-300 p-3 rounded-lg text-center text-xl tracking-widest font-bold focus:outline-none focus:border-blue-600 mb-4" placeholder="비밀번호 입력" autocomplete="off">
             <button onclick="checkPassword()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md">접속하기</button>
             <p id="lockError" class="text-red-500 text-sm font-bold mt-4 hidden">비밀번호가 일치하지 않습니다.</p>
         </div>
@@ -490,17 +490,33 @@
         function checkPassword() {
             const pin = document.getElementById('lockPin').value;
             const errorMsg = document.getElementById('lockError');
-            const numPin = parseInt(pin, 10);
-            
-            if (!isNaN(numPin) && (numPin ^ 1024) === 5227) { 
-                sessionStorage.setItem('aiQuantUnlocked', 'true');
-                document.getElementById('lockScreen').style.display = 'none';
-                document.getElementById('mainContent').classList.remove('hidden');
-            } else {
-                errorMsg.classList.remove('hidden');
-                document.getElementById('lockPin').value = '';
-                document.getElementById('lockPin').focus();
-            }
+
+           // 'cjsqlans1!@'의 각 문자를 아스키코드로 변환 후 42와 비트 XOR(^) 연산한 결과값 배열
+           // c(73), j(64), s(89), q(83), l(70), a(123), n(68), s(89), 1(27), !(11), @(106)
+           const secretHash = [73, 64, 89, 83, 70, 123, 68, 89, 27, 11, 106];
+    
+           // 입력된 비밀번호 길이와 해시 배열 길이가 같은지 1차 확인
+           let isValid = (pin.length === secretHash.length);
+
+           // 2차 비트 연산 검증 (입력된 각 문자를 42와 XOR 연산하여 비교)
+           if (isValid) {
+               for (let i = 0; i < pin.length; i++) {
+                   if ((pin.charCodeAt(i) ^ 42) !== secretHash[i]) {
+                       isValid = false;
+                       break;
+                   }
+               }
+           }
+
+           if (isValid) { 
+               sessionStorage.setItem('aiQuantUnlocked', 'true');
+               document.getElementById('lockScreen').style.display = 'none';
+               document.getElementById('mainContent').classList.remove('hidden');
+           } else {
+               errorMsg.classList.remove('hidden');
+               document.getElementById('lockPin').value = '';
+               document.getElementById('lockPin').focus();
+           }
         }
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxaxvLXEw7HTVEXDig_zWA5UhXU7s5fTxtvVrjlZLiUGd5yX-GwycVpxPLaRBHtS5v9/exec";
