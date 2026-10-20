@@ -3,8 +3,6 @@ import json
 import time
 import re
 from concurrent.futures import ThreadPoolExecutor
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 # ================= KOSPI 200 전체 종목 분류 ================= #
 KOSPI200_SECTORS = {
@@ -42,18 +40,6 @@ TARGET_STOCKS = {}
 for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companies)
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
-# 🔥 타임아웃 방지 & 차단 우회용 세션 세팅 🔥
-session = requests.Session()
-retry = Retry(total=3, backoff_factor=0.3, status_forcelist=[500, 502, 503, 504])
-adapter = HTTPAdapter(max_retries=retry, pool_connections=50, pool_maxsize=50)
-session.mount('http://', adapter)
-session.mount('https://', adapter)
-session.headers.update({
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/plain, */*",
-    "Referer": "https://m.stock.naver.com/"
-})
-
 def fetch_stock_data(name, ticker):
     stock_info = {
         "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
@@ -62,16 +48,18 @@ def fetch_stock_data(name, ticker):
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
     }
     
+    session = requests.Session()
+    session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+    
+    # 1. API 데이터 요청 (에러 방어)
     try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
     except: res_basic = {}
-    
     try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
     except: res_integ = {}
-    
     try: res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
     except: res_fin = {}
 
-    # 1. 기본 주가 데이터
+    # 2. 기본 주가 데이터
     try:
         raw_price_str = "".join(filter(str.isdigit, str(res_basic.get("closePrice", "0"))))
         stock_info["rawPrice"] = int(raw_price_str) if raw_price_str else 0
@@ -82,7 +70,7 @@ def fetch_stock_data(name, ticker):
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
     except: pass
 
-    # 2. 목표주가 및 지표 1차 추출
+    # 3. 목표주가 및 지표 1차 추출 (모바일 API)
     try:
         if res_basic.get("cnsTargetPrice"):
             digits = "".join(filter(str.isdigit, str(res_basic["cnsTargetPrice"])))
@@ -121,46 +109,47 @@ def fetch_stock_data(name, ticker):
                 if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
     except: pass
 
-    # 3. 누락된 데이터가 있을 때만 HTML 크롤링 실행 (속도 최적화의 핵심!)
-    need_html = (stock_info["targetPrice"] == "-" or stock_info["dividend"] == "-" or 
-                 stock_info["per"] == "-" or stock_info["pbr"] == "-")
-    
-    if need_html:
-        try:
-            html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
-            if stock_info["targetPrice"] == "-":
-                idx = html.find('목표주가')
-                if idx != -1:
-                    nums = re.findall(r'[\d,]{4,}', html[idx:idx+200])
-                    for n in nums:
-                        clean_n = n.replace(',', '').strip()
-                        if clean_n.isdigit() and int(clean_n) > 0:
-                            stock_info["targetPrice"] = f"{int(clean_n):,}"
-                            break
+    # 4. 🔥 무조건 찾아내는 PC 웹 크롤링 (목표주가 2차 방어선) 🔥
+    try:
+        html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
+        
+        # 목표주가 강제 추출
+        if stock_info["targetPrice"] == "-":
+            idx = html.find('목표주가')
+            if idx != -1:
+                sub_html = html[idx:idx+200]
+                nums = re.findall(r'[\d,]{4,}', sub_html)
+                for n in nums:
+                    clean_n = n.replace(',', '').strip()
+                    if clean_n.isdigit() and int(clean_n) > 0:
+                        stock_info["targetPrice"] = f"{int(clean_n):,}"
+                        break
 
-            if stock_info["dividend"] == "-":
-                idx = html.find('배당수익률')
-                if idx != -1:
-                    nums = re.findall(r'>\s*([\d.]+)\s*<', html[idx:idx+200])
-                    for n in nums:
-                        if n.replace('.', '', 1).isdigit():
-                            stock_info["dividend"] = n + "%"
-                            break
-                            
-            if stock_info["per"] == "-":
-                idx = html.find('PER')
-                if idx != -1:
-                    match = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
-                    if match: stock_info["per"] = match.group(1)
-                    
-            if stock_info["pbr"] == "-":
-                idx = html.find('PBR')
-                if idx != -1:
-                    match = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
-                    if match: stock_info["pbr"] = match.group(1)
-        except: pass
+        # 배당수익률 강제 추출
+        if stock_info["dividend"] == "-":
+            idx = html.find('배당수익률')
+            if idx != -1:
+                sub_html = html[idx:idx+200]
+                nums = re.findall(r'>\s*([\d.]+)\s*<', sub_html)
+                for n in nums:
+                    if n.replace('.', '', 1).isdigit():
+                        stock_info["dividend"] = n + "%"
+                        break
+                        
+        if stock_info["per"] == "-":
+            idx = html.find('PER')
+            if idx != -1:
+                match = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
+                if match: stock_info["per"] = match.group(1)
+                
+        if stock_info["pbr"] == "-":
+            idx = html.find('PBR')
+            if idx != -1:
+                match = re.search(r'<em[^>]*>([\d.]+)</em>', html[idx:idx+200])
+                if match: stock_info["pbr"] = match.group(1)
+    except: pass
 
-    # 4. 재무제표 
+    # 5. 재무제표 
     try:
         fin_info = res_fin.get("financeInfo", {})
         if fin_info and "trTitleList" in fin_info and "rowList" in fin_info:
@@ -190,7 +179,7 @@ def fetch_stock_data(name, ticker):
             stock_info["finance"]["epss"] = get_fin_valid("EPS")
     except: pass
 
-    # 5. PEG 계산
+    # 6. PEG 계산
     try:
         target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
         per_float = float(str(target_per).replace(',', ''))
@@ -215,24 +204,17 @@ def fetch_stock_data(name, ticker):
     return ticker, stock_info
 
 quant_data = {}
-print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 안전 수집 시작...")
+print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 시작...")
 start_time = time.time()
 
-# 🔥 속도 2배 향상: max_workers 20으로 증가 🔥
-with ThreadPoolExecutor(max_workers=20) as executor:
+with ThreadPoolExecutor(max_workers=10) as executor:
     futures = {executor.submit(fetch_stock_data, name, ticker): ticker for name, ticker in TARGET_STOCKS.items()}
-    
-    completed = 0
     for future in futures:
         ticker, data = future.result()
         quant_data[ticker] = data
-        completed += 1
-        if completed % 50 == 0:
-            print(f"진행 중... ({completed}/{len(TARGET_STOCKS)}) 완료")
 
 with open("quant_data.json", "w", encoding="utf-8") as f:
     json.dump(quant_data, f, ensure_ascii=False, indent=2)
 
 end_time = time.time()
-print(f"\n✅ 완벽하게 데이터 수집이 끝났습니다! (소요 시간: {end_time - start_time:.2f}초)")
-print("👉 이제 브라우저에서 새로고침을 누르시면 빈 칸 없이 정상적으로 종목들이 뜹니다!")
+print(f"✅ 데이터 수집 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
