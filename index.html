@@ -170,7 +170,6 @@
                     <input type="text" id="tickerInput" oninput="showSuggestions()" onkeypress="if(event.key==='Enter') fetchDashboardData()" placeholder="기업명(예: 삼성전자) 또는 종목코드" class="border-2 border-blue-600 p-3 rounded-lg w-full text-base md:text-lg text-center font-medium focus:outline-none" autocomplete="off">
                     <div id="suggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-64 overflow-y-auto text-left"></div>
                 </div>
-                <!-- 🚀 실시간 새로고침 버튼 추가됨 -->
                 <div class="flex gap-2 w-full md:w-auto">
                     <button onclick="fetchDashboardData()" class="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-blue-700 transition shrink-0">분석</button>
                     <button onclick="refreshRealTimePrice()" class="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-slate-200 transition shrink-0" title="실시간 주가 업데이트 및 초기화">🔄</button>
@@ -642,7 +641,7 @@
                 const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
                 if (areas && areas[0] && areas[0].datas && areas[0].datas[0]) {
                     const st = areas[0].datas[0];
-                    const rf = String(st.rf || "3");
+                    const rf = String(st.rf || "3"); // 1,2:상승 / 4,5:하락
                     const isUp = ["1", "2"].includes(rf);
                     const isDown = ["4", "5"].includes(rf);
                     
@@ -780,6 +779,40 @@
             renderPortfolioTable();
         }
 
+        function editPortfolioItem(ticker) {
+            const index = userPortfolio.findIndex(p => p.ticker === ticker);
+            if (index === -1) return;
+
+            const item = userPortfolio[index];
+            
+            // 1. 평단가 수정창
+            const newAvgPriceStr = prompt(`[${item.corpName}] 새로운 내 평단가를 입력하세요 (원):`, item.avgPrice);
+            if (newAvgPriceStr === null) return; // 취소 버튼을 누른 경우
+            
+            const newAvgPrice = parseInt(newAvgPriceStr.replace(/,/g, ''));
+            if (isNaN(newAvgPrice) || newAvgPrice <= 0) {
+                alert('올바른 숫자를 입력해주세요.');
+                return;
+            }
+
+            // 2. 매수금액 수정창
+            const newInvestAmountStr = prompt(`[${item.corpName}] 새로운 총 매수금액을 입력하세요 (원):`, item.investAmount);
+            if (newInvestAmountStr === null) return; // 취소 버튼을 누른 경우
+            
+            const newInvestAmount = parseInt(newInvestAmountStr.replace(/,/g, ''));
+            if (isNaN(newInvestAmount) || newInvestAmount <= 0) {
+                alert('올바른 숫자를 입력해주세요.');
+                return;
+            }
+
+            // 3. 데이터 업데이트 및 저장
+            userPortfolio[index].avgPrice = newAvgPrice;
+            userPortfolio[index].investAmount = newInvestAmount;
+
+            savePortfolioToLocal();
+            renderPortfolioTable(); // 테이블 다시 그리기
+        }
+
         function savePortfolioToLocal() {
             localStorage.setItem('userPortfolioList', JSON.stringify(userPortfolio));
         }
@@ -822,8 +855,9 @@
                     <td class="p-2 text-right ${rateColor}">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
                     <td class="p-2 text-right font-medium">${item.investAmount.toLocaleString()}원</td>
                     <td class="p-2 text-right font-semibold text-slate-900">${evalValue.toLocaleString()}원</td>
-                    <td class="p-2 text-center">
-                        <button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 hover:bg-rose-500 hover:text-white px-2 py-0.5 rounded transition">삭제</button>
+                    <td class="p-2 text-center whitespace-nowrap">
+                        <button onclick="editPortfolioItem('${item.ticker}')" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition mr-1">수정</button>
+                        <button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-500 hover:text-white px-2 py-1 rounded transition">삭제</button>
                     </td>
                 </tr>`;
             });
@@ -919,7 +953,7 @@
             });
 
             const prompt = `당신은 대한민국 최고의 퀀트 포트폴리오 매니저이자 실전 트레이딩 전문가입니다.
-사용자가 현재 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로, 분석 날짜 기준으로 매크로적인 경제상황과 기업의 가치를 상세하게 분석하고 "어떻게 행동하는 가장 합리적이고 손실을 최소화하며 수익을 극대화할 수 있는지"에 대한 명쾌한 종합 솔루션을 제시하세요.
+사용자가 현재 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로, 분석 날짜 기준으로 매크로적인 경제상황과 기업의 가치훼손 여부를 상세하게 분석하고 "어떻게 행동하는 가장 합리적이고 손실을 최소화하며 수익을 극대화할 수 있는지"에 대한 명쾌한 종합 솔루션을 제시하세요.
 
 [사용자 전체 포트폴리오 데이터]
 - 투입 가능 대기자금: ${standbyCash.toLocaleString()}원
@@ -1049,7 +1083,7 @@ ${portfolioSummaryString}
             document.getElementById('fnPbr').textContent = data.pbr && data.pbr !== "-" ? `${data.pbr}배` : "N/A";
             document.getElementById('fnDiv').textContent = data.dividend && data.dividend !== "-" ? data.dividend : "N/A";
 
-            // 🚀 추가된 부분: PEG 데이터 및 텍스트 연동
+            // PEG 데이터 및 텍스트 연동
             document.getElementById('fnPeg').textContent = data.peg && data.peg !== "N/A" ? data.peg : "N/A";
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
@@ -1105,7 +1139,7 @@ ${portfolioSummaryString}
             document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
             document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
-            // 🚀 변경된 부분: fwdPer, peg, pegDesc 항목 추가
+            // fwdPer, peg, pegDesc 항목 추가
             lastFetchedData = { 
                 corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, 
                 changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, 
@@ -1113,14 +1147,14 @@ ${portfolioSummaryString}
                 peg: data.peg, pegDesc: data.pegDesc
             };
 
-            // 🚀 변경된 부분: 시가총액 & 외국인 소진율 가져오기
+            // 상세정보 로드
             try {
                 const details = await fetchStockDetails(ticker);
                 if(details.marketCap !== "-") lastFetchedData.marketCap = details.marketCap;
                 if(details.foreignRate !== "-") lastFetchedData.foreignRate = details.foreignRate;
             } catch (e) { console.warn("상세정보 로드 실패"); }
 
-            // 🚀 변경된 부분: 0.1초 단위 실시간 주가 덮어쓰기 (JSONP)
+            // 0.1초 단위 실시간 주가 덮어쓰기 (JSONP)
             try {
                 const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
                 if (areas && areas[0] && areas[0].datas && areas[0].datas[0]) {
