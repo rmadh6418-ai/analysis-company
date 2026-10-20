@@ -8,7 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="AI 퀀트">
+    <meta name="apple-mobile-web-app-title" content="AI 퀀트 Pro">
     <meta name="theme-color" content="#1e293b">
     
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
@@ -16,7 +16,7 @@
 
     <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22id%22%3A%22%2F%22%2C%22name%22%3A%22AI%20%EC%A3%BC%EC%8B%9D%20%EC%BD%B4%ED%8A%B8%20Pro%22%2C%22short_name%22%3A%22AI%EC%BD%B4%ED%8A%B8%22%2C%22description%22%3A%22AI%20Quant%20Dashboard%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f1f5f9%22%2C%22theme_color%22%3A%22%231e293b%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2933%2F2933116.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
-    <title>AI 주식 퀀트 대시보드 Pro</title>
+    <title>AI 주식 퀀트 & 다종목 포트폴리오 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -45,10 +45,10 @@
         <!-- 헤더 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
-                <span class="text-3xl">📈</span>
+                <span class="text-3xl">💼</span>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-extrabold text-slate-800">AI 주식 퀀트 대시보드</h1>
-                    <p class="text-xs text-slate-500">Auto Scraper Engine · Gemini AI · Personalized Trading</p>
+                    <h1 class="text-xl md:text-2xl font-extrabold text-slate-800">AI 퀀트 & 포트폴리오 자금 전략실</h1>
+                    <p class="text-xs text-slate-500">Multi-Asset Portfolio Optimizer · Gemini AI · Automated Quant Engine</p>
                 </div>
             </div>
             <div class="flex space-x-2 w-full md:w-auto">
@@ -57,8 +57,106 @@
             </div>
         </div>
 
-        <!-- 검색 영역 -->
+        <!-- ============================================================== -->
+        <!-- 🚀 1. 다종목 보유 포트폴리오 & 투입대기자금 통합 관리 영역 -->
+        <!-- ============================================================== -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-3">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span>📊</span> 내 보유 종목 전체 포트폴리오 & 대기자금
+                    </h2>
+                    <p class="text-xs text-slate-500">보유 종목들을 등록하고 투입 대기자금을 넣으면, AI가 대기자금을 어디에 어떻게 배분할지 최적의 대응 시나리오를 산출합니다.</p>
+                </div>
+                <!-- 투입 대기 자금 인풋 -->
+                <div class="flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-200">
+                    <span class="text-xs font-bold text-blue-900 shrink-0">💰 총 투입 대기자금:</span>
+                    <input type="number" id="portfolioStandbyCash" oninput="updatePortfolioSummary()" placeholder="예: 5000000" class="border border-blue-300 px-3 py-1 rounded text-sm font-extrabold text-blue-900 bg-white w-36 md:w-44 text-right focus:outline-none">
+                    <span class="text-xs font-bold text-blue-900">원</span>
+                </div>
+            </div>
+
+            <!-- 보유 종목 등록 폼 -->
+            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-2">
+                <div class="relative">
+                    <input type="text" id="portSearchInput" oninput="showPortSuggestions()" placeholder="종목명(예: 삼성전자)" class="w-full border p-2 rounded text-sm font-medium focus:outline-none" autocomplete="off">
+                    <div id="portSuggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-48 overflow-y-auto text-left"></div>
+                </div>
+                <input type="number" id="portAvgPriceInput" placeholder="내 평단가 (원)" class="border p-2 rounded text-sm font-medium text-right focus:outline-none">
+                <input type="number" id="portInvestAmountInput" placeholder="총 매수금액 (원)" class="border p-2 rounded text-sm font-medium text-right focus:outline-none">
+                <button onclick="addPortfolioItem()" class="bg-emerald-600 text-white font-bold py-2 rounded text-sm hover:bg-emerald-700 transition shadow-sm">+ 종목 등록</button>
+            </div>
+
+            <!-- 등록된 종목 목록 테이블 -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 text-xs">
+                            <th class="p-2 border text-left">종목명 (코드)</th>
+                            <th class="p-2 border text-right">현재가</th>
+                            <th class="p-2 border text-right">내 평단가</th>
+                            <th class="p-2 border text-right">수익률</th>
+                            <th class="p-2 border text-right">총 매수금액</th>
+                            <th class="p-2 border text-right">평가금액</th>
+                            <th class="p-2 border text-center">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolioTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center p-4 text-xs text-slate-400">등록된 보유 종목이 없습니다. 위에서 종목을 추가해주세요.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 포트폴리오 합계 요약 바 -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-900 text-white p-3 rounded-lg text-center text-xs">
+                <div>
+                    <span class="text-slate-400 block mb-0.5">총 매수원금</span>
+                    <span id="portTotalInvest" class="font-bold text-sm">0원</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block mb-0.5">총 평가금액</span>
+                    <span id="portTotalValue" class="font-bold text-sm">0원</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block mb-0.5">총 평가손익</span>
+                    <span id="portTotalProfit" class="font-bold text-sm">0원</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block mb-0.5">통합 수익률</span>
+                    <span id="portTotalRate" class="font-bold text-sm">0.00%</span>
+                </div>
+                <div class="bg-slate-800 p-1 rounded">
+                    <span class="text-blue-300 block mb-0.5">총 운용자산 (투자+대기)</span>
+                    <span id="portTotalAssets" class="font-extrabold text-sm text-blue-200">0원</span>
+                </div>
+            </div>
+
+            <!-- 포트폴리오 AI 분석 실행 버튼 -->
+            <div class="text-center pt-1">
+                <button onclick="runPortfolioAiAnalysis()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold py-3 px-6 rounded-lg text-base shadow-md hover:from-purple-700 hover:to-indigo-700 transition flex items-center justify-center gap-2">
+                    <span>🤖</span> 보유 포트폴리오 & 대기자금 최적 배분 AI 종합 분석 실행
+                </button>
+            </div>
+
+            <!-- 포트폴리오 AI 분석 결과창 -->
+            <div id="portfolioAiResultBox" class="hidden bg-purple-50/50 border border-purple-200 p-5 rounded-xl space-y-3">
+                <div class="flex items-center gap-2 border-b border-purple-200 pb-2">
+                    <span class="text-xl">💡</span>
+                    <h3 class="text-base font-extrabold text-purple-900">AI 포트폴리오 통합 솔루션 & 대기자금 집행 가이드</h3>
+                </div>
+                <div id="portfolioAiResultText" class="text-slate-700 leading-relaxed text-sm space-y-2">
+                    AI 분석을 대기 중입니다...
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- 🔍 2. 개별 종목 정밀 퀀트 분석기 (기존 기능) -->
+        <!-- ============================================================== -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+            <h3 class="text-left text-sm font-bold text-slate-700 mb-2">🔍 개별 종목 퀀트 지표 & 매매 타점 상세 분석</h3>
             <div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-2 relative">
                 <div class="flex-1 relative flex">
                     <input type="text" id="tickerInput" oninput="showSuggestions()" onkeypress="if(event.key==='Enter') fetchDashboardData()" placeholder="기업명(예: 삼성전자) 또는 종목코드" class="border-2 border-blue-600 p-3 rounded-lg w-full text-base md:text-lg text-center font-medium focus:outline-none" autocomplete="off">
@@ -132,7 +230,7 @@
                 </div>
             </div>
 
-            <!-- AI 실전 트레이딩 타점 & 컨트롤 영역 -->
+            <!-- 타점 및 개별 시뮬레이터 -->
             <div>
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-3 gap-3">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 flex items-center">
@@ -141,7 +239,6 @@
                     </h2>
                 </div>
                 
-                <!-- 입력 컨트롤 영역 -->
                 <div class="bg-white p-3 rounded-lg border shadow-sm mb-4">
                     <div class="flex flex-wrap items-center gap-3">
                         <select id="analysisModeSelect" onchange="toggleInputs()" class="border-2 border-slate-300 bg-white px-3 py-2 rounded-lg text-sm font-bold text-slate-700 focus:outline-none focus:border-rose-500 cursor-pointer">
@@ -151,16 +248,13 @@
                         <button onclick="reRunAiAnalysis()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shrink-0">타점 재분석</button>
                     </div>
 
-                    <!-- 신규 진입 시 입력창 -->
                     <div id="currentModeInputs" class="flex flex-wrap gap-2 mt-3 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
                         <div class="flex items-center gap-2 w-full md:w-auto">
                             <span class="text-sm font-bold text-emerald-800">💰 총 투자 준비금:</span>
                             <input type="number" id="investAmountInput" placeholder="입력 (원)" oninput="calculateInvestment()" class="flex-1 md:flex-none border-2 border-emerald-300 px-3 py-1.5 rounded-md text-sm font-bold text-emerald-900 focus:outline-none w-full md:w-48" autocomplete="off">
                         </div>
-                        <span class="text-xs text-emerald-600 self-center">* 입력 시 하단 타점별로 매수 수량이 자동 배분됩니다.</span>
                     </div>
 
-                    <!-- 기존 보유 시 입력창 -->
                     <div id="averageModeInputs" class="hidden flex flex-wrap gap-3 mt-3 p-3 bg-rose-50 rounded-lg border border-rose-100">
                         <div class="flex flex-col w-full md:w-auto">
                             <label class="text-[11px] font-bold text-rose-700 mb-1">내 평단가 (원)</label>
@@ -177,26 +271,19 @@
                     </div>
                 </div>
                 
-                <!-- 시뮬레이션 결과 배너 -->
                 <div id="expectedReturnBox" class="hidden mb-4 bg-white border border-slate-300 rounded-xl shadow-md overflow-hidden">
                     <div class="bg-slate-800 px-4 py-2 flex justify-between items-center">
                         <span class="font-bold text-white text-sm">💡 AI 트레이딩 실전 시뮬레이터</span>
                         <span id="simModeBadge" class="text-xs bg-slate-600 text-white px-2 py-0.5 rounded font-semibold">-</span>
                     </div>
                     <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                        
-                        <!-- 좌측: 매수/평단가 브리핑 -->
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
                             <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1">📥 투입 및 매수 시뮬레이션</h4>
-                            
-                            <!-- 신규진입용 뷰 -->
                             <div id="simCurrentView" class="space-y-2">
                                 <div class="flex justify-between text-sm"><span class="text-slate-500">총 투입 자금:</span> <span id="simTotalInvestNew" class="font-bold text-slate-800">-</span></div>
                                 <div class="border-t border-slate-200 my-2"></div>
                                 <div class="flex justify-between text-sm"><span class="text-slate-500">예상 매수 수량:</span> <span id="simTotalSharesNew" class="font-bold text-rose-600">-</span></div>
                             </div>
-
-                            <!-- 기존보유(물타기)용 뷰 -->
                             <div id="simAverageView" class="hidden space-y-2">
                                 <div class="flex justify-between text-sm"><span class="text-slate-500">기존 평단가:</span> <span id="simOldAvgPrice" class="font-semibold text-slate-700">-</span></div>
                                 <div class="flex justify-between text-sm"><span class="text-slate-500">대기자금 투입:</span> <span id="simInvestedStandby" class="font-semibold text-blue-600">-</span></div>
@@ -208,9 +295,7 @@
                             </div>
                         </div>
 
-                        <!-- 우측: 매도 (익절/손절) 브리핑 -->
                         <div class="space-y-3 flex flex-col justify-center">
-                            <!-- 익절 -->
                             <div class="bg-rose-50 p-3 rounded-xl border border-rose-200">
                                 <h4 class="text-xs font-bold text-rose-800 mb-1">📈 AI 목표가 3분할 익절 성공 시</h4>
                                 <div class="flex justify-between items-end">
@@ -221,7 +306,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- 손절 -->
                             <div class="bg-blue-50 p-3 rounded-xl border border-blue-200">
                                 <h4 class="text-xs font-bold text-blue-800 mb-1">📉 지지선 이탈 3분할 방어 매도 시</h4>
                                 <div class="flex justify-between items-end">
@@ -233,7 +317,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
                 
@@ -340,7 +423,6 @@
 
             <!-- 재무제표 영역 -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- 표 영역 -->
                 <div class="lg:col-span-2">
                     <div class="flex justify-between items-end mb-3">
                         <h2 class="text-lg font-bold text-slate-800 border-l-4 border-indigo-600 pl-3">최근 결산 및 컨센서스 (자동수집)</h2>
@@ -354,7 +436,6 @@
                     </div>
                 </div>
                 
-                <!-- 차트 영역 -->
                 <div class="lg:col-span-1">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-cyan-500 pl-3 mb-3">📊 영업이익 트렌드</h2>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-64 flex items-center justify-center">
@@ -363,7 +444,7 @@
                 </div>
             </div>
 
-            <!-- AI 분석 리포트 -->
+            <!-- 개별 종목 AI 분석 리포트 -->
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 맞춤형 AI 트레이딩 심층 분석 리포트</h2>
@@ -407,11 +488,7 @@
             "제약·바이오": {"삼성바이오로직스": "207940", "셀트리온": "068270", "유한양행": "000100", "한미약품": "128940", "SK바이오팜": "326030", "SK바이오사이언스": "302440", "녹십자": "006280", "종근당": "185750", "대웅제약": "069620", "대원제약": "003220", "보령": "003850", "JW중외제약": "001060", "영진약품": "003520", "일동제약": "249420", "환인제약": "016580", "한올바이오파마": "009420", "신풍제약": "019170", "에스디바이오센서": "137310", "대웅": "003090", "바이오노트": "377740"},
             "화학·정유·에너지": {"LG화학": "051910", "SK이노베이션": "096770", "S-Oil": "010950", "한화솔루션": "009830", "롯데케미칼": "011170", "금호석유": "011780", "SKC": "011790", "효성첨단소재": "298050", "효성티앤씨": "298020", "OCI홀딩스": "010060", "대한유화": "006650", "한국가스공사": "036460", "SK가스": "018670", "롯데정밀화학": "004000", "애경케미칼": "161000", "태광산업": "003240", "후성": "093370", "케이카": "381970", "TKG휴켐스": "069260", "이수스페셜티케미컬": "457190", "PI첨단소재": "178920", "SK케미칼": "285130", "OCI": "456040"},
             "철강·비철금속·소재": {"고려아연": "010130", "현대제철": "004020", "동국제강": "460860", "세아제강": "306200", "세아베스틸지주": "001430", "KG모빌리티": "003620", "영풍": "000670", "동원산업": "006040", "포스코인터내셔널": "047050", "세아제강지주": "003030", "삼아알미늄": "006110"},
-            "금융·지주사": {"KB금융": "105560", "신한지주": "055550", "하나금융지주": "086790", "우리금융지주": "316140", "메리츠금융지주": "138040", "기업은행": "024110", "BNK금융지주": "138930", "DGB금융지주": "139130", "JB금융지주": "175330", "SK": "034730", "LG": "003550", "HD현대": "267250", "CJ": "001040", "LS": "006260", "한화": "000880", "GS": "078930", "삼성물산": "028260", "두산": "000150", "효성": "004800", "BGF": "027410"},
-            "증권·보험": {"삼성생명": "032830", "삼성화재": "000810", "DB손해보험": "005830", "현대해상": "001450", "한화생명": "088350", "한화손해보험": "000370", "롯데손해보험": "000400", "코리안리": "003690", "미래에셋증권": "006800", "한국금융지주": "071050", "NH투자증권": "005940", "삼성증권": "016360", "키움증권": "039490", "대신증권": "003540", "한화투자증권": "003530", "동양생명": "082640"},
-            "건설·건자재": {"현대건설": "000720", "GS건설": "006360", "대우건설": "047040", "DL이앤씨": "375500", "HDC현대산업개발": "294870", "삼성E&A": "028050", "쌍용C&E": "003410", "KCC": "002380", "아세아시멘트": "183190", "한일시멘트": "300720", "동서": "026960"},
-            "화장품·의류·소비재": {"아모레퍼시픽": "090430", "LG생활건강": "051900", "한국콜마": "161890", "코스맥스": "192820", "아모레G": "002790", "애경산업": "018250", "F&F": "383220", "영원무역": "111110", "한섬": "020000", "휠라홀딩스": "081660", "코웨이": "021240", "쿠쿠홈시스": "284740", "에이피알": "278470", "영원무역홀딩스": "009970", "신세계인터내셔날": "031430"},
-            "음식료·유통·엔터": {"KT&G": "033780", "CJ제일제당": "097950", "삼양식품": "003230", "오리온": "271560", "농심": "004370", "롯데웰푸드": "280360", "하이트진로": "000080", "대상": "001680", "오뚜기": "007310", "롯데칠성": "005300", "동원F&B": "049770", "이마트": "139480", "BGF리테일": "282330", "GS리테일": "007070", "신세계": "004170", "롯데쇼핑": "023530", "현대백화점": "069960", "호텔신라": "008770", "강원랜드": "035250", "GKL": "114090", "현대홈쇼핑": "057050", "빙그레": "005180", "현대그린푸드": "453340"}
+            "금융·지주사": {"KB금융": "105560", "신한지주": "055550", "하나금융지주": "086790", "우리금융지주": "316140", "메리츠금융지주": "138040", "기업은행": "024110", "BNK금융지주": "138930", "DGB금융지주": "139130", "JB금융지주": "175330", "SK": "034730", "LG": "003550", "HD현대": "267250", "CJ": "001040", "LS": "006260", "한화": "000880", "GS": "078930", "삼성물산": "028260", "두산": "000150", "효성": "004800", "BGF": "027410"}
         };
 
         const KOSDAQ150_COMPANIES = {
@@ -434,9 +511,14 @@
         let globalQuantData = null;
         let myChart = null;
 
-        // 전략 저장을 위한 전역 변수
         let aiParsedStrategy = {}; 
         let parsedAiTargetPrice = 0; 
+
+        // ==============================================================
+        // 🚀 다종목 포트폴리오 관리 상태 (로컬 스토리지 연동)
+        // ==============================================================
+        let userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
+        let selectedPortCode = '';
 
         window.onload = async () => {
             if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
@@ -449,6 +531,9 @@
             const savedKey = localStorage.getItem('geminiApiKey');
             if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
 
+            const savedStandby = localStorage.getItem('portfolioStandbyCash');
+            if(savedStandby) document.getElementById('portfolioStandbyCash').value = savedStandby;
+
             generateQuickButtons('kospiQuickBtns', KOSPI200_COMPANIES, 'bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-800 border-blue-200');
             generateQuickButtons('kosdaqQuickBtns', KOSDAQ150_COMPANIES, 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border-emerald-200');
             
@@ -456,14 +541,283 @@
                 if (!e.target.closest('#tickerInput') && !e.target.closest('#suggestionBox')) {
                     document.getElementById('suggestionBox').classList.add('hidden');
                 }
+                if (!e.target.closest('#portSearchInput') && !e.target.closest('#portSuggestionBox')) {
+                    document.getElementById('portSuggestionBox').classList.add('hidden');
+                }
             });
 
             try {
                 const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' });
-                if(res.ok) globalQuantData = await res.json();
+                if(res.ok) {
+                    globalQuantData = await res.json();
+                }
             } catch(e) { console.warn("데이터 로드 실패", e); }
+
+            renderPortfolioTable();
         };
 
+        // ==============================================================
+        // 포트폴리오 다종목 관리 로직
+        // ==============================================================
+        function showPortSuggestions() {
+            const inputEl = document.getElementById('portSearchInput');
+            selectedPortCode = '';
+            const input = inputEl.value.trim().toLowerCase();
+            const box = document.getElementById('portSuggestionBox');
+            if (!input) { box.classList.add('hidden'); return; }
+
+            const matches = [];
+            for (const [name, code] of Object.entries(ALL_COMPANIES)) {
+                if (name.toLowerCase().includes(input) || code.includes(input)) matches.push({ name, code });
+            }
+
+            if (matches.length > 0) {
+                box.innerHTML = matches.map(m => `<div onclick="selectPortCompany('${m.name}', '${m.code}')" class="p-2 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b text-xs"><span class="font-bold text-slate-800">${m.name}</span><span class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">${m.code}</span></div>`).join('');
+                box.classList.remove('hidden');
+            } else { box.classList.add('hidden'); }
+        }
+
+        function selectPortCompany(name, code) {
+            const inputEl = document.getElementById('portSearchInput');
+            inputEl.value = `${name} (${code})`;
+            selectedPortCode = code;
+            document.getElementById('portSuggestionBox').classList.add('hidden');
+        }
+
+        function addPortfolioItem() {
+            const inputVal = document.getElementById('portSearchInput').value.trim();
+            const avgPrice = parseInt(document.getElementById('portAvgPriceInput').value);
+            const investAmount = parseInt(document.getElementById('portInvestAmountInput').value);
+
+            let ticker = selectedPortCode;
+            let corpName = "";
+
+            if (!ticker) {
+                const match = inputVal.match(/\d{6}/);
+                if (match) ticker = match[0];
+                else if (ALL_COMPANIES[inputVal]) ticker = ALL_COMPANIES[inputVal];
+            }
+
+            corpName = CODE_TO_NAME[ticker] || inputVal;
+
+            if (!ticker || !/^\d{6}$/.test(ticker)) {
+                alert('목록에서 유효한 종목명을 선택해주세요.');
+                return;
+            }
+            if (isNaN(avgPrice) || avgPrice <= 0) {
+                alert('올바른 매수 평단가를 입력해주세요.');
+                return;
+            }
+            if (isNaN(investAmount) || investAmount <= 0) {
+                alert('올바른 총 매수금액을 입력해주세요.');
+                return;
+            }
+
+            // 중복 체크
+            const existingIndex = userPortfolio.findIndex(p => p.ticker === ticker);
+            if (existingIndex >= 0) {
+                if (confirm(`[${corpName}] 종목이 이미 등록되어 있습니다. 새 데이터로 수정하시겠습니까?`)) {
+                    userPortfolio[existingIndex] = { ticker, corpName, avgPrice, investAmount };
+                }
+            } else {
+                userPortfolio.push({ ticker, corpName, avgPrice, investAmount });
+            }
+
+            savePortfolioToLocal();
+            renderPortfolioTable();
+
+            // 폼 초기화
+            document.getElementById('portSearchInput').value = '';
+            document.getElementById('portAvgPriceInput').value = '';
+            document.getElementById('portInvestAmountInput').value = '';
+            selectedPortCode = '';
+        }
+
+        function removePortfolioItem(ticker) {
+            userPortfolio = userPortfolio.filter(p => p.ticker !== ticker);
+            savePortfolioToLocal();
+            renderPortfolioTable();
+        }
+
+        function savePortfolioToLocal() {
+            localStorage.setItem('userPortfolioList', JSON.stringify(userPortfolio));
+        }
+
+        function renderPortfolioTable() {
+            const tbody = document.getElementById('portfolioTableBody');
+            if (userPortfolio.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-xs text-slate-400">등록된 보유 종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
+                updatePortfolioSummary();
+                return;
+            }
+
+            let html = '';
+            userPortfolio.forEach(item => {
+                let currentPrice = 0;
+                if (globalQuantData && globalQuantData[item.ticker]) {
+                    const priceStr = String(globalQuantData[item.ticker].price).replace(/,/g, '');
+                    currentPrice = parseInt(priceStr) || 0;
+                }
+
+                // 주식 수 계산
+                const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0;
+                const evalValue = currentPrice > 0 ? Math.floor(shares * currentPrice) : item.investAmount;
+                const profitRate = currentPrice > 0 ? (((currentPrice - item.avgPrice) / item.avgPrice) * 100) : 0;
+                const rateColor = profitRate > 0 ? 'text-red-600 font-bold' : (profitRate < 0 ? 'text-blue-600 font-bold' : 'text-slate-700');
+
+                html += `<tr class="hover:bg-slate-50 transition border-b">
+                    <td class="p-2 text-left font-bold text-slate-800">
+                        <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-blue-600 text-left underline underline-offset-2">
+                            ${item.corpName}
+                        </button>
+                        <span class="text-[11px] font-mono text-slate-400 block">${item.ticker}</span>
+                    </td>
+                    <td class="p-2 text-right font-medium">${currentPrice > 0 ? currentPrice.toLocaleString() + '원' : '데이터연동'}</td>
+                    <td class="p-2 text-right font-semibold">${item.avgPrice.toLocaleString()}원</td>
+                    <td class="p-2 text-right ${rateColor}">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
+                    <td class="p-2 text-right font-medium">${item.investAmount.toLocaleString()}원</td>
+                    <td class="p-2 text-right font-semibold text-slate-900">${evalValue.toLocaleString()}원</td>
+                    <td class="p-2 text-center">
+                        <button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 hover:bg-rose-500 hover:text-white px-2 py-0.5 rounded transition">삭제</button>
+                    </td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+            updatePortfolioSummary();
+        }
+
+        function updatePortfolioSummary() {
+            let totalInvest = 0;
+            let totalValue = 0;
+
+            userPortfolio.forEach(item => {
+                totalInvest += item.investAmount;
+                let currentPrice = 0;
+                if (globalQuantData && globalQuantData[item.ticker]) {
+                    const priceStr = String(globalQuantData[item.ticker].price).replace(/,/g, '');
+                    currentPrice = parseInt(priceStr) || 0;
+                }
+                const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0;
+                const evalVal = currentPrice > 0 ? (shares * currentPrice) : item.investAmount;
+                totalValue += evalVal;
+            });
+
+            const standbyInput = document.getElementById('portfolioStandbyCash').value;
+            const standbyCash = parseInt(standbyInput) || 0;
+            localStorage.setItem('portfolioStandbyCash', standbyCash);
+
+            const totalProfit = totalValue - totalInvest;
+            const totalRate = totalInvest > 0 ? ((totalProfit / totalInvest) * 100) : 0;
+            const totalAssets = totalValue + standbyCash;
+
+            document.getElementById('portTotalInvest').textContent = totalInvest.toLocaleString() + '원';
+            document.getElementById('portTotalValue').textContent = Math.floor(totalValue).toLocaleString() + '원';
+            
+            const profitEl = document.getElementById('portTotalProfit');
+            profitEl.textContent = (totalProfit >= 0 ? '+' : '') + Math.floor(totalProfit).toLocaleString() + '원';
+            profitEl.className = `font-bold text-sm ${totalProfit > 0 ? 'text-red-400' : (totalProfit < 0 ? 'text-blue-400' : 'text-slate-300')}`;
+
+            const rateEl = document.getElementById('portTotalRate');
+            rateEl.textContent = (totalRate >= 0 ? '+' : '') + totalRate.toFixed(2) + '%';
+            rateEl.className = `font-bold text-sm ${totalRate > 0 ? 'text-red-400' : (totalRate < 0 ? 'text-blue-400' : 'text-slate-300')}`;
+
+            document.getElementById('portTotalAssets').textContent = Math.floor(totalAssets).toLocaleString() + '원';
+        }
+
+        // ==============================================================
+        // 🤖 다종목 포트폴리오 & 대기자금 AI 통합 분석 엔진
+        // ==============================================================
+        async function runPortfolioAiAnalysis() {
+            const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                alert('우측 상단에 Gemini API Key를 먼저 입력하고 [키 저장]을 눌러주세요.');
+                return;
+            }
+            if (userPortfolio.length === 0) {
+                alert('포트폴리오에 분석할 보유 종목이 없습니다. 최소 1개 이상의 종목을 등록해주세요.');
+                return;
+            }
+
+            const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0;
+            const resultBox = document.getElementById('portfolioAiResultBox');
+            const resultText = document.getElementById('portfolioAiResultText');
+
+            resultBox.classList.remove('hidden');
+            resultText.innerHTML = `<span class="text-purple-600 font-bold animate-pulse">보유 중인 ${userPortfolio.length}개 종목과 대기자금(${standbyCash.toLocaleString()}원)을 종합 모델링하여 최적의 자금 배분 및 리밸런싱 전략을 도출 중입니다...</span>`;
+
+            // 각 보유 종목의 퀀트 데이터 종합
+            let portfolioSummaryString = '';
+            userPortfolio.forEach((p, idx) => {
+                let currentPrice = '데이터 없음';
+                let per = '-', pbr = '-', targetP = '-';
+                if (globalQuantData && globalQuantData[p.ticker]) {
+                    const q = globalQuantData[p.ticker];
+                    currentPrice = `${q.price}원`;
+                    per = q.per;
+                    pbr = q.pbr;
+                    targetP = q.targetPrice;
+                }
+                const diffRate = (currentPrice !== '데이터 없음') ? (((parseInt(currentPrice.replace(/,/g,'')) - p.avgPrice) / p.avgPrice) * 100).toFixed(2) + '%' : '계산불가';
+                
+                portfolioSummaryString += `[종목${idx+1}: ${p.corpName}(${p.ticker})]
+- 내 평단가: ${p.avgPrice.toLocaleString()}원 | 매수금액: ${p.investAmount.toLocaleString()}원
+- 현재가: ${currentPrice} (손익률: ${diffRate}) | 증권사목표가: ${targetP}원 | PER: ${per} | PBR: ${pbr}
+\n`;
+            });
+
+            const prompt = `당신은 대한민국 최고의 퀀트 포트폴리오 매니저이자 실전 트레이딩 전문가입니다.
+사용자가 현재 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로, "어떻게 행동하는 것이 가장 합리적이고 손실을 최소화하며 수익을 극대화할 수 있는지"에 대한 명쾌한 종합 솔루션을 제시하세요.
+
+[사용자 전체 포트폴리오 데이터]
+- 투입 가능 대기자금: ${standbyCash.toLocaleString()}원
+${portfolioSummaryString}
+
+[필수 분석 지침 및 양식]
+마크다운 서식을 사용하여 다음 목차로 구체적인 수치(금액, 비중, 주수)를 포함해 작성하세요.
+### 1. 🏆 종목별 종합 진단 및 대응 우선순위 (Tier Ranking)
+- 보유 종목들 중 '지금 대기자금을 투입해 집중 물타기할 종목', '불타기(돌파매수)할 종목', '그냥 지켜보아야 할 종목', '비중을 줄이거나 손절 검토할 종목'을 1순위부터 순서대로 나누고 이유를 밝히세요.
+
+### 2. 💰 대기자금(${standbyCash.toLocaleString()}원) 최적 분배 계획표
+- 보유한 대기자금을 어떤 종목에 얼마씩(몇 원, 몇 %) 배분할 것인지 구체적으로 지정하세요. (만약 시장 위험이나 종목 모멘텀 부족으로 현금을 남겨두어야 한다면 현금 유지 비중도 명시)
+- 배분 금액에 따른 종목별 예상 신규 평단가 및 비중 변화를 계산해 제시하세요.
+
+### 3. 🛡️ 리밸런싱 및 손실 방어 가이드
+- 보유 종목 중 추가 매수를 하지 말고 반등 시 매도(익절 또는 손절)해야 할 종목의 대응 가격 가이드라인.
+
+### 4. 🎯 최종 행동 요약 (Action Plan)
+- 내일부터 사용자가 당장 실행해야 하는 1, 2, 3단계 행동 수칙을 번호 매겨 단도직입적으로 요약.`;
+
+            try {
+                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                if (!response.ok) {
+                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                }
+
+                const data = await response.json();
+                let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "분석 실패";
+
+                resultText.innerHTML = aiText
+                    .replace(/### (.*?)\n/g, '<h4 class="text-base font-extrabold text-purple-950 mt-4 mb-2 pb-1 border-b border-purple-200">$1</h4>')
+                    .replace(/## (.*?)\n/g, '<h3 class="text-lg font-black text-indigo-950 mt-5 mb-2">$1</h3>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-yellow-200/60 px-1 rounded">$1</strong>')
+                    .replace(/\n/g, '<br>');
+
+            } catch(e) {
+                resultText.innerHTML = `<div class="p-3 bg-red-100 text-red-700 rounded-lg">❌ AI 분석 호출 오류: ${e.message}</div>`;
+            }
+        }
+
+        // ==============================================================
+        // 개별 종목 분석 기존 로직 유지
+        // ==============================================================
         function generateQuickButtons(targetId, companyData, btnClass) {
             const container = document.getElementById(targetId);
             let html = '';
@@ -594,7 +948,6 @@
             theadHtml += `</tr>`;
             document.getElementById('financeTableHead').innerHTML = theadHtml;
 
-            // 재무제표 6개 항목 모두 표시
             const rowsData = [
                 { label: "매출(억)", data: data.finance.revs, bold: true },
                 { label: "영익(억)", data: data.finance.ops, bold: false },
@@ -683,7 +1036,6 @@
                 document.getElementById('strategyBase').textContent = `기준: 평단가 ${avg ? Number(avg).toLocaleString() + '원' : '미입력'}`;
             }
 
-            // 🚀 사용자의 자금 상황(투입금, 대기자금 등)을 컨텍스트로 생성하여 AI에게 전달
             let avgPriceContext = "";
             let actionPlanContext = "";
             
