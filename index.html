@@ -14,6 +14,8 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
 
+    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22id%22%3A%22%2F%22%2C%22name%22%3A%22AI%20%EC%A3%BC%EC%8B%9D%20%EC%BD%B4%ED%8A%B8%20Pro%22%2C%22short_name%22%3A%22AI%EC%BD%B4%ED%8A%B8%22%2C%22description%22%3A%22AI%20Quant%20Dashboard%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f1f5f9%22%2C%22theme_color%22%3A%22%231e293b%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2933%2F2933116.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
     <title>AI 주식 퀀트 & 다종목 포트폴리오 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -65,10 +67,11 @@
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <span>📊</span> 내 보유 종목 전체 포트폴리오 & 대기자금
-                        <button id="portRefreshBtn" onclick="refreshPortfolioPrices()" class="ml-2 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-xs font-bold hover:bg-blue-100 transition shadow-sm" title="보유 종목 실시간 주가 즉시 갱신">실시간가 🔄</button>
+                        <button id="portRefreshBtn" onclick="refreshPortfolioPrices()" class="ml-2 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-xs font-bold hover:bg-blue-100 transition shadow-sm" title="보유 종목 실시간 주가 업데이트">실시간가 🔄</button>
                     </h2>
                     <p class="text-xs text-slate-500 mt-1">보유 종목들을 등록하고 투입 대기자금을 넣으면, AI가 대기자금을 어떻게 배분할지 최적의 대응 시나리오를 산출합니다.</p>
                 </div>
+                <!-- 투입 대기 자금 인풋 -->
                 <div class="flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-200">
                     <span class="text-xs font-bold text-blue-900 shrink-0">💰 총 투입 대기자금:</span>
                     <input type="number" id="portfolioStandbyCash" oninput="updatePortfolioSummary()" placeholder="예: 5000000" class="border border-blue-300 px-3 py-1 rounded text-sm font-extrabold text-blue-900 bg-white w-36 md:w-44 text-right focus:outline-none">
@@ -76,6 +79,7 @@
                 </div>
             </div>
 
+            <!-- 보유 종목 등록 폼 -->
             <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-2">
                 <div class="relative">
                     <input type="text" id="portSearchInput" oninput="showPortSuggestions()" placeholder="종목명(예: 삼성전자)" class="w-full border p-2 rounded text-sm font-medium focus:outline-none" autocomplete="off">
@@ -86,6 +90,7 @@
                 <button onclick="addPortfolioItem()" class="bg-emerald-600 text-white font-bold py-2 rounded text-sm hover:bg-emerald-700 transition shadow-sm">+ 종목 등록</button>
             </div>
 
+            <!-- 등록된 종목 목록 테이블 -->
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse">
                     <thead>
@@ -107,6 +112,7 @@
                 </table>
             </div>
 
+            <!-- 포트폴리오 합계 요약 바 -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-900 text-white p-3 rounded-lg text-center text-xs">
                 <div>
                     <span class="text-slate-400 block mb-0.5">총 매수원금</span>
@@ -130,12 +136,14 @@
                 </div>
             </div>
 
+            <!-- 포트폴리오 AI 분석 실행 버튼 -->
             <div class="text-center pt-1">
                 <button onclick="runPortfolioAiAnalysis()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold py-3 px-6 rounded-lg text-base shadow-md hover:from-purple-700 hover:to-indigo-700 transition flex items-center justify-center gap-2">
                     <span>🤖</span> 보유 포트폴리오 & 대기자금 최적 배분 AI 종합 분석 실행
                 </button>
             </div>
 
+            <!-- 포트폴리오 AI 분석 결과창 (아코디언 형태) -->
             <details id="portfolioAiResultBox" class="hidden group bg-purple-50/50 border border-purple-200 rounded-xl overflow-hidden">
                 <summary class="p-4 cursor-pointer flex justify-between items-center border-b border-purple-200 bg-purple-100/50 hover:bg-purple-100 transition focus:outline-none">
                     <div class="flex items-center gap-2">
@@ -162,18 +170,18 @@
                     <input type="text" id="tickerInput" oninput="showSuggestions()" onkeypress="if(event.key==='Enter') fetchDashboardData()" placeholder="기업명(예: 삼성전자) 또는 종목코드" class="border-2 border-blue-600 p-3 rounded-lg w-full text-base md:text-lg text-center font-medium focus:outline-none" autocomplete="off">
                     <div id="suggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-64 overflow-y-auto text-left"></div>
                 </div>
+                <!-- 🚀 실시간 새로고침 버튼 추가됨 -->
                 <div class="flex gap-2 w-full md:w-auto">
                     <button onclick="fetchDashboardData()" class="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-blue-700 transition shrink-0">분석</button>
-                    <!-- 🔄 실시간 주가 갱신 버튼 -->
-                    <button onclick="refreshRealTimePrice()" class="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-slate-200 transition shrink-0" title="실시간 현재가 즉시 동기화">🔄</button>
+                    <button onclick="refreshRealTimePrice()" class="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-slate-200 transition shrink-0" title="실시간 주가 업데이트 및 초기화">🔄</button>
                 </div>
             </div>
             <div id="statusBox" class="hidden mt-4">
-                <p id="statusMsg" class="text-blue-600 font-semibold text-sm animate-pulse">자동 수집된 퀀트 데이터를 불러오는 중...</p>
+                <p class="text-blue-600 font-semibold text-sm animate-pulse">자동 수집된 퀀트 데이터를 불러오는 중...</p>
             </div>
         </div>
 
-        <!-- 퀵 버튼 영역 (완벽 복구됨) -->
+        <!-- 퀵 버튼 영역 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
             <details class="group" open>
                 <summary class="flex justify-between items-center font-bold text-slate-800 cursor-pointer list-none focus:outline-none">
@@ -200,9 +208,7 @@
                     <span id="corpNameTitle" class="text-2xl font-extrabold">-</span>
                     <span id="corpCodeTitle" class="text-sm text-slate-300 ml-2 font-mono">-</span>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span id="liveBadge" class="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full font-semibold">데이터 연동 완료</span>
-                </div>
+                <span class="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full font-semibold">데이터 연동 완료</span>
             </div>
 
             <!-- 요약 지표 -->
@@ -463,20 +469,13 @@
     </div>
 
     <script>
-        // ==============================================================
-        // 비밀번호 확인
-        // ==============================================================
         function checkPassword() {
             const pin = document.getElementById('lockPin').value;
             const errorMsg = document.getElementById('lockError');
-
-            if (pin === '4203') { 
-                try {
-                    sessionStorage.setItem('aiQuantUnlocked', 'true');
-                } catch (e) {
-                    console.warn("세션 스토리지가 제한된 환경이지만 접속을 허용합니다.");
-                }
-                
+            const numPin = parseInt(pin, 10);
+            
+            if (!isNaN(numPin) && (numPin ^ 1024) === 5227) { 
+                sessionStorage.setItem('aiQuantUnlocked', 'true');
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').classList.remove('hidden');
             } else {
@@ -487,7 +486,7 @@
         }
 
         // ==============================================================
-        // 종목 데이터
+        // 100% 완전 복구된 종목 데이터 (KOSPI 200: 16개 섹터 / KOSDAQ 150: 8개 섹터)
         // ==============================================================
         const KOSPI200_COMPANIES = {
             "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
@@ -531,39 +530,25 @@
         let lastFetchedData = null;
         let globalQuantData = null;
         let myChart = null;
-
         let aiParsedStrategy = {}; 
         let parsedAiTargetPrice = 0; 
+        let userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
+        let selectedPortCode = '';
         let livePortfolioPrices = {};
 
-        let userPortfolio = [];
-        try {
-            userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
-        } catch (e) {
-            console.warn("로컬 스토리지를 사용할 수 없는 환경입니다. 휘발성 데이터로 대체합니다.");
-        }
-
-        let selectedPortCode = '';
-
         window.onload = async () => {
-            try {
-                if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
-                    document.getElementById('lockScreen').style.display = 'none';
-                    document.getElementById('mainContent').classList.remove('hidden');
-                } else {
-                    document.getElementById('lockPin').focus();
-                }
-            } catch(e) {
+            if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('mainContent').classList.remove('hidden');
+            } else {
                 document.getElementById('lockPin').focus();
             }
 
-            try {
-                const savedKey = localStorage.getItem('geminiApiKey');
-                if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
+            const savedKey = localStorage.getItem('geminiApiKey');
+            if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
 
-                const savedStandby = localStorage.getItem('portfolioStandbyCash');
-                if(savedStandby) document.getElementById('portfolioStandbyCash').value = savedStandby;
-            } catch(e) {}
+            const savedStandby = localStorage.getItem('portfolioStandbyCash');
+            if(savedStandby) document.getElementById('portfolioStandbyCash').value = savedStandby;
 
             generateQuickButtons('kospiQuickBtns', KOSPI200_COMPANIES, 'bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-800 border-blue-200');
             generateQuickButtons('kosdaqQuickBtns', KOSDAQ150_COMPANIES, 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border-emerald-200');
@@ -587,9 +572,12 @@
             renderPortfolioTable();
         };
 
+        // ==============================================================
+        // 실시간 주가 API (네이버 금융 우회)
+        // ==============================================================
         function formatMarketCap(mvStr) {
             if (!mvStr) return '-';
-            const num = parseInt(String(mvStr).replace(/,/g, ''));
+            const num = parseInt(mvStr.replace(/,/g, ''));
             if (isNaN(num)) return mvStr + '억원';
             if (num >= 10000) {
                 const jo = Math.floor(num / 10000);
@@ -597,49 +585,6 @@
                 return eok > 0 ? `${jo.toLocaleString()}조 ${eok.toLocaleString()}억원` : `${jo.toLocaleString()}조원`;
             }
             return `${num.toLocaleString()}억원`;
-        }
-
-        // ==============================================================
-        // 🚀 실시간 주가 초고속 JSONP 다이렉트 통신 (캐시 완전 무력화)
-        // ==============================================================
-        function fetchNaverDirectJsonp(queryStr) {
-            return new Promise((resolve) => {
-                const cbName = "__nv_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
-                const script = document.createElement("script");
-                const timer = setTimeout(() => { cleanup(); resolve(null); }, 3000);
-
-                function cleanup() {
-                    clearTimeout(timer);
-                    if (script.parentNode) script.parentNode.removeChild(script);
-                    try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
-                }
-
-                window[cbName] = function(res) {
-                    cleanup();
-                    if (res && res.result && Array.isArray(res.result.areas)) {
-                        resolve(res.result.areas);
-                    } else { resolve(null); }
-                };
-
-                script.onerror = function() { cleanup(); resolve(null); };
-                script.charset = "euc-kr";
-                script.src = `https://polling.finance.naver.com/api/realtime?query=${encodeURIComponent(queryStr)}&_callback=${cbName}&_=${Date.now()}`;
-                document.head.appendChild(script);
-            });
-        }
-
-        async function fetchRealtimeStock(ticker) {
-            const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
-            if (areas && areas.length > 0 && areas[0].datas && areas[0].datas.length > 0) {
-                const item = areas[0].datas[0];
-                return {
-                    price: Number(item.nv).toLocaleString(),
-                    changeRate: (item.cr > 0 ? '+' : '') + item.cr + '%',
-                    direction: item.rf === "2" || item.rf === "1" ? "UP" : (item.rf === "4" || item.rf === "5" ? "DOWN" : "FLAT"),
-                    rawPrice: Number(item.nv)
-                };
-            }
-            throw new Error("No data");
         }
 
         async function refreshRealTimePrice() {
@@ -650,31 +595,39 @@
             
             const ticker = lastFetchedData.ticker;
             const statusBox = document.getElementById('statusBox');
-            const statusMsg = document.getElementById('statusMsg');
             statusBox.classList.remove('hidden');
-            statusMsg.textContent = "⚡ 네이버 증권에서 초단위 실시간 주가를 수신 중입니다...";
-            statusMsg.className = "text-blue-600 font-semibold text-sm animate-pulse";
+            statusBox.innerHTML = `<p class="text-blue-600 font-semibold text-sm animate-pulse">실시간 주가 데이터를 연동 중입니다...</p>`;
 
             try {
-                const data = await fetchRealtimeStock(ticker);
+                const url = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
                 
-                lastFetchedData.price = data.price;
-                lastFetchedData.changeRate = data.changeRate;
-                lastFetchedData.direction = data.direction;
-                livePortfolioPrices[ticker] = data.price;
+                const res = await fetch(proxyUrl);
+                const proxyData = await res.json();
+                const stockData = JSON.parse(proxyData.contents);
                 
-                updateTopDashboardUI(lastFetchedData);
-                renderPortfolioTable();
-                calculateInvestment();
-                
-                statusMsg.textContent = `✅ 실시간 체결가 [${data.price}원] 동기화 완료!`;
-                statusMsg.className = "text-emerald-600 font-bold text-sm";
-                setTimeout(() => statusBox.classList.add('hidden'), 2000);
+                if (stockData && stockData.closePrice) {
+                    lastFetchedData.price = stockData.closePrice;
+                    lastFetchedData.changeRate = stockData.fluctuationsRatio + '%';
+                    lastFetchedData.marketCap = formatMarketCap(stockData.marketValue);
+                    lastFetchedData.foreignRate = stockData.foreignRatio + '%';
+                    lastFetchedData.direction = parseFloat(stockData.fluctuationsRatio) > 0 ? 'UP' : (parseFloat(stockData.fluctuationsRatio) < 0 ? 'DOWN' : 'FLAT');
+                    
+                    livePortfolioPrices[ticker] = stockData.closePrice;
+                    
+                    updateTopDashboardUI(lastFetchedData);
+                    renderPortfolioTable();
+                    calculateInvestment();
+                    
+                    statusBox.innerHTML = `<p class="text-emerald-600 font-semibold text-sm">✅ 실시간 주가 갱신 완료!</p>`;
+                    setTimeout(() => statusBox.classList.add('hidden'), 2000);
+                } else {
+                    throw new Error("Invalid data");
+                }
             } catch (e) {
-                console.error("실시간 갱신 실패:", e);
-                statusMsg.textContent = "⚠️ 실시간 주가 수신 실패 (잠시 후 다시 시도해주세요)";
-                statusMsg.className = "text-red-500 font-bold text-sm";
-                setTimeout(() => statusBox.classList.add('hidden'), 2500);
+                console.error(e);
+                statusBox.innerHTML = `<p class="text-red-600 font-semibold text-sm">❌ 실시간 데이터를 가져오는데 실패했습니다.</p>`;
+                setTimeout(() => statusBox.classList.add('hidden'), 3000);
             }
         }
 
@@ -685,23 +638,23 @@
             }
             
             const btn = document.getElementById('portRefreshBtn');
-            btn.textContent = "초단위 갱신 중...";
+            btn.textContent = "갱신 중...";
             btn.disabled = true;
 
             try {
-                const tickers = userPortfolio.map(p => p.ticker).join(',');
-                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${tickers}`);
-                if (areas) {
-                    for (const area of areas) {
-                        for (const st of (area.datas || [])) {
-                            if (st.cd && st.nv) {
-                                livePortfolioPrices[st.cd] = Number(st.nv).toLocaleString();
-                            }
-                        }
+                const promises = userPortfolio.map(async (item) => {
+                    const url = `https://m.stock.naver.com/api/stock/${item.ticker}/basic`;
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                    const res = await fetch(proxyUrl);
+                    const proxyData = await res.json();
+                    const stockData = JSON.parse(proxyData.contents);
+                    if (stockData && stockData.closePrice) {
+                        livePortfolioPrices[item.ticker] = stockData.closePrice;
                     }
-                }
+                });
+                await Promise.all(promises);
             } catch(e) {
-                console.warn("Portfolio fetch error", e);
+                console.warn("Portfolio real-time fetch error", e);
             }
 
             renderPortfolioTable();
@@ -709,6 +662,9 @@
             btn.disabled = false;
         }
 
+        // ==============================================================
+        // 포트폴리오 관리 로직
+        // ==============================================================
         function showPortSuggestions() {
             const inputEl = document.getElementById('portSearchInput');
             selectedPortCode = '';
@@ -788,7 +744,7 @@
         }
 
         function savePortfolioToLocal() {
-            try { localStorage.setItem('userPortfolioList', JSON.stringify(userPortfolio)); } catch(e) {}
+            localStorage.setItem('userPortfolioList', JSON.stringify(userPortfolio));
         }
 
         function renderPortfolioTable() {
@@ -858,7 +814,7 @@
 
             const standbyInput = document.getElementById('portfolioStandbyCash').value;
             const standbyCash = parseInt(standbyInput) || 0;
-            try { localStorage.setItem('portfolioStandbyCash', standbyCash); } catch(e) {}
+            localStorage.setItem('portfolioStandbyCash', standbyCash);
 
             const totalProfit = totalValue - totalInvest;
             const totalRate = totalInvest > 0 ? ((totalProfit / totalInvest) * 100) : 0;
@@ -879,10 +835,7 @@
         }
 
         async function runPortfolioAiAnalysis() {
-            let apiKey = document.getElementById('apiKeyInput').value.trim();
-            if(!apiKey) {
-                try { apiKey = localStorage.getItem('geminiApiKey'); } catch(e) {}
-            }
+            const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
                 alert('우측 상단에 Gemini API Key를 먼저 입력하고 [키 저장]을 눌러주세요.');
                 return;
@@ -977,6 +930,55 @@ ${portfolioSummaryString}
             }
         }
 
+        // ==============================================================
+        // 개별 종목 분석 기본 로직
+        // ==============================================================
+        function generateQuickButtons(targetId, companyData, btnClass) {
+            const container = document.getElementById(targetId);
+            let html = '';
+            for (const sector in companyData) {
+                html += `<div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80"><span class="text-xs font-extrabold text-slate-600 block mb-1.5">${sector}</span><div class="flex flex-wrap gap-1">`;
+                for (const [name, code] of Object.entries(companyData[sector])) {
+                    html += `<button onclick="selectCompany('${name}', '${code}')" class="text-xs px-2 py-0.5 rounded border ${btnClass} transition font-medium">${name}</button>`;
+                }
+                html += `</div></div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function showSuggestions() {
+            const inputEl = document.getElementById('tickerInput');
+            inputEl.dataset.selectedCode = '';
+            const input = inputEl.value.trim().toLowerCase();
+            const box = document.getElementById('suggestionBox');
+            if (!input) { box.classList.add('hidden'); return; }
+
+            const matches = [];
+            for (const [name, code] of Object.entries(ALL_COMPANIES)) {
+                if (name.toLowerCase().includes(input) || code.includes(input)) matches.push({ name, code });
+            }
+
+            if (matches.length > 0) {
+                box.innerHTML = matches.map(m => `<div onclick="selectCompany('${m.name}', '${m.code}')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b text-sm"><span class="font-bold text-slate-800">${m.name}</span><span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">${m.code}</span></div>`).join('');
+                box.classList.remove('hidden');
+            } else { box.classList.add('hidden'); }
+        }
+
+        function selectCompany(name, code) {
+            const inputEl = document.getElementById('tickerInput');
+            inputEl.value = `${name} (${code})`;
+            inputEl.dataset.selectedCode = code;
+            document.getElementById('suggestionBox').classList.add('hidden');
+            fetchDashboardData();
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if(!key) { alert('API Key를 입력해주세요.'); return; }
+            localStorage.setItem('geminiApiKey', key);
+            alert('Gemini API Key가 안전하게 저장되었습니다.');
+        }
+
         function toggleInputs() {
             const mode = document.getElementById('analysisModeSelect').value;
             if (mode === 'current') {
@@ -1069,12 +1071,24 @@ ${portfolioSummaryString}
             };
 
             try {
-                const live = await fetchRealtimeStock(ticker);
-                lastFetchedData.price = live.price;
-                lastFetchedData.changeRate = live.changeRate;
-                lastFetchedData.direction = live.direction;
-                livePortfolioPrices[ticker] = live.price;
-            } catch (e) {}
+                const url = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const res = await fetch(proxyUrl);
+                const proxyData = await res.json();
+                const stockData = JSON.parse(proxyData.contents);
+                
+                if (stockData && stockData.closePrice) {
+                    lastFetchedData.price = stockData.closePrice;
+                    lastFetchedData.changeRate = stockData.fluctuationsRatio + '%';
+                    lastFetchedData.marketCap = formatMarketCap(stockData.marketValue);
+                    lastFetchedData.foreignRate = stockData.foreignRatio + '%';
+                    lastFetchedData.direction = parseFloat(stockData.fluctuationsRatio) > 0 ? 'UP' : (parseFloat(stockData.fluctuationsRatio) < 0 ? 'DOWN' : 'FLAT');
+                    
+                    livePortfolioPrices[ticker] = stockData.closePrice;
+                }
+            } catch (e) {
+                console.warn("Real-time fetch skipped, using local data.");
+            }
 
             updateTopDashboardUI(lastFetchedData);
 
@@ -1139,10 +1153,7 @@ ${portfolioSummaryString}
         }
 
         async function runGeminiAnalysisOnly(mode) {
-            let apiKey = document.getElementById('apiKeyInput').value.trim();
-            if(!apiKey) {
-                try { apiKey = localStorage.getItem('geminiApiKey'); } catch(e) {}
-            }
+            const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
                 document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 심층 분석 리포트가 출력됩니다.</div>`;
                 return;
@@ -1256,7 +1267,7 @@ SELL_LOSS_3: [금액]원 / [비중]%
                             targetUpsideEl.textContent = `현재가 대비 상승 여력: +${diffRate.toFixed(1)}%`;
                             targetUpsideEl.className = "text-xs font-bold mt-1 text-red-600";
                         } else {
-                            targetUpsideEl.textContent = `현재가 초 초과: ${diffRate.toFixed(1)}%`;
+                            targetUpsideEl.textContent = `현재가 초과: ${diffRate.toFixed(1)}%`;
                             targetUpsideEl.className = "text-xs font-bold mt-1 text-blue-600";
                         }
                     }
