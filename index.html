@@ -67,8 +67,9 @@
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <span>📊</span> 내 보유 종목 전체 포트폴리오 & 대기자금
+                        <button id="portRefreshBtn" onclick="refreshPortfolioPrices()" class="ml-2 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-xs font-bold hover:bg-blue-100 transition shadow-sm" title="보유 종목 실시간 주가 업데이트">실시간가 🔄</button>
                     </h2>
-                    <p class="text-xs text-slate-500">보유 종목들을 등록하고 투입 대기자금을 넣으면, AI가 대기자금을 어떻게 배분할지 최적의 대응 시나리오를 산출합니다.</p>
+                    <p class="text-xs text-slate-500 mt-1">보유 종목들을 등록하고 투입 대기자금을 넣으면, AI가 대기자금을 어떻게 배분할지 최적의 대응 시나리오를 산출합니다.</p>
                 </div>
                 <!-- 투입 대기 자금 인풋 -->
                 <div class="flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-200">
@@ -142,7 +143,7 @@
                 </button>
             </div>
 
-            <!-- 🚀 접기/펼치기가 적용된 포트폴리오 AI 분석 결과창 -->
+            <!-- 포트폴리오 AI 분석 결과창 (아코디언 형태) -->
             <details id="portfolioAiResultBox" class="hidden group bg-purple-50/50 border border-purple-200 rounded-xl overflow-hidden">
                 <summary class="p-4 cursor-pointer flex justify-between items-center border-b border-purple-200 bg-purple-100/50 hover:bg-purple-100 transition focus:outline-none">
                     <div class="flex items-center gap-2">
@@ -169,9 +170,10 @@
                     <input type="text" id="tickerInput" oninput="showSuggestions()" onkeypress="if(event.key==='Enter') fetchDashboardData()" placeholder="기업명(예: 삼성전자) 또는 종목코드" class="border-2 border-blue-600 p-3 rounded-lg w-full text-base md:text-lg text-center font-medium focus:outline-none" autocomplete="off">
                     <div id="suggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-64 overflow-y-auto text-left"></div>
                 </div>
+                <!-- 🚀 실시간 새로고침 버튼 추가됨 -->
                 <div class="flex gap-2 w-full md:w-auto">
                     <button onclick="fetchDashboardData()" class="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-blue-700 transition shrink-0">분석</button>
-                    <button onclick="window.location.reload()" class="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-slate-200 transition shrink-0">🔄</button>
+                    <button onclick="refreshRealTimePrice()" class="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-lg text-base md:text-lg font-bold hover:bg-slate-200 transition shrink-0" title="실시간 주가 업데이트 및 초기화">🔄</button>
                 </div>
             </div>
             <div id="statusBox" class="hidden mt-4">
@@ -179,7 +181,7 @@
             </div>
         </div>
 
-        <!-- 퀵 버튼 영역 (종목 100% 완전 복구) -->
+        <!-- 퀵 버튼 영역 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
             <details class="group" open>
                 <summary class="flex justify-between items-center font-bold text-slate-800 cursor-pointer list-none focus:outline-none">
@@ -528,15 +530,11 @@
         let lastFetchedData = null;
         let globalQuantData = null;
         let myChart = null;
-
         let aiParsedStrategy = {}; 
         let parsedAiTargetPrice = 0; 
-
-        // ==============================================================
-        // 🚀 다종목 포트폴리오 관리 상태 (로컬 스토리지 연동)
-        // ==============================================================
         let userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
         let selectedPortCode = '';
+        let livePortfolioPrices = {};
 
         window.onload = async () => {
             if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
@@ -575,7 +573,97 @@
         };
 
         // ==============================================================
-        // 포트폴리오 다종목 관리 로직
+        // 실시간 주가 API (네이버 금융 우회)
+        // ==============================================================
+        function formatMarketCap(mvStr) {
+            if (!mvStr) return '-';
+            const num = parseInt(mvStr.replace(/,/g, ''));
+            if (isNaN(num)) return mvStr + '억원';
+            if (num >= 10000) {
+                const jo = Math.floor(num / 10000);
+                const eok = num % 10000;
+                return eok > 0 ? `${jo.toLocaleString()}조 ${eok.toLocaleString()}억원` : `${jo.toLocaleString()}조원`;
+            }
+            return `${num.toLocaleString()}억원`;
+        }
+
+        async function refreshRealTimePrice() {
+            if (!lastFetchedData || !lastFetchedData.ticker) {
+                window.location.reload(); 
+                return;
+            }
+            
+            const ticker = lastFetchedData.ticker;
+            const statusBox = document.getElementById('statusBox');
+            statusBox.classList.remove('hidden');
+            statusBox.innerHTML = `<p class="text-blue-600 font-semibold text-sm animate-pulse">실시간 주가 데이터를 연동 중입니다...</p>`;
+
+            try {
+                const url = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                
+                const res = await fetch(proxyUrl);
+                const proxyData = await res.json();
+                const stockData = JSON.parse(proxyData.contents);
+                
+                if (stockData && stockData.closePrice) {
+                    lastFetchedData.price = stockData.closePrice;
+                    lastFetchedData.changeRate = stockData.fluctuationsRatio + '%';
+                    lastFetchedData.marketCap = formatMarketCap(stockData.marketValue);
+                    lastFetchedData.foreignRate = stockData.foreignRatio + '%';
+                    lastFetchedData.direction = parseFloat(stockData.fluctuationsRatio) > 0 ? 'UP' : (parseFloat(stockData.fluctuationsRatio) < 0 ? 'DOWN' : 'FLAT');
+                    
+                    livePortfolioPrices[ticker] = stockData.closePrice;
+                    
+                    updateTopDashboardUI(lastFetchedData);
+                    renderPortfolioTable();
+                    calculateInvestment();
+                    
+                    statusBox.innerHTML = `<p class="text-emerald-600 font-semibold text-sm">✅ 실시간 주가 갱신 완료!</p>`;
+                    setTimeout(() => statusBox.classList.add('hidden'), 2000);
+                } else {
+                    throw new Error("Invalid data");
+                }
+            } catch (e) {
+                console.error(e);
+                statusBox.innerHTML = `<p class="text-red-600 font-semibold text-sm">❌ 실시간 데이터를 가져오는데 실패했습니다.</p>`;
+                setTimeout(() => statusBox.classList.add('hidden'), 3000);
+            }
+        }
+
+        async function refreshPortfolioPrices() {
+            if (userPortfolio.length === 0) {
+                alert("등록된 보유 종목이 없습니다.");
+                return;
+            }
+            
+            const btn = document.getElementById('portRefreshBtn');
+            btn.textContent = "갱신 중...";
+            btn.disabled = true;
+
+            try {
+                const promises = userPortfolio.map(async (item) => {
+                    const url = `https://m.stock.naver.com/api/stock/${item.ticker}/basic`;
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                    const res = await fetch(proxyUrl);
+                    const proxyData = await res.json();
+                    const stockData = JSON.parse(proxyData.contents);
+                    if (stockData && stockData.closePrice) {
+                        livePortfolioPrices[item.ticker] = stockData.closePrice;
+                    }
+                });
+                await Promise.all(promises);
+            } catch(e) {
+                console.warn("Portfolio real-time fetch error", e);
+            }
+
+            renderPortfolioTable();
+            btn.textContent = "실시간가 🔄";
+            btn.disabled = false;
+        }
+
+        // ==============================================================
+        // 포트폴리오 관리 로직
         // ==============================================================
         function showPortSuggestions() {
             const inputEl = document.getElementById('portSearchInput');
@@ -631,7 +719,6 @@
                 return;
             }
 
-            // 중복 체크
             const existingIndex = userPortfolio.findIndex(p => p.ticker === ticker);
             if (existingIndex >= 0) {
                 if (confirm(`[${corpName}] 종목이 이미 등록되어 있습니다. 새 데이터로 수정하시겠습니까?`)) {
@@ -644,7 +731,6 @@
             savePortfolioToLocal();
             renderPortfolioTable();
 
-            // 폼 초기화
             document.getElementById('portSearchInput').value = '';
             document.getElementById('portAvgPriceInput').value = '';
             document.getElementById('portInvestAmountInput').value = '';
@@ -672,12 +758,16 @@
             let html = '';
             userPortfolio.forEach(item => {
                 let currentPrice = 0;
-                if (globalQuantData && globalQuantData[item.ticker]) {
-                    const priceStr = String(globalQuantData[item.ticker].price).replace(/,/g, '');
-                    currentPrice = parseInt(priceStr) || 0;
-                }
+                let priceStr = "";
 
-                // 주식 수 계산
+                if (livePortfolioPrices[item.ticker]) {
+                    priceStr = livePortfolioPrices[item.ticker];
+                } else if (globalQuantData && globalQuantData[item.ticker]) {
+                    priceStr = String(globalQuantData[item.ticker].price);
+                }
+                
+                currentPrice = parseInt(priceStr.replace(/,/g, '')) || 0;
+
                 const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0;
                 const evalValue = currentPrice > 0 ? Math.floor(shares * currentPrice) : item.investAmount;
                 const profitRate = currentPrice > 0 ? (((currentPrice - item.avgPrice) / item.avgPrice) * 100) : 0;
@@ -712,9 +802,10 @@
             userPortfolio.forEach(item => {
                 totalInvest += item.investAmount;
                 let currentPrice = 0;
-                if (globalQuantData && globalQuantData[item.ticker]) {
-                    const priceStr = String(globalQuantData[item.ticker].price).replace(/,/g, '');
-                    currentPrice = parseInt(priceStr) || 0;
+                if (livePortfolioPrices[item.ticker]) {
+                    currentPrice = parseInt(livePortfolioPrices[item.ticker].replace(/,/g, '')) || 0;
+                } else if (globalQuantData && globalQuantData[item.ticker]) {
+                    currentPrice = parseInt(String(globalQuantData[item.ticker].price).replace(/,/g, '')) || 0;
                 }
                 const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0;
                 const evalVal = currentPrice > 0 ? (shares * currentPrice) : item.investAmount;
@@ -743,9 +834,6 @@
             document.getElementById('portTotalAssets').textContent = Math.floor(totalAssets).toLocaleString() + '원';
         }
 
-        // ==============================================================
-        // 🤖 다종목 포트폴리오 & 대기자금 AI 통합 분석 엔진
-        // ==============================================================
         async function runPortfolioAiAnalysis() {
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
@@ -762,26 +850,34 @@
             const resultText = document.getElementById('portfolioAiResultText');
 
             resultBox.classList.remove('hidden');
-            resultBox.open = true; // 세부 내용 펼치기
+            resultBox.open = true; 
             resultText.innerHTML = `<span class="text-purple-600 font-bold animate-pulse">보유 중인 ${userPortfolio.length}개 종목과 대기자금(${standbyCash.toLocaleString()}원)을 종합 모델링하여 최적의 자금 배분 및 리밸런싱 전략을 도출 중입니다...</span>`;
 
-            // 각 보유 종목의 퀀트 데이터 종합
             let portfolioSummaryString = '';
             userPortfolio.forEach((p, idx) => {
-                let currentPrice = '데이터 없음';
+                let currentPriceStr = '데이터 없음';
                 let per = '-', pbr = '-', targetP = '-';
+                
+                if (livePortfolioPrices[p.ticker]) {
+                    currentPriceStr = livePortfolioPrices[p.ticker];
+                } else if (globalQuantData && globalQuantData[p.ticker]) {
+                    currentPriceStr = globalQuantData[p.ticker].price;
+                }
+
                 if (globalQuantData && globalQuantData[p.ticker]) {
                     const q = globalQuantData[p.ticker];
-                    currentPrice = `${q.price}원`;
-                    per = q.per;
-                    pbr = q.pbr;
-                    targetP = q.targetPrice;
+                    per = q.per; pbr = q.pbr; targetP = q.targetPrice;
                 }
-                const diffRate = (currentPrice !== '데이터 없음') ? (((parseInt(currentPrice.replace(/,/g,'')) - p.avgPrice) / p.avgPrice) * 100).toFixed(2) + '%' : '계산불가';
+                
+                let diffRate = '계산불가';
+                if (currentPriceStr !== '데이터 없음') {
+                    const curPNum = parseInt(currentPriceStr.replace(/,/g,''));
+                    diffRate = (((curPNum - p.avgPrice) / p.avgPrice) * 100).toFixed(2) + '%';
+                }
                 
                 portfolioSummaryString += `[종목${idx+1}: ${p.corpName}(${p.ticker})]
 - 내 평단가: ${p.avgPrice.toLocaleString()}원 | 매수금액: ${p.investAmount.toLocaleString()}원
-- 현재가: ${currentPrice} (손익률: ${diffRate}) | 증권사목표가: ${targetP}원 | PER: ${per} | PBR: ${pbr}
+- 현재가: ${currentPriceStr}원 (손익률: ${diffRate}) | 증권사목표가: ${targetP}원 | PER: ${per} | PBR: ${pbr}
 \n`;
             });
 
@@ -835,7 +931,7 @@ ${portfolioSummaryString}
         }
 
         // ==============================================================
-        // 개별 종목 분석 기존 로직 유지
+        // 개별 종목 분석 기본 로직
         // ==============================================================
         function generateQuickButtons(targetId, companyData, btnClass) {
             const container = document.getElementById(targetId);
@@ -895,6 +991,28 @@ ${portfolioSummaryString}
             calculateInvestment(); 
         }
 
+        function updateTopDashboardUI(data) {
+            const priceEl = document.getElementById('naverPrice');
+            const changeEl = document.getElementById('naverChange');
+            
+            priceEl.textContent = data.price !== "N/A" ? `${data.price}원` : "N/A";
+            changeEl.textContent = data.changeRate;
+            
+            const isUp = data.direction === "UP";
+            const isDown = data.direction === "DOWN";
+            const colorCls = isUp ? "text-red-600" : (isDown ? "text-blue-600" : "text-slate-800");
+            
+            priceEl.className = `text-2xl font-extrabold ${colorCls}`;
+            changeEl.className = `text-2xl font-extrabold ${colorCls}`;
+            
+            document.getElementById('naverMarketCap').textContent = data.marketCap;
+            document.getElementById('naverForeign').textContent = data.foreignRate;
+            document.getElementById('fnPer').textContent = data.per !== "-" ? `${data.per}배` : "N/A";
+            document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
+            document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
+            document.getElementById('fnDiv').textContent = data.dividend !== "-" ? data.dividend : "N/A";
+        }
+
         async function fetchDashboardData() {
             const inputEl = document.getElementById('tickerInput');
             const mode = document.getElementById('analysisModeSelect').value;
@@ -946,19 +1064,33 @@ ${portfolioSummaryString}
             document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
             document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
-            const priceEl = document.getElementById('naverPrice');
-            const changeEl = document.getElementById('naverChange');
-            priceEl.textContent = data.price !== "N/A" ? `${data.price}원` : "N/A";
-            changeEl.textContent = data.changeRate;
-            priceEl.className = `text-2xl font-extrabold ${data.direction === "UP" ? "text-red-600" : (data.direction === "DOWN" ? "text-blue-600" : "text-slate-800")}`;
-            changeEl.className = `text-2xl font-extrabold ${data.direction === "UP" ? "text-red-600" : (data.direction === "DOWN" ? "text-blue-600" : "text-slate-800")}`;
-            
-            document.getElementById('naverMarketCap').textContent = data.marketCap;
-            document.getElementById('naverForeign').textContent = data.foreignRate;
-            document.getElementById('fnPer').textContent = data.per !== "-" ? `${data.per}배` : "N/A";
-            document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
-            document.getElementById('fnPbr').textContent = data.pbr !== "-" ? `${data.pbr}배` : "N/A";
-            document.getElementById('fnDiv').textContent = data.dividend !== "-" ? data.dividend : "N/A";
+            lastFetchedData = { 
+                corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, 
+                changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, 
+                per: data.per, pbr: data.pbr, dividend: data.dividend, direction: data.direction
+            };
+
+            try {
+                const url = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const res = await fetch(proxyUrl);
+                const proxyData = await res.json();
+                const stockData = JSON.parse(proxyData.contents);
+                
+                if (stockData && stockData.closePrice) {
+                    lastFetchedData.price = stockData.closePrice;
+                    lastFetchedData.changeRate = stockData.fluctuationsRatio + '%';
+                    lastFetchedData.marketCap = formatMarketCap(stockData.marketValue);
+                    lastFetchedData.foreignRate = stockData.foreignRatio + '%';
+                    lastFetchedData.direction = parseFloat(stockData.fluctuationsRatio) > 0 ? 'UP' : (parseFloat(stockData.fluctuationsRatio) < 0 ? 'DOWN' : 'FLAT');
+                    
+                    livePortfolioPrices[ticker] = stockData.closePrice;
+                }
+            } catch (e) {
+                console.warn("Real-time fetch skipped, using local data.");
+            }
+
+            updateTopDashboardUI(lastFetchedData);
 
             let theadHtml = `<tr><th class="table-cell table-header">재무 항목</th>`;
             data.finance.years.forEach(y => {
@@ -991,12 +1123,6 @@ ${portfolioSummaryString}
             
             renderChart(data.finance.years, data.finance.ops);
             document.getElementById('statusBox').classList.add('hidden');
-
-            lastFetchedData = { 
-                corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, 
-                changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, 
-                per: data.per, pbr: data.pbr, dividend: data.dividend
-            };
             
             await runGeminiAnalysisOnly(mode);
         }
