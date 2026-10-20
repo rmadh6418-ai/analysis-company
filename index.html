@@ -490,25 +490,31 @@
         function checkPassword() {
             const pin = document.getElementById('lockPin').value.trim();
             const errorMsg = document.getElementById('lockError');
+ 
+            const secretHash = [73, 64, 89, 91, 70, 75, 68, 89, 27, 11, 106];
+            const xorKey = 42;
 
-            const secureToken = "YTIwanBjUTBsYW5zMUFBPQ==";
+            let isValid = (pin.length === secretHash.length);
 
-            try {
-                // 입력값을 동일한 방식으로 2중 인코딩하여 비교
-                if (btoa(btoa(pin)) === secureToken) {
-                    sessionStorage.setItem('aiQuantUnlocked', 'true');
-                    document.getElementById('lockScreen').style.display = 'none';
-                    document.getElementById('mainContent').classList.remove('hidden');
-                    errorMsg.classList.add('hidden');
-                    return;
-                }
-            } catch (e) {}
+         if (isValid) {
+             for (let i = 0; i < pin.length; i++) {
+                 if ((pin.charCodeAt(i) ^ xorKey) !== secretHash[i]) {
+                     isValid = false;
+                     break;
+                 }
+             }
+         }
 
-            // 실패 시
-            errorMsg.classList.remove('hidden');
-            document.getElementById('lockPin').value = '';
-            document.getElementById('lockPin').focus();
-        }
+         if (isValid) { 
+             sessionStorage.setItem('aiQuantUnlocked', 'true');
+             document.getElementById('lockScreen').style.display = 'none';
+             document.getElementById('mainContent').classList.remove('hidden');
+         } else {
+             errorMsg.classList.remove('hidden');
+             document.getElementById('lockPin').value = '';
+             document.getElementById('lockPin').focus();
+         }
+     }
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxaxvLXEw7HTVEXDig_zWA5UhXU7s5fTxtvVrjlZLiUGd5yX-GwycVpxPLaRBHtS5v9/exec";
 
