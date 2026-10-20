@@ -1043,9 +1043,18 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '65%', 
+                    cutout: '60%', // 도넛 두께 약간 조절
                     plugins: {
-                        legend: { display: false }, 
+                        // 👇 범례 표시 설정 활성화 및 우측 배치
+                        legend: { 
+                            display: true, 
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 11, family: "'Pretendard', 'Noto Sans KR', sans-serif" },
+                                color: '#475569'
+                            }
+                        }, 
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -1053,7 +1062,7 @@
                                     let value = context.raw || 0;
                                     let total = context.chart._metasets[context.datasetIndex].total;
                                     let percentage = ((value / total) * 100).toFixed(1) + '%';
-                                    return ` ${label}: ${percentage}`;
+                                    return ` ${label}: ${value.toLocaleString()}원 (${percentage})`;
                                 }
                             }
                         }
