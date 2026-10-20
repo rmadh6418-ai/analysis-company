@@ -78,7 +78,7 @@
                     </h2>
                     <p class="text-xs text-slate-500 mt-1">보유 종목들을 등록하고 투입 대기자금을 넣으면, AI가 대기자금을 어떻게 배분할지 최적의 대응 시나리오를 산출합니다.</p>
                 </div>
-                <!-- 투입 대기 자금 인풋 (변경: onchange 추가) -->
+                <!-- 투입 대기 자금 인풋 -->
                 <div class="flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-200">
                     <span class="text-xs font-bold text-blue-900 shrink-0">💰 총 투입 대기자금:</span>
                     <input type="number" id="portfolioStandbyCash" onchange="saveStandbyCashToCloud()" oninput="updatePortfolioSummary()" placeholder="예: 5000000" class="border border-blue-300 px-3 py-1 rounded text-sm font-extrabold text-blue-900 bg-white w-36 md:w-44 text-right focus:outline-none">
@@ -108,38 +108,50 @@
                             <th class="p-2 border text-right">수익률</th>
                             <th class="p-2 border text-right">총 매수금액</th>
                             <th class="p-2 border text-right">평가금액</th>
+                            <th class="p-2 border text-right bg-indigo-50 text-indigo-800">비중</th>
                             <th class="p-2 border text-center">관리</th>
                         </tr>
                     </thead>
                     <tbody id="portfolioTableBody">
                         <tr>
-                            <td colspan="7" class="text-center p-4 text-xs text-slate-400">등록된 보유 종목이 없습니다. 위에서 종목을 추가해주세요.</td>
+                            <td colspan="8" class="text-center p-4 text-xs text-slate-400">등록된 보유 종목이 없습니다. 위에서 종목을 추가해주세요.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- 포트폴리오 합계 요약 바 -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-900 text-white p-3 rounded-lg text-center text-xs">
-                <div>
-                    <span class="text-slate-400 block mb-0.5">총 매수원금</span>
-                    <span id="portTotalInvest" class="font-bold text-sm">0원</span>
+            <!-- 포트폴리오 합계 요약 바 & 비중 차트 -->
+            <div class="flex flex-col lg:flex-row gap-4 mt-2">
+                <!-- 좌측: 기존 합계 요약 바 -->
+                <div class="flex-1 grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-900 text-white p-4 rounded-xl text-center text-xs content-center">
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">총 매수원금</span>
+                        <span id="portTotalInvest" class="font-bold text-sm">0원</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">총 평가금액</span>
+                        <span id="portTotalValue" class="font-bold text-sm">0원</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">총 평가손익</span>
+                        <span id="portTotalProfit" class="font-bold text-sm">0원</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block mb-0.5">통합 수익률</span>
+                        <span id="portTotalRate" class="font-bold text-sm">0.00%</span>
+                    </div>
+                    <div class="bg-slate-800 p-2 rounded-lg flex flex-col justify-center">
+                        <span class="text-blue-300 block mb-0.5 text-[11px]">총 운용자산 (투자+대기)</span>
+                        <span id="portTotalAssets" class="font-extrabold text-sm text-blue-200">0원</span>
+                    </div>
                 </div>
-                <div>
-                    <span class="text-slate-400 block mb-0.5">총 평가금액</span>
-                    <span id="portTotalValue" class="font-bold text-sm">0원</span>
-                </div>
-                <div>
-                    <span class="text-slate-400 block mb-0.5">총 평가손익</span>
-                    <span id="portTotalProfit" class="font-bold text-sm">0원</span>
-                </div>
-                <div>
-                    <span class="text-slate-400 block mb-0.5">통합 수익률</span>
-                    <span id="portTotalRate" class="font-bold text-sm">0.00%</span>
-                </div>
-                <div class="bg-slate-800 p-1 rounded">
-                    <span class="text-blue-300 block mb-0.5">총 운용자산 (투자+대기)</span>
-                    <span id="portTotalAssets" class="font-extrabold text-sm text-blue-200">0원</span>
+
+                <!-- 우측: 종목 비중 파이(도넛) 차트 -->
+                <div class="w-full lg:w-64 bg-white border border-slate-200 shadow-sm rounded-xl p-3 flex flex-col justify-center items-center">
+                    <h4 class="text-[11px] font-bold text-slate-500 mb-2">📊 포트폴리오 비중</h4>
+                    <div class="relative w-full h-24 flex justify-center">
+                        <canvas id="portfolioPieChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -603,6 +615,7 @@
         let userPortfolio = [];
         let selectedPortCode = '';
         let livePortfolioPrices = {};
+        let portfolioPieChart = null; // 포트폴리오 파이 차트 변수
 
         // 🚀 구글 클라우드 시트에서 데이터 불러오기
         async function loadFromGoogleCloud() {
@@ -883,12 +896,15 @@
         function renderPortfolioTable() {
             const tbody = document.getElementById('portfolioTableBody');
             if (userPortfolio.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-xs text-slate-400">등록된 보유 종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
+                // 열이 추가되었으므로 colspan="8"로 맞춰줍니다.
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-xs text-slate-400">등록된 보유 종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
                 updatePortfolioSummary();
+                renderPortfolioPieChart();
                 return;
             }
 
-            let html = '';
+            // 1. 전체 평가금액을 먼저 계산하고, 각 종목 객체에 최신 가격 및 평가금액을 임시 저장합니다.
+            let totalValue = 0;
             userPortfolio.forEach(item => {
                 let currentPrice = 0;
                 let priceStr = "";
@@ -903,8 +919,26 @@
 
                 const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0;
                 const evalValue = currentPrice > 0 ? Math.floor(shares * currentPrice) : item.investAmount;
+                
+                item._currentPrice = currentPrice;
+                item._evalValue = evalValue;
+                
+                totalValue += evalValue;
+            });
+
+            // 2. 평가금액(비중)을 기준으로 내림차순 정렬 (가장 큰 비중이 최상단으로 오도록)
+            userPortfolio.sort((a, b) => b._evalValue - a._evalValue);
+
+            // 3. 정렬된 데이터를 바탕으로 HTML 렌더링
+            let html = '';
+            userPortfolio.forEach(item => {
+                const currentPrice = item._currentPrice;
+                const evalValue = item._evalValue;
                 const profitRate = currentPrice > 0 ? (((currentPrice - item.avgPrice) / item.avgPrice) * 100) : 0;
                 const rateColor = profitRate > 0 ? 'text-red-600 font-bold' : (profitRate < 0 ? 'text-blue-600 font-bold' : 'text-slate-700');
+                
+                // 비중(%) 계산
+                const weightRate = totalValue > 0 ? ((evalValue / totalValue) * 100) : 0;
 
                 html += `<tr class="hover:bg-slate-50 transition border-b">
                     <td class="p-2 text-left font-bold text-slate-800">
@@ -918,15 +952,19 @@
                     <td class="p-2 text-right ${rateColor}">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
                     <td class="p-2 text-right font-medium">${item.investAmount.toLocaleString()}원</td>
                     <td class="p-2 text-right font-semibold text-slate-900">${evalValue.toLocaleString()}원</td>
+                    
+                    <td class="p-2 text-right font-extrabold text-indigo-600">${weightRate.toFixed(1)}%</td>
+                    
                     <td class="p-2 text-center whitespace-nowrap">
                         <button onclick="editPortfolioItem('${item.ticker}')" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition mr-1">수정</button>
-                        <button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-500 hover:text-white px-2 py-1 rounded transition">삭제</button>
+                        <button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button>
                     </td>
                 </tr>`;
             });
 
             tbody.innerHTML = html;
             updatePortfolioSummary();
+            renderPortfolioPieChart();
         }
 
         function updatePortfolioSummary() {
@@ -965,6 +1003,63 @@
             rateEl.className = `font-bold text-sm ${totalRate > 0 ? 'text-red-400' : (totalRate < 0 ? 'text-blue-400' : 'text-slate-300')}`;
 
             document.getElementById('portTotalAssets').textContent = Math.floor(totalAssets).toLocaleString() + '원';
+        }
+
+        function renderPortfolioPieChart() {
+            const ctx = document.getElementById('portfolioPieChart').getContext('2d');
+            
+            const labels = [];
+            const dataValues = [];
+            const bgColors = [
+                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+                '#14b8a6', '#f43f5e', '#84cc16', '#06b6d4', '#d946ef'
+            ];
+
+            userPortfolio.forEach(item => {
+                labels.push(item.corpName);
+                dataValues.push(item._evalValue || item.investAmount);
+            });
+
+            if (portfolioPieChart) {
+                portfolioPieChart.destroy();
+            }
+
+            if (userPortfolio.length === 0) {
+                return;
+            }
+
+            portfolioPieChart = new Chart(ctx, {
+                type: 'doughnut', 
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: bgColors.slice(0, dataValues.length),
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%', 
+                    plugins: {
+                        legend: { display: false }, 
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.raw || 0;
+                                    let total = context.chart._metasets[context.datasetIndex].total;
+                                    let percentage = ((value / total) * 100).toFixed(1) + '%';
+                                    return ` ${label}: ${percentage}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         async function runPortfolioAiAnalysis() {
