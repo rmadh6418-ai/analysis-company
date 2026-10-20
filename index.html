@@ -468,13 +468,20 @@
     </div>
 
     <script>
+        // ==============================================================
+        // 비밀번호 확인 함수 (저장소 예외처리 추가 완료)
+        // ==============================================================
         function checkPassword() {
             const pin = document.getElementById('lockPin').value;
             const errorMsg = document.getElementById('lockError');
-            const numPin = parseInt(pin, 10);
-            
-            if (!isNaN(numPin) && (numPin ^ 1024) === 5227) { 
-                sessionStorage.setItem('aiQuantUnlocked', 'true');
+
+            if (pin === '4203') { 
+                try {
+                    sessionStorage.setItem('aiQuantUnlocked', 'true');
+                } catch (e) {
+                    console.warn("세션 스토리지가 제한된 환경이지만 접속을 허용합니다.");
+                }
+                
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').classList.remove('hidden');
             } else {
@@ -484,6 +491,9 @@
             }
         }
 
+        // ==============================================================
+        // 종목 데이터 (100% 복구 완료)
+        // ==============================================================
         const KOSPI200_COMPANIES = {
             "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
             "이차전지·소재": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "삼성SDI": "006400", "포스코퓨처엠": "003670", "에코프로머티": "450080", "엘앤에프": "066970", "코스모신소재": "005070", "코스모화학": "005420", "솔루스첨단소재": "336370", "금양": "001570", "더블유씨피": "393890", "롯데에너지머티리얼즈": "020150", "SK아이이테크놀로지": "361610"},
@@ -526,25 +536,42 @@
         let lastFetchedData = null;
         let globalQuantData = null;
         let myChart = null;
+
         let aiParsedStrategy = {}; 
         let parsedAiTargetPrice = 0; 
-        let userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
-        let selectedPortCode = '';
         let livePortfolioPrices = {};
 
+        // ==============================================================
+        // 🚀 예외 처리 보강: 로컬 스토리지 안전 호출
+        // ==============================================================
+        let userPortfolio = [];
+        try {
+            userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
+        } catch (e) {
+            console.warn("로컬 스토리지를 사용할 수 없는 환경입니다. 휘발성 데이터로 대체합니다.");
+        }
+
+        let selectedPortCode = '';
+
         window.onload = async () => {
-            if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
-                document.getElementById('lockScreen').style.display = 'none';
-                document.getElementById('mainContent').classList.remove('hidden');
-            } else {
+            try {
+                if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('mainContent').classList.remove('hidden');
+                } else {
+                    document.getElementById('lockPin').focus();
+                }
+            } catch(e) {
                 document.getElementById('lockPin').focus();
             }
 
-            const savedKey = localStorage.getItem('geminiApiKey');
-            if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
+            try {
+                const savedKey = localStorage.getItem('geminiApiKey');
+                if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
 
-            const savedStandby = localStorage.getItem('portfolioStandbyCash');
-            if(savedStandby) document.getElementById('portfolioStandbyCash').value = savedStandby;
+                const savedStandby = localStorage.getItem('portfolioStandbyCash');
+                if(savedStandby) document.getElementById('portfolioStandbyCash').value = savedStandby;
+            } catch(e) {}
 
             generateQuickButtons('kospiQuickBtns', KOSPI200_COMPANIES, 'bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-800 border-blue-200');
             generateQuickButtons('kosdaqQuickBtns', KOSDAQ150_COMPANIES, 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border-emerald-200');
@@ -568,12 +595,20 @@
             renderPortfolioTable();
         };
 
-        // ==============================================================
-        // 🚀 실시간 주가 고속 조회 엔진 (초단위 체결가 + 캐시 강제 무효화)
-        // ==============================================================
+        function formatMarketCap(mvStr) {
+            if (!mvStr) return '-';
+            const num = parseInt(mvStr.replace(/,/g, ''));
+            if (isNaN(num)) return mvStr + '억원';
+            if (num >= 10000) {
+                const jo = Math.floor(num / 10000);
+                const eok = num % 10000;
+                return eok > 0 ? `${jo.toLocaleString()}조 ${eok.toLocaleString()}억원` : `${jo.toLocaleString()}조원`;
+            }
+            return `${num.toLocaleString()}억원`;
+        }
+
         async function fetchRealtimeStock(ticker) {
             const timestamp = Date.now();
-            // 네이버 실시간 체결 폴링 엔드포인트
             const targetUrl = `https://polling.finance.naver.com/api/realtime/domestic/stock/${ticker}?_t=${timestamp}`;
             const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&_nocache=${timestamp}`;
             
@@ -646,23 +681,16 @@
                     try {
                         const data = await fetchRealtimeStock(item.ticker);
                         livePortfolioPrices[item.ticker] = data.price;
-                    } catch(err) {
-                        console.warn(`[${item.corpName}] 주가 조회 실패:`, err);
-                    }
+                    } catch(err) {}
                 });
                 await Promise.all(promises);
-            } catch(e) {
-                console.warn("Portfolio fetch error", e);
-            }
+            } catch(e) {}
 
             renderPortfolioTable();
             btn.textContent = "실시간가 🔄";
             btn.disabled = false;
         }
 
-        // ==============================================================
-        // 포트폴리오 관리 로직
-        // ==============================================================
         function showPortSuggestions() {
             const inputEl = document.getElementById('portSearchInput');
             selectedPortCode = '';
@@ -742,7 +770,7 @@
         }
 
         function savePortfolioToLocal() {
-            localStorage.setItem('userPortfolioList', JSON.stringify(userPortfolio));
+            try { localStorage.setItem('userPortfolioList', JSON.stringify(userPortfolio)); } catch(e) {}
         }
 
         function renderPortfolioTable() {
@@ -812,7 +840,7 @@
 
             const standbyInput = document.getElementById('portfolioStandbyCash').value;
             const standbyCash = parseInt(standbyInput) || 0;
-            localStorage.setItem('portfolioStandbyCash', standbyCash);
+            try { localStorage.setItem('portfolioStandbyCash', standbyCash); } catch(e) {}
 
             const totalProfit = totalValue - totalInvest;
             const totalRate = totalInvest > 0 ? ((totalProfit / totalInvest) * 100) : 0;
@@ -833,7 +861,10 @@
         }
 
         async function runPortfolioAiAnalysis() {
-            const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
+            let apiKey = document.getElementById('apiKeyInput').value.trim();
+            if(!apiKey) {
+                try { apiKey = localStorage.getItem('geminiApiKey'); } catch(e) {}
+            }
             if (!apiKey) {
                 alert('우측 상단에 Gemini API Key를 먼저 입력하고 [키 저장]을 눌러주세요.');
                 return;
@@ -973,7 +1004,7 @@ ${portfolioSummaryString}
         function saveApiKey() {
             const key = document.getElementById('apiKeyInput').value.trim();
             if(!key) { alert('API Key를 입력해주세요.'); return; }
-            localStorage.setItem('geminiApiKey', key);
+            try { localStorage.setItem('geminiApiKey', key); } catch(e) { alert('브라우저 설정상 저장이 불가능합니다.'); return;}
             alert('Gemini API Key가 안전하게 저장되었습니다.');
         }
 
@@ -1068,16 +1099,13 @@ ${portfolioSummaryString}
                 per: data.per, pbr: data.pbr, dividend: data.dividend, direction: data.direction
             };
 
-            // 실시간 주가 1차 수신 시도
             try {
                 const live = await fetchRealtimeStock(ticker);
                 lastFetchedData.price = live.price;
                 lastFetchedData.changeRate = live.changeRate;
                 lastFetchedData.direction = live.direction;
                 livePortfolioPrices[ticker] = live.price;
-            } catch (e) {
-                console.warn("실시간 폴링 생략, 로컬 데이터 사용");
-            }
+            } catch (e) {}
 
             updateTopDashboardUI(lastFetchedData);
 
@@ -1142,7 +1170,10 @@ ${portfolioSummaryString}
         }
 
         async function runGeminiAnalysisOnly(mode) {
-            const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
+            let apiKey = document.getElementById('apiKeyInput').value.trim();
+            if(!apiKey) {
+                try { apiKey = localStorage.getItem('geminiApiKey'); } catch(e) {}
+            }
             if (!apiKey) {
                 document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 심층 분석 리포트가 출력됩니다.</div>`;
                 return;
@@ -1387,4 +1418,93 @@ SELL_LOSS_3: [금액]원 / [비중]%
             } else {
                 const avgPrice = parseInt(document.getElementById('myAvgPriceInput').value);
                 const currentInvest = parseInt(document.getElementById('currentInvestInput').value);
-                const standby
+                const standbyCash = parseInt(document.getElementById('standbyCashInput').value) || 0; 
+
+                if (isNaN(avgPrice) || isNaN(currentInvest) || avgPrice <= 0 || currentInvest <= 0) { 
+                    returnBox.classList.add('hidden'); return; 
+                }
+
+                const currentShares = currentInvest / avgPrice;
+                
+                let addedShares = 0;
+                let actualStandbyUsed = 0;
+
+                ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3'].forEach(id => {
+                    const data = aiParsedStrategy[id];
+                    const calcDiv = document.getElementById('calc_' + id);
+                    if (data && data.price > 0 && calcDiv && standbyCash > 0) {
+                        const allocatedMoney = standbyCash * (data.weight / 100);
+                        const shares = Math.floor(allocatedMoney / data.price);
+                        addedShares += shares;
+                        actualStandbyUsed += shares * data.price;
+                        if(shares > 0) {
+                            calcDiv.innerHTML = `+${shares.toLocaleString()}주 <span class="font-normal text-slate-500">(${(shares*data.price).toLocaleString()}원)</span>`;
+                            calcDiv.classList.remove('hidden');
+                        }
+                    }
+                });
+
+                const newTotalShares = currentShares + addedShares;
+                const newTotalInvest = currentInvest + actualStandbyUsed;
+                const newAvgPrice = newTotalShares > 0 ? (newTotalInvest / newTotalShares) : 0;
+
+                document.getElementById('simModeBadge').textContent = "기존보유/물타기 시나리오";
+                simCurrentView.classList.add('hidden');
+                simAverageView.classList.remove('hidden');
+
+                document.getElementById('simOldAvgPrice').textContent = avgPrice.toLocaleString() + '원';
+                document.getElementById('simInvestedStandby').textContent = standbyCash > 0 ? `+${actualStandbyUsed.toLocaleString()}원` : '0원 (대기금 없음)';
+                document.getElementById('simNewAvgPrice').textContent = Math.floor(newAvgPrice).toLocaleString() + '원';
+                document.getElementById('simTotalSharesAvg').textContent = Math.floor(newTotalShares).toLocaleString() + '주';
+
+                runSellSimulation(newTotalShares, newTotalInvest);
+                returnBox.classList.remove('hidden');
+            }
+        }
+
+        function runSellSimulation(totalShares, totalInvest) {
+            let profitRevenue = 0;
+            let profitCount = 0;
+            ['aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3'].forEach(id => {
+                const data = aiParsedStrategy[id];
+                if (data && data.price > 0) {
+                    profitRevenue += (totalShares * (data.weight / 100)) * data.price;
+                    profitCount++;
+                }
+            });
+
+            if (profitCount > 0 && totalInvest > 0) {
+                const netProfit = profitRevenue - totalInvest;
+                const profitRate = (netProfit / totalInvest) * 100;
+                
+                document.getElementById('simProfitRate').textContent = `+${profitRate.toFixed(2)}%`;
+                document.getElementById('simProfitMoney').textContent = `+${Math.floor(netProfit).toLocaleString()}원 예상`;
+            } else {
+                document.getElementById('simProfitRate').textContent = "-";
+                document.getElementById('simProfitMoney').textContent = "타점 데이터 부족";
+            }
+
+            let lossRevenue = 0;
+            let lossCount = 0;
+            ['aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'].forEach(id => {
+                const data = aiParsedStrategy[id];
+                if (data && data.price > 0) {
+                    lossRevenue += (totalShares * (data.weight / 100)) * data.price;
+                    lossCount++;
+                }
+            });
+
+            if (lossCount > 0 && totalInvest > 0) {
+                const netLoss = lossRevenue - totalInvest; 
+                const lossRate = (netLoss / totalInvest) * 100;
+                
+                document.getElementById('simLossRate').textContent = `${lossRate.toFixed(2)}%`;
+                document.getElementById('simLossMoney').textContent = `${Math.floor(netLoss).toLocaleString()}원 손실`;
+            } else {
+                document.getElementById('simLossRate').textContent = "-";
+                document.getElementById('simLossMoney').textContent = "타점 데이터 부족";
+            }
+        }
+    </script>
+</body>
+</html>
