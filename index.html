@@ -491,23 +491,20 @@
             const pin = document.getElementById('lockPin').value;
             const errorMsg = document.getElementById('lockError');
 
-           // 'cjsqlans1!@'의 각 문자를 아스키코드로 변환 후 42와 비트 XOR(^) 연산한 결과값 배열
-           // c(73), j(64), s(89), q(83), l(70), a(123), n(68), s(89), 1(27), !(11), @(106)
-           const secretHash = [73, 64, 89, 83, 70, 123, 68, 89, 27, 11, 106];
-    
-           // 입력된 비밀번호 길이와 해시 배열 길이가 같은지 1차 확인
-           let isValid = (pin.length === secretHash.length);
+            const secretHash = [73, 64, 89, 83, 70, 123, 68, 89, 27, 11, 22];
+            const xorKey = 42; 
 
-           // 2차 비트 연산 검증 (입력된 각 문자를 42와 XOR 연산하여 비교)
-           if (isValid) {
-               for (let i = 0; i < pin.length; i++) {
-                   if ((pin.charCodeAt(i) ^ 42) !== secretHash[i]) {
-                       isValid = false;
-                       break;
-                   }
-               }
-           }
+            let isValid = (pin.length === secretHash.length);
 
+            if (isValid) {
+                for (let i = 0; i < pin.length; i++) {
+                    if ((pin.charCodeAt(i) ^ xorKey) !== secretHash[i]) {
+                        isValid = false;
+                        break;
+                    }
+                }    
+            }
+                
            if (isValid) { 
                sessionStorage.setItem('aiQuantUnlocked', 'true');
                document.getElementById('lockScreen').style.display = 'none';
