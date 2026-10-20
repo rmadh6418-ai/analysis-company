@@ -487,25 +487,19 @@
     </div>
 
     <script>
-        async function checkPassword() {
-    
+        function checkPassword() {
             const pin = document.getElementById('lockPin').value.trim();
             const errorMsg = document.getElementById('lockError');
 
-            const targetHash = "a3f5a09c2e50d603a11b150937a0989f6d194cf288d61f185db219662e080479";
+            const secureToken = "YTIwanBjUTBsYW5zMUFBPQ==";
 
             try {
-                // 입력받은 비밀번호를 SHA-256으로 해시 변환
-                const msgBuffer = new TextEncoder().encode(pin);
-                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-                // 저장된 해시값과 비교
-                if (hashHex === targetHash) {
+                // 입력값을 동일한 방식으로 2중 인코딩하여 비교
+                if (btoa(btoa(pin)) === secureToken) {
                     sessionStorage.setItem('aiQuantUnlocked', 'true');
                     document.getElementById('lockScreen').style.display = 'none';
                     document.getElementById('mainContent').classList.remove('hidden');
+                    errorMsg.classList.add('hidden');
                     return;
                 }
             } catch (e) {}
