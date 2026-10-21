@@ -41,7 +41,7 @@ for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companie
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
 def fetch_stock_data(name, ticker):
-    # 🌟 [추가] "tech" 딕셔너리를 신설하여 기술적 지표 저장 공간 확보
+    # 기술적 지표 저장 공간 확보
     stock_info = {
         "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "dividend": "-",
@@ -51,7 +51,13 @@ def fetch_stock_data(name, ticker):
     }
     
     session = requests.Session()
-    session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+    # 🌟 [우회 로직 추가] GitHub Actions IP 차단(403)을 방지하기 위한 강력한 브라우저 위장 헤더
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Referer": "https://m.stock.naver.com/",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
+    })
     
     # 1. API 데이터 요청 (에러 방어)
     try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
@@ -72,7 +78,7 @@ def fetch_stock_data(name, ticker):
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
     except: pass
 
-    # 3. 🌟 [핵심 추가 로직] 일봉 차트 데이터 수집 및 기술적 지표(이평선, RSI, MACD) 자체 계산
+    # 3. [기존 방식 유지] 일봉 차트 데이터 수집 및 기술적 지표(이평선, RSI, MACD) 연산
     try:
         chart_res = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/chart/day?pageSize=150&page=1", timeout=5).json()
         if chart_res and isinstance(chart_res, list):
