@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- PWA 및 모바일 설정 -->
+    <!-- PWA 및 모바일 태블릿 앱 설정 -->
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,6 +18,8 @@
     <title>AI 주식 퀀트 & 다종목 포트폴리오 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 트레이딩뷰 차트 라이브러리 추가 -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     
     <style>
         .table-cell { padding: 0.75rem 0.5rem; border: 1px solid #e5e7eb; text-align: center; white-space: nowrap; }
@@ -266,13 +268,13 @@
                 </div>
             </div>
 
-            <!-- 🌟 절대 막히지 않는 네이버 캔들 차트 (트레이딩뷰 대체) -->
+            <!-- 🌟 실시간 트레이딩뷰 캔들 차트 (애플 폴백 버그 완벽 해결) -->
             <div>
                 <div class="flex justify-between items-center mb-3 mt-2">
-                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-600 pl-3">📈 실시간 캔들 차트 (이평선 포함)</h2>
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-600 pl-3">📈 실시간 캔들 차트 (이평선·RSI·MACD 적용)</h2>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex justify-center items-center overflow-hidden">
-                    <img id="stockCandleChart" src="" alt="차트를 불러오는 중..." class="max-w-full h-auto object-contain rounded">
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 h-[500px]" id="tv_container">
+                    <div id="tradingview_chart" style="height: 100%; width: 100%;"></div>
                 </div>
             </div>
 
@@ -281,8 +283,7 @@
                 <div class="flex justify-between items-center mb-1 mt-2">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🔮 AI 5일 주가 예측 및 매수 지지선</h2>
                 </div>
-                
-                <!-- grid와 items-stretch로 좌우 박스 높이 강제 100% 동기화 -->
+                <!-- items-stretch를 적용하여 좌우 박스의 높이를 완벽히 일치시킴 -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch lg:h-[350px]">
                     <!-- Left: Smooth Line Chart -->
                     <div class="lg:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-purple-200 flex flex-col relative h-full min-h-[300px] lg:min-h-0">
@@ -1023,11 +1024,44 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-        // 🌟 네이버 이미지 차트 로드 (트레이딩뷰 완벽 대체)
-        function loadNaverChart(ticker) {
-            const chartImg = document.getElementById('stockCandleChart');
-            // 네이버 금융에서 캔들, 이동평균선, 거래량이 모두 표시되는 고해상도 이미지 차트 다이렉트 연동
-            chartImg.src = `https://ssl.pstatic.net/imgfinance/chart/item/candle/day/${ticker}.png?sidcode=${new Date().getTime()}`;
+        // 🌟 트레이딩뷰 차트 완벽 로드 함수 (코스피/코스닥 자동 식별)
+        function loadTradingView(ticker) {
+            const container = document.getElementById('tv_container');
+            container.innerHTML = '<div id="tradingview_chart" style="height: 100%; width: 100%;"></div>';
+            
+            // 코스닥 종목인지 확인하여 정확한 거래소 태그 적용
+            let prefix = "KRX:";
+            for (const sector in KOSDAQ150_COMPANIES) {
+                for (const name in KOSDAQ150_COMPANIES[sector]) {
+                    if (KOSDAQ150_COMPANIES[sector][name] === ticker) {
+                        prefix = "KOSDAQ:";
+                        break;
+                    }
+                }
+            }
+            
+            const symbol = prefix + ticker.trim();
+
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": symbol,
+                "interval": "D",
+                "timezone": "Asia/Seoul",
+                "theme": "light",
+                "style": "1", // 1 = 캔들차트
+                "locale": "kr",
+                "enable_publishing": false,
+                "backgroundColor": "#ffffff",
+                "hide_top_toolbar": false,
+                "hide_legend": false,
+                "save_image": false,
+                "container_id": "tradingview_chart",
+                "studies": [
+                    "MASimple@tv-basicstudies", // 이동평균선
+                    "MACD@tv-basicstudies",     // MACD
+                    "RSI@tv-basicstudies"       // RSI
+                ]
+            });
         }
 
         async function fetchDashboardData() {
@@ -1052,15 +1086,14 @@
 
             const data = globalQuantData[ticker];
             
-            // UI 초기화 및 화면 노출 처리
             document.getElementById('statusBox').classList.remove('hidden');
             document.getElementById('dashboardArea').classList.remove('hidden');
             document.getElementById('expectedReturnBox').classList.add('hidden'); 
             document.getElementById('aiPredictionSection').classList.add('hidden'); // 분석 전엔 예측차트 숨김
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 맞춤 심층 분석 및 타점을 생성 중입니다...</span>";
             
-            // 🌟 네이버 이미지 차트 즉시 로드
-            loadNaverChart(ticker);
+            // 🌟 DOM 렌더링 후 타이밍을 살짝 늦춰서 트레이딩뷰 차트 호출 (차트 폴백 오류 방지)
+            setTimeout(() => { loadTradingView(ticker); }, 100);
 
             // 🌟 UI용 기술적 지표 현황판 값 채우기
             const tech = data.tech || { ma5: '-', ma20: '-', ma33: '-', ma60: '-', ma120: '-', rsi: '-', macd: '-' };
@@ -1251,7 +1284,7 @@ ${portfolioSummaryString}
 ### 4. 🎯 최종 행동 요약 (Action Plan)`;
 
             try {
-                // 🌟 속도 최적화: 유저 지침에 따라 3.5-flash-lite 모델 강제 고정
+                // 🌟 속도/용량 최적화: 유저 지침에 따라 3.5-flash-lite 모델 강제 고정
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
@@ -1342,7 +1375,7 @@ PRED_D5: [예상종가]원
 위 내용 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가 등을 명시하여 반영)
 2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
-3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정하세요. 매수 타점의 기술적 근거는 반드시 프롬프트 상단에 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 작성해야 하며, 제공되지 않은 차트 흐름을 지어내지 마세요.
+3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정하세요. 매수 타점의 기술적 근거는 반드시 프롬프트 상단에 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 작성해야 단, 제공되지 않은 차트 흐름을 지어내지 마세요.
 4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차 설정 근거를 구체적으로 제시하세요. 매도 타점 역시 제공된 기술적 지표 데이터 저항선 이탈 여부를 기반으로 작성하세요.
 5. 향후 5일 예상 주가: 제공된 기술적 지표와 모멘텀을 바탕으로 향후 5거래일(D+1~D+5)의 주가 흐름을 시뮬레이션하고 예측 근거를 객관적으로 평가하세요.
 6. 배당 투자 매력도 및 종합 총평`;
@@ -1400,7 +1433,7 @@ PRED_D5: [예상종가]원
                     }
                 }
 
-                // 🌟 향후 5일 예측값 추출
+                // 🌟 향후 5일 예측 [단일 종가] 추출 로직
                 let preds = [];
                 const curPriceNum = parseInt(String(ld.price).replace(/,/g, '')) || 0;
                 
@@ -1418,7 +1451,7 @@ PRED_D5: [예상종가]원
                 document.getElementById('aiResult').innerHTML = aiText.replace(/### (.*?)\n/g, '<h3 class="text-lg font-extrabold text-slate-800 mt-4 mb-2">$1</h3>').replace(/## (.*?)\n/g, '<h2 class="text-xl font-extrabold text-slate-900 mt-5 mb-2 border-b pb-1">$1</h2>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-yellow-100/60 px-1 rounded">$1</strong>').replace(/\n/g, '<br>');
                 calculateInvestment();
 
-                // 🌟 예측 차트 렌더링
+                // 🌟 5일 예측 차트 렌더링
                 const supportLines = [
                     aiParsedStrategy['aiBuyDown1']?.price || 0,
                     aiParsedStrategy['aiBuyDown2']?.price || 0,
