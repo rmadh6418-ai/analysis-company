@@ -18,8 +18,6 @@
     <title>AI 주식 퀀트 & 다종목 포트폴리오 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- 트레이딩뷰 차트 라이브러리 추가 -->
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     
     <style>
         .table-cell { padding: 0.75rem 0.5rem; border: 1px solid #e5e7eb; text-align: center; white-space: nowrap; }
@@ -1024,23 +1022,19 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-       // 🌟 트레이딩뷰 차트 (iframe 직접 삽입 방식 - 애플 튕김 현상 완벽 해결)
+       // 🌟 트레이딩뷰 대체: 네이버 공식 HTML5 인터랙티브(동적) 차트 완벽 적용
         function loadTradingView(ticker) {
             const container = document.getElementById('tv_container');
             const cleanTicker = ticker.trim();
-            const symbol = `KRX:${cleanTicker}`;
-
-            // tv.js 스크립트를 거치지 않고 직접 TradingView 서버의 차트를 iframe으로 강제 호출합니다.
-            const iframeUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(symbol)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22MACD%40tv-basicstudies%22%2C%22RSI%40tv-basicstudies%22%5D&theme=light&style=1&timezone=Asia%2FSeoul&withdateranges=1&showpopupbutton=1&locale=kr`;
+            
+            // 네이버 금융의 '동적 차트' 전용 페이지를 iframe으로 호출하여 트레이딩뷰와 동일한 경험 제공
+            const naverInteractiveUrl = `https://finance.naver.com/item/fchart.naver?code=${cleanTicker}`;
 
             container.innerHTML = `
-                <iframe 
-                    id="tradingview_chart" 
-                    src="${iframeUrl}" 
-                    style="width: 100%; height: 100%; border: none; border-radius: 0.5rem;" 
-                    allowtransparency="true" 
-                    scrolling="no" 
-                    frameborder="0">
+                <iframe src="${naverInteractiveUrl}" 
+                        style="width: 100%; height: 100%; border: none; border-radius: 0.5rem;" 
+                        scrolling="no"
+                        allowtransparency="true">
                 </iframe>
             `;
         }
