@@ -1022,20 +1022,43 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-       // 🌟 트레이딩뷰 대체: 네이버 공식 HTML5 인터랙티브(동적) 차트 완벽 적용
+       // 🌟 한국거래소(KRX) 보안 정책 우회용 하이브리드 차트 로더
         function loadTradingView(ticker) {
             const container = document.getElementById('tv_container');
             const cleanTicker = ticker.trim();
-            
-            // 네이버 금융의 '동적 차트' 전용 페이지를 iframe으로 호출하여 트레이딩뷰와 동일한 경험 제공
-            const naverInteractiveUrl = `https://finance.naver.com/item/fchart.naver?code=${cleanTicker}`;
+            const timestamp = new Date().getTime();
+
+            // 팝업용 링크 (새 창으로 열면 iframe 보안 차단을 우회하여 100% 정상 작동합니다)
+            const tvLink = `https://kr.tradingview.com/chart/?symbol=KRX%3A${cleanTicker}`;
+            const naverLink = `https://finance.naver.com/item/fchart.naver?code=${cleanTicker}`;
 
             container.innerHTML = `
-                <iframe src="${naverInteractiveUrl}" 
-                        style="width: 100%; height: 100%; border: none; border-radius: 0.5rem;" 
-                        scrolling="no"
-                        allowtransparency="true">
-                </iframe>
+                <div class="flex flex-col h-full w-full bg-white">
+                    <!-- 상단 컨트롤 패널 -->
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-3 px-1 gap-2 border-b border-slate-100 pb-3">
+                        <span class="text-[12px] font-bold text-slate-500 flex items-center gap-1">
+                            <span class="text-rose-500 text-base">※</span> KRX 보안 정책으로 정밀 지표 조작은 팝업을 이용하세요
+                        </span>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button onclick="window.open('${tvLink}', '_blank', 'width=1300,height=800,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes')" class="flex-1 md:flex-none text-xs font-extrabold bg-slate-800 text-white hover:bg-slate-700 px-4 py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1">
+                                📈 트레이딩뷰 (풀버전)
+                            </button>
+                            <button onclick="window.open('${naverLink}', '_blank', 'width=1100,height=750,menubar=no,toolbar=no,location=no,status=no')" class="flex-1 md:flex-none text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1">
+                                📊 네이버 동적차트
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 대시보드 내장용 퀵뷰 차트 (마우스 오버 시 일/주/월봉 전환 버튼 등장) -->
+                    <div class="flex-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden p-2 relative group">
+                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/80 p-1 rounded backdrop-blur-sm">
+                            <button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/day/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-blue-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">일봉</button>
+                            <button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/week/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-emerald-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">주봉</button>
+                            <button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/month/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-purple-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">월봉</button>
+                        </div>
+                        <img id="naver_img" src="https://ssl.pstatic.net/imgfinance/chart/item/candle/day/${cleanTicker}.png?sidcode=${timestamp}" alt="대시보드 요약 차트" class="w-full h-full object-contain mix-blend-multiply">
+                    </div>
+                </div>
             `;
         }
 
