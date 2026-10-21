@@ -755,7 +755,7 @@
             corpName = CODE_TO_NAME[ticker] || inputVal;
 
             if (!ticker || !/^\d{6}$/.test(ticker)) { alert('목록에서 유효한 종목명을 선택해주세요.'); return; }
-            if (isNaN(avgPrice) || avgPrice <= 0) { alert('올바 매수 평단가를 입력해주세요.'); return; }
+            if (isNaN(avgPrice) || avgPrice <= 0) { alert('올바른 매수 평단가를 입력해주세요.'); return; }
             if (isNaN(investAmount) || investAmount <= 0) { alert('올바른 총 매수금액을 입력해주세요.'); return; }
 
             const existingIndex = userPortfolio.findIndex(p => p.ticker === ticker);
@@ -1117,6 +1117,10 @@ ${portfolioSummaryString}
 
             const ld = lastFetchedData;
             
+            // 🌟 [추가됨] 파이썬이 생성한 기술적 지표(tech) 데이터 불러오기
+            const qData = globalQuantData[ld.ticker] || {};
+            const tech = qData.tech || { ma5: '-', ma20: '-', ma33: '-', ma60: '-', ma120: '-', rsi: '-', macd: '-' };
+            
             if (mode === 'current') {
                 document.getElementById('labelBuyDown1').textContent = "신규 하락매수 1차"; document.getElementById('labelBuyDown2').textContent = "신규 하락매수 2차"; document.getElementById('labelBuyDown3').textContent = "신규 하락매수 3차";
                 document.getElementById('labelBuyUp1').textContent = "신규 돌파매수 1차"; document.getElementById('labelBuyUp2').textContent = "신규 돌파매수 2차"; document.getElementById('labelBuyUp3').textContent = "신규 돌파매수 3차";
@@ -1138,31 +1142,19 @@ ${portfolioSummaryString}
                 actionPlanContext = `사용자는 이 종목에 신규로 ${inv}원을 투입하려고 합니다. 현재가 기준으로 이 금액을 한 번에 진입하는 것이 좋은지, 아니면 분할 매수나 관망 후 진입이 안전한지 '최적의 진입 시나리오'를 분석해 주어야 합니다.`;
             }
 
-            // [핵심 변경 사항] 기술적 지표 데이터 추출 및 방어 로직 추가
-            const techData = globalQuantData && globalQuantData[ld.ticker] && globalQuantData[ld.ticker].tech ? globalQuantData[ld.ticker].tech : {};
-            const ma5 = techData.ma5 || "데이터 부족";
-            const ma20 = techData.ma20 || "데이터 부족";
-            const ma60 = techData.ma60 || "데이터 부족";
-            const ma120 = techData.ma120 || "데이터 부족";
-            const rsi = techData.rsi || "데이터 부족";
-            const macd = techData.macd || "데이터 부족";
-            const supportPrice = techData.supportPrice || "데이터 부족";
-            const resistPrice = techData.resistPrice || "데이터 부족";
-
-            // [핵심 변경 사항] 프롬프트 문자열 구성 변경 (기술 지표 블록 추가 및 3, 4, 5번 항목 수정)
+            // 🌟 [수정됨] 프롬프트에 [기술적 지표 데이터] 블록 강제 주입
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
-
 [종목 기본 데이터]
 현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
 
 [기술적 지표 데이터]
-- 5일 이평선: ${ma5}
-- 20일 이평선: ${ma20}
-- 60일 이평선: ${ma60}
-- 120일 이평선: ${ma120}
-- RSI(14): ${rsi}
-- MACD: ${macd}
-- 주요 매물대 지지/저항: 지지 ${supportPrice} / 저항 ${resistPrice}
+- 5일 이평선: ${tech.ma5}원
+- 20일 이평선: ${tech.ma20}원
+- 33일 이평선: ${tech.ma33}원
+- 60일 이평선: ${tech.ma60}원
+- 120일 이평선: ${tech.ma120}원
+- RSI(14): ${tech.rsi}
+- MACD: ${tech.macd}
 
 **중요:** ${avgPriceContext}
 ${actionPlanContext}
@@ -1186,11 +1178,11 @@ SELL_LOSS_3: [금액]원 / [비중]%
 위 14줄 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가 등을 명시하여 반영)
 2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
-3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정하세요. 매수 타점의 기술적 근거는 반드시 위 [기술적 지표 데이터]의 이평선 및 지지/저항 가격과 현재가를 비교하여 논리적으로 모순 없이 작성해야 하며, 제공되지 않은 차트 흐름을 임의로 지어내지 마세요.
-4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 및 손절 1~3차 타점과 비중을 설정하세요. 목표가 설정 근거와 리스크 관리를 위한 지지선 이탈 손절 근거 역시 위 [기술적 지표 데이터]를 바탕으로 작성하고, 차트를 보지 않은 상태에서 상상력을 발휘하지 마세요.
-5. 향후 단기 모멘텀 전망: 제공된 기술적 지표(이평선 배열, RSI, MACD 등)와 밸류에이션을 종합하여, 향후 1주일 간의 기술적 반등 여부 및 하방 리스크를 객관적으로 평가하세요. (정확한 5일치 주가를 예측하지 말고, 추세와 모멘텀의 강도만 분석할 것)
+3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정하세요. 매수 타점의 기술적 근거는 반드시 프롬프트 상단에 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 작성해야 하며, 제공되지 않은 차트 흐름을 지어내지 마세요.
+4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차 설정 근거를 구체적으로 제시하세요. 매도 타점 역시 제공된 기술적 지표 데이터 저항선 이탈 여부를 기반으로 작성하세요.
+5. 향후 단기 모멘텀 전망: 제공된 기술적 지표(이격도, RSI, MACD 등)와 PER 밸류에이션을 종합하여, 향후 1주일 간의 기술적 반등 여부 및 하방 리스크를 객관적으로 평가하세요. 정확한 주가를 예측하지 말고, 추세와 모멘텀의 강도만 분석할 것.
 6. 배당 투자 매력도 및 종합 총평`;
-            
+
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
                 if (!response.ok) { response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }); }
