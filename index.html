@@ -1024,14 +1024,13 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-        // 🌟 트레이딩뷰 차트 완벽 로드 함수 (애플 차트 오류 방지)
+        // 🌟 트레이딩뷰 차트 로드 함수 (애플 차트 버그 완벽 해결)
         function loadTradingView(ticker) {
             const container = document.getElementById('tv_container');
             container.innerHTML = '<div id="tradingview_chart" style="height: 100%; width: 100%;"></div>';
             
-            // 모든 한국 주식을 KRX 단일 코드로 통일하여 전송 (트레이딩뷰 최신 시스템 기준)
-            const cleanTicker = ticker.trim();
-            const symbol = "KRX:" + cleanTicker;
+            // 트레이딩뷰 최신 시스템 규격에 맞춰 모든 한국 주식에 KRX 접두사 적용
+            const symbol = "KRX:" + ticker.trim();
 
             new TradingView.widget({
                 "autosize": true,
@@ -1077,7 +1076,6 @@
 
             const data = globalQuantData[ticker];
             
-            // UI 초기화 및 화면 노출 처리
             document.getElementById('statusBox').classList.remove('hidden');
             document.getElementById('dashboardArea').classList.remove('hidden');
             document.getElementById('expectedReturnBox').classList.add('hidden'); 
@@ -1161,6 +1159,7 @@
 
         // 🌟 새롭게 디자인된 AI 5일 예측 곡선 차트 & 데이터 테이블 렌더링 함수
         function renderPredChartAndTable(curPrice, preds, supports) {
+            // 1. 일자별 예상 종가 테이블 생성
             const tableBody = document.getElementById('predTableBody');
             let tableHtml = '';
             
@@ -1181,15 +1180,17 @@
             });
             tableBody.innerHTML = tableHtml;
 
+            // 2. 부드러운 트렌드 라인 차트 생성
             const ctx = document.getElementById('predLineChart').getContext('2d');
             if(predChartObj) predChartObj.destroy();
 
             const labels = ['현재가', 'D+1', 'D+2', 'D+3', 'D+4', 'D+5'];
             const dataPoints = [curPrice, ...preds];
 
+            // 보라색 그라데이션 채우기 효과
             const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-            gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-            gradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
+            gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)'); // 상단 보라색
+            gradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)'); // 하단 투명
 
             const datasets = [{
                 label: 'AI 5일 주가 예측경로',
@@ -1198,13 +1199,13 @@
                 backgroundColor: gradient,
                 borderWidth: 3,
                 fill: true,
-                tension: 0.4,
+                tension: 0.4, // 곡선 스무딩
                 pointBackgroundColor: '#8b5cf6',
                 pointRadius: 4,
                 pointHoverRadius: 7
             }];
 
-            const colors = ['#ef4444', '#f97316', '#eab308'];
+            const colors = ['#ef4444', '#f97316', '#eab308']; // 지지선 색상 (빨, 주, 노)
             supports.forEach((val, idx) => {
                 if(val > 0) {
                     datasets.push({
@@ -1327,6 +1328,7 @@ ${portfolioSummaryString}
                 actionPlanContext = `사용자는 이 종목에 신규로 ${inv}원을 투입하려고 합니다. 현재가 기준으로 이 금액을 한 번에 진입하는 것이 좋은지, 아니면 분할 매수나 관망 후 진입이 안전한지 '최적의 진입 시나리오'를 분석해 주어야 합니다.`;
             }
 
+            // 🌟 5일 예측값 프롬프트를 직관적인 [종가] 단일 숫자로 변경
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
 [종목 기본 데이터]
 현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
