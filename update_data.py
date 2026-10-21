@@ -41,10 +41,12 @@ for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companie
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
 def fetch_stock_data(name, ticker):
+    # 🌟 [추가] "tech" 딕셔너리를 신설하여 기술적 지표 저장 공간 확보
     stock_info = {
         "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "dividend": "-",
         "peg": "N/A", "pegDesc": "EPS 부족",
+        "tech": {"ma5": "-", "ma20": "-", "ma33": "-", "ma60": "-", "ma120": "-", "rsi": "-", "macd": "-"},
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
     }
     
@@ -70,7 +72,56 @@ def fetch_stock_data(name, ticker):
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
     except: pass
 
-    # 3. 목표주가 및 지표 1차 추출 (모바일 API)
+    # 3. 🌟 [핵심 추가 로직] 일봉 차트 데이터 수집 및 기술적 지표(이평선, RSI, MACD) 자체 계산
+    try:
+        chart_res = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/chart/day?pageSize=150&page=1", timeout=5).json()
+        if chart_res and isinstance(chart_res, list):
+            # API는 최신 날짜가 0번 인덱스이므로, 시계열 계산을 위해 과거->현재 순으로 뒤집음
+            closes = [float(str(day.get('closePrice', '0')).replace(',', '')) for day in chart_res if 'closePrice' in day]
+            closes.reverse()
+            
+            # 이동평균선(MA) 계산
+            if len(closes) >= 5: stock_info["tech"]["ma5"] = f"{int(sum(closes[-5:]) / 5):,}"
+            if len(closes) >= 20: stock_info["tech"]["ma20"] = f"{int(sum(closes[-20:]) / 20):,}"
+            if len(closes) >= 33: stock_info["tech"]["ma33"] = f"{int(sum(closes[-33:]) / 33):,}"
+            if len(closes) >= 60: stock_info["tech"]["ma60"] = f"{int(sum(closes[-60:]) / 60):,}"
+            if len(closes) >= 120: stock_info["tech"]["ma120"] = f"{int(sum(closes[-120:]) / 120):,}"
+
+            # RSI(14) 단순 계산식 적용
+            if len(closes) >= 15:
+                deltas = [closes[i] - closes[i-1] for i in range(1, len(closes))]
+                gains = [d if d > 0 else 0 for d in deltas]
+                losses = [-d if d < 0 else 0 for d in deltas]
+                
+                avg_gain = sum(gains[:14]) / 14
+                avg_loss = sum(losses[:14]) / 14
+                
+                # 와일더(Wilder)의 지수이동평균(EMA) 방식 스무딩
+                for i in range(14, len(deltas)):
+                    avg_gain = (avg_gain * 13 + gains[i]) / 14
+                    avg_loss = (avg_loss * 13 + losses[i]) / 14
+                    
+                if avg_loss == 0: stock_info["tech"]["rsi"] = "100.0"
+                else:
+                    rs = avg_gain / avg_loss
+                    stock_info["tech"]["rsi"] = f"{100 - (100 / (1 + rs)):.1f}"
+
+            # MACD (12, 26) 계산 (EMA 기반)
+            if len(closes) >= 26:
+                def get_ema(data, period):
+                    k = 2 / (period + 1)
+                    ema_val = sum(data[:period]) / period # SMA로 초기 시드값 설정
+                    for p in data[period:]:
+                        ema_val = (p - ema_val) * k + ema_val
+                    return ema_val
+                    
+                ema12 = get_ema(closes, 12)
+                ema26 = get_ema(closes, 26)
+                macd_val = ema12 - ema26
+                stock_info["tech"]["macd"] = f"{macd_val:,.1f}"
+    except: pass
+
+    # 4. 목표주가 및 지표 1차 추출 (모바일 API)
     try:
         if res_basic.get("cnsTargetPrice"):
             digits = "".join(filter(str.isdigit, str(res_basic["cnsTargetPrice"])))
@@ -109,11 +160,10 @@ def fetch_stock_data(name, ticker):
                 if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
     except: pass
 
-    # 4. 🔥 무조건 찾아내는 PC 웹 크롤링 (목표주가 2차 방어선) 🔥
+    # 5. PC 웹 크롤링 (목표주가 2차 방어선)
     try:
         html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
         
-        # 목표주가 강제 추출
         if stock_info["targetPrice"] == "-":
             idx = html.find('목표주가')
             if idx != -1:
@@ -125,7 +175,6 @@ def fetch_stock_data(name, ticker):
                         stock_info["targetPrice"] = f"{int(clean_n):,}"
                         break
 
-        # 배당수익률 강제 추출
         if stock_info["dividend"] == "-":
             idx = html.find('배당수익률')
             if idx != -1:
@@ -149,7 +198,7 @@ def fetch_stock_data(name, ticker):
                 if match: stock_info["pbr"] = match.group(1)
     except: pass
 
-    # 5. 재무제표 
+    # 6. 재무제표 
     try:
         fin_info = res_fin.get("financeInfo", {})
         if fin_info and "trTitleList" in fin_info and "rowList" in fin_info:
@@ -179,7 +228,7 @@ def fetch_stock_data(name, ticker):
             stock_info["finance"]["epss"] = get_fin_valid("EPS")
     except: pass
 
-    # 6. PEG 계산
+    # 7. PEG 계산
     try:
         target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
         per_float = float(str(target_per).replace(',', ''))
@@ -204,7 +253,7 @@ def fetch_stock_data(name, ticker):
     return ticker, stock_info
 
 quant_data = {}
-print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 시작...")
+print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 및 퀀트 지표(MA, RSI, MACD) 연산 시작...")
 start_time = time.time()
 
 with ThreadPoolExecutor(max_workers=10) as executor:
@@ -217,4 +266,4 @@ with open("quant_data.json", "w", encoding="utf-8") as f:
     json.dump(quant_data, f, ensure_ascii=False, indent=2)
 
 end_time = time.time()
-print(f"✅ 데이터 수집 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
+print(f"✅ 데이터 수집 및 연산 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
