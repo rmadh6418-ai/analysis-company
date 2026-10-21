@@ -17,7 +17,6 @@
     <title>AI 주식 퀀트 & 다종목 포트폴리오 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- 트레이딩뷰 차트 라이브러리 추가 -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     
     <style>
@@ -246,7 +245,7 @@
                     </div>
                 </div>
 
-                <!-- 🌟 AI가 읽고 있는 기술적 지표 원본 현황판 추가 -->
+                <!-- 🌟 AI가 읽고 있는 기술적 지표 원본 현황판 -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                     <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
                         <p class="text-[11px] font-bold text-slate-500 mb-1">RSI (14일)</p>
@@ -267,22 +266,23 @@
                 </div>
             </div>
 
-            <!-- 🌟 실시간 인터랙티브 캔들 & 보조지표 차트 (TradingView 연동) -->
+            <!-- 🌟 실시간 인터랙티브 캔들 차트 (TradingView - 코스피/코스닥 완벽 분류, RSI/MACD 추가) -->
             <div>
                 <div class="flex justify-between items-center mb-3 mt-2">
-                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-600 pl-3">📈 실시간 캔들 차트 (이평선·RSI·MACD)</h2>
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-600 pl-3">📈 실시간 캔들 차트 (이평선·RSI·MACD 적용)</h2>
                 </div>
-                <div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200 h-[500px]">
-                    <div id="tradingview_chart" style="height: 100%; width: 100%;"></div>
+                <!-- z-index와 relative를 통해 iframe이 완벽히 자리를 잡도록 유도 -->
+                <div class="bg-white p-2 rounded-xl shadow-sm border border-slate-200 h-[550px] relative z-10">
+                    <div id="tradingview_chart" class="absolute inset-0 m-2"></div>
                 </div>
             </div>
 
-            <!-- 🌟 AI 향후 5일 주가 시뮬레이션 및 자동 지지선 차트 -->
+            <!-- 🌟 AI 향후 5일 캔들 예측 및 지지선 차트 (Chart.js 커스텀 구현) -->
             <div id="aiPredictionSection" class="hidden">
                 <div class="flex justify-between items-center mb-3 mt-2">
-                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🔮 AI 향후 5일 시뮬레이션 및 자동 매수타점(지지선)</h2>
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🔮 AI 5일 캔들 예상도 및 자동 지지선 표기</h2>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-purple-200 h-[350px]">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-purple-200 h-[400px]">
                     <canvas id="predChart"></canvas>
                 </div>
             </div>
@@ -1010,16 +1010,31 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-        // 🌟 트레이딩뷰 차트 로드 함수 추가
+        // 🌟 코스닥 / 코스피 자동 분류 로직 추가 (애플 차트 출력 방지)
+        function getMarketPrefix(ticker) {
+            for (const sector in KOSDAQ150_COMPANIES) {
+                for (const name in KOSDAQ150_COMPANIES[sector]) {
+                    if (KOSDAQ150_COMPANIES[sector][name] === ticker) return "KOSDAQ:";
+                }
+            }
+            return "KRX:";
+        }
+
+        // 🌟 트레이딩뷰 실시간 인터랙티브 차트 로드 함수
         function loadTradingView(ticker) {
-            document.getElementById('tradingview_chart').innerHTML = ''; // 기존 차트 초기화
+            const container = document.getElementById('tradingview_chart');
+            container.innerHTML = ''; // 찌꺼기 완벽 제거
+            
+            const prefix = getMarketPrefix(ticker);
+            const symbol = prefix + ticker;
+
             new TradingView.widget({
                 "autosize": true,
-                "symbol": "KRX:" + ticker,
+                "symbol": symbol,
                 "interval": "D",
                 "timezone": "Asia/Seoul",
                 "theme": "light",
-                "style": "1", // 1번 캔들스타일
+                "style": "1", // 1 = 캔들차트
                 "locale": "kr",
                 "enable_publishing": false,
                 "backgroundColor": "#ffffff",
@@ -1028,7 +1043,7 @@
                 "save_image": false,
                 "container_id": "tradingview_chart",
                 "studies": [
-                    "MASimple@tv-basicstudies", // 이평선
+                    "MASimple@tv-basicstudies", // 이동평균선
                     "MACD@tv-basicstudies",     // MACD
                     "RSI@tv-basicstudies"       // RSI
                 ]
@@ -1060,13 +1075,13 @@
             document.getElementById('statusBox').classList.remove('hidden');
             document.getElementById('dashboardArea').classList.remove('hidden');
             document.getElementById('expectedReturnBox').classList.add('hidden'); 
-            document.getElementById('aiPredictionSection').classList.add('hidden'); // 분석 전엔 숨김
+            document.getElementById('aiPredictionSection').classList.add('hidden'); // 분석 전엔 예측차트 숨김
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 맞춤 심층 분석 및 타점을 생성 중입니다...</span>";
             
-            // 🌟 트레이딩뷰 실시간 인터랙티브 차트 호출
+            // 🌟 트레이딩뷰 실시간 인터랙티브 차트 호출 (이평선, RSI, MACD 적용)
             loadTradingView(ticker);
 
-            // 🌟 UI용 기술적 지표 직접 노출
+            // 🌟 UI용 기술적 지표 현황판 값 채우기
             const tech = data.tech || { ma5: '-', ma20: '-', ma33: '-', ma60: '-', ma120: '-', rsi: '-', macd: '-' };
             document.getElementById('uiRsiValue').textContent = tech.rsi !== '-' ? tech.rsi : "데이터 부족";
             document.getElementById('uiMacdValue').textContent = tech.macd !== '-' ? tech.macd : "데이터 부족";
@@ -1138,33 +1153,44 @@
             myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: '영업이익 (억원)', data: numericData, backgroundColor: bgColors, borderColor: borderColors, borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
         }
 
-        // 🌟 커스텀 AI 5일 예측 및 지지선 차트 함수
+        // 🌟 커스텀 AI 5일 캔들 예상도 & 지지선 차트 함수
         function renderPredChart(curPrice, preds, supports) {
             const ctx = document.getElementById('predChart').getContext('2d');
             if(predChartObj) predChartObj.destroy();
 
             const labels = ['현재가', 'D+1', 'D+2', 'D+3', 'D+4', 'D+5'];
-            // 예측 데이터가 실패했을 경우 전부 현재가로 임시 할당
-            const validPreds = preds.length === 5 && preds.every(p => p > 0) ? preds : [curPrice, curPrice, curPrice, curPrice, curPrice];
-            const dataPoints = [curPrice, ...validPreds];
+            
+            // 데이터 구성: floating bar [시가, 종가] 로 캔들 몸통을 구현
+            const candleData = [[curPrice, curPrice]]; // 현재가는 점처럼 처리
+            const bgColors = ['#94a3b8']; // 현재가 색상 (회색)
+            
+            preds.forEach(p => {
+                if(p) {
+                    candleData.push([p.open, p.close]);
+                    // 종가가 시가보다 높거나 같으면 빨간양봉, 낮으면 파란음봉
+                    bgColors.push(p.close >= p.open ? 'rgba(239, 68, 68, 0.85)' : 'rgba(59, 130, 246, 0.85)');
+                } else {
+                    candleData.push([curPrice, curPrice]);
+                    bgColors.push('#94a3b8');
+                }
+            });
 
             const datasets = [{
-                label: 'AI 5일 주가 예측경로',
-                data: dataPoints,
-                borderColor: '#8b5cf6', // 보라색
-                backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4, // 스무딩 적용
-                pointBackgroundColor: '#8b5cf6',
-                pointRadius: 5
+                type: 'bar',
+                label: 'AI 5일 캔들 예상 (시가~종가)',
+                data: candleData,
+                backgroundColor: bgColors,
+                borderColor: bgColors.map(c => c.replace('0.85', '1')),
+                borderWidth: 1.5,
+                barPercentage: 0.4
             }];
 
-            const colors = ['#ef4444', '#f97316', '#eab308']; // 빨, 주, 노
+            const colors = ['#ef4444', '#f97316', '#eab308']; // 지지선 색상 (빨, 주, 노)
             supports.forEach((val, idx) => {
                 if(val > 0) {
                     datasets.push({
-                        label: `AI 지지선 ${idx+1}차`,
+                        type: 'line',
+                        label: `AI 방어 지지선 ${idx+1}차`,
                         data: [val, val, val, val, val, val],
                         borderColor: colors[idx],
                         borderWidth: 2,
@@ -1176,7 +1202,6 @@
             });
 
             predChartObj = new Chart(ctx, {
-                type: 'line',
                 data: { labels, datasets },
                 options: {
                     responsive: true,
@@ -1229,7 +1254,7 @@ ${portfolioSummaryString}
 ### 4. 🎯 최종 행동 요약 (Action Plan)`;
 
             try {
-                // 🌟 속도/용량 최적화: 유저 지침에 따라 3.5-flash-lite 모델 강제 고정
+                // 🌟 속도 최적화 유지 및 3.5 Flash Lite 모델 강제 적용 (temperature: 0.1)
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
@@ -1280,7 +1305,7 @@ ${portfolioSummaryString}
                 actionPlanContext = `사용자는 이 종목에 신규로 ${inv}원을 투입하려고 합니다. 현재가 기준으로 이 금액을 한 번에 진입하는 것이 좋은지, 아니면 분할 매수나 관망 후 진입이 안전한지 '최적의 진입 시나리오'를 분석해 주어야 합니다.`;
             }
 
-            // 🌟 프롬프트 업데이트: 5일 예측값 추출 추가
+            // 🌟 프롬프트 업데이트: 5일 예측 캔들값 추출 (시, 고, 저, 종)
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트입니다. [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
 [종목 기본 데이터]
 현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
@@ -1297,7 +1322,7 @@ ${portfolioSummaryString}
 **중요:** ${avgPriceContext}
 ${actionPlanContext}
 
-[작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 첫 줄부터 출력하세요. 타점과 예측가는 '금액'만 숫자로 작성(예: 100,000).
+[작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 첫 줄부터 출력하세요. 타점과 예측가는 기호 없이 숫자만 작성.
 MOAT_RATING: [Wide/Narrow/None 중 택1]
 AI_TARGET_PRICE: [금액]원
 BUY_DOWN_1: [금액]원 / [비중]%
@@ -1312,22 +1337,22 @@ SELL_PROFIT_3: [금액]원 / [비중]%
 SELL_LOSS_1: [금액]원 / [비중]%
 SELL_LOSS_2: [금액]원 / [비중]%
 SELL_LOSS_3: [금액]원 / [비중]%
-PRED_D1: [금액]원
-PRED_D2: [금액]원
-PRED_D3: [금액]원
-PRED_D4: [금액]원
-PRED_D5: [금액]원
+PRED_D1: [시가],[고가],[저가],[종가]
+PRED_D2: [시가],[고가],[저가],[종가]
+PRED_D3: [시가],[고가],[저가],[종가]
+PRED_D4: [시가],[고가],[저가],[종가]
+PRED_D5: [시가],[고가],[저가],[종가]
 
 위 내용 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가 등을 명시하여 반영)
 2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
 3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정하세요. 매수 타점의 기술적 근거는 반드시 프롬프트 상단에 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 작성해야 하며, 제공되지 않은 차트 흐름을 지어내지 마세요.
 4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차 설정 근거를 구체적으로 제시하세요. 매도 타점 역시 제공된 기술적 지표 데이터 저항선 이탈 여부를 기반으로 작성하세요.
-5. 향후 5일 주가 예측: 제공된 기술적 지표와 모멘텀을 바탕으로 향후 5거래일(D+1~D+5)의 주가 흐름을 시뮬레이션하고 예측 근거를 객관적으로 평가하세요.
+5. 향후 5일 캔들 예측: 제공된 기술적 지표와 모멘텀을 바탕으로 향후 5거래일(D+1~D+5)의 주가 흐름을 시뮬레이션하고 예측 근거를 객관적으로 평가하세요.
 6. 배당 투자 매력도 및 종합 총평`;
 
             try {
-                // 🌟 속도/용량 최적화: 유저 지침에 따라 3.5-flash-lite 모델 강제 고정
+                // 🌟 속도 최적화 및 3.5 Flash Lite 모델 강제 적용 (temperature: 0.1)
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
@@ -1379,23 +1404,29 @@ PRED_D5: [금액]원
                     }
                 }
 
-                // 🌟 향후 5일 예측값 추출 로직
+                // 🌟 향후 5일 예측값 (시가, 고가, 저가, 종가) 추출 로직
                 let preds = [];
                 for(let i=1; i<=5; i++) {
-                    const regex = new RegExp(`PRED_D${i}:\\s*([\\d,]+)`, 'i');
+                    const regex = new RegExp(`PRED_D${i}:\\s*([\\d,]+)\\s*,\\s*([\\d,]+)\\s*,\\s*([\\d,]+)\\s*,\\s*([\\d,]+)`, 'i');
                     const pMatch = aiText.match(regex);
                     if(pMatch) {
-                        preds.push(parseInt(pMatch[1].replace(/,/g, '')));
-                        aiText = aiText.replace(new RegExp(`PRED_D${i}:\\s*([\\d,]+(?:원)?)\\s*\\n?`, 'i'), ''); // 텍스트에서 삭제
+                        preds.push({
+                            open: parseInt(pMatch[1].replace(/,/g, '')),
+                            high: parseInt(pMatch[2].replace(/,/g, '')),
+                            low: parseInt(pMatch[3].replace(/,/g, '')),
+                            close: parseInt(pMatch[4].replace(/,/g, ''))
+                        });
+                        // 텍스트상에서 예측 데이터 부분 깔끔하게 지우기
+                        aiText = aiText.replace(new RegExp(`PRED_D${i}:.*\\n?`, 'i'), ''); 
                     } else {
-                        preds.push(0);
+                        preds.push(null);
                     }
                 }
 
                 document.getElementById('aiResult').innerHTML = aiText.replace(/### (.*?)\n/g, '<h3 class="text-lg font-extrabold text-slate-800 mt-4 mb-2">$1</h3>').replace(/## (.*?)\n/g, '<h2 class="text-xl font-extrabold text-slate-900 mt-5 mb-2 border-b pb-1">$1</h2>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-yellow-100/60 px-1 rounded">$1</strong>').replace(/\n/g, '<br>');
                 calculateInvestment();
 
-                // 🌟 5일 예측 시뮬레이션 차트 랜더링 및 영역 표시
+                // 🌟 5일 캔들 예측 시뮬레이션 차트 랜더링
                 const curPriceNum = parseInt(String(ld.price).replace(/,/g, '')) || 0;
                 const supportLines = [
                     aiParsedStrategy['aiBuyDown1']?.price || 0,
