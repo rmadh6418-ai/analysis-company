@@ -1024,34 +1024,25 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-       // 🌟 실시간 트레이딩뷰 캔들 차트 (애플 폴백 버그 완벽 해결)
+       // 🌟 트레이딩뷰 차트 (iframe 직접 삽입 방식 - 애플 튕김 현상 완벽 해결)
         function loadTradingView(ticker) {
             const container = document.getElementById('tv_container');
-            container.innerHTML = '<div id="tradingview_chart" style="height: 100%; width: 100%;"></div>';
-            
-            // 트레이딩뷰는 코스피/코스닥 상관없이 무조건 'KRX:' 접두사만 사용해야 인식합니다.
-            const symbol = "KRX:" + ticker.trim();
+            const cleanTicker = ticker.trim();
+            const symbol = `KRX:${cleanTicker}`;
 
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": symbol,
-                "interval": "D",
-                "timezone": "Asia/Seoul",
-                "theme": "light",
-                "style": "1", // 1 = 캔들차트
-                "locale": "kr",
-                "enable_publishing": false,
-                "backgroundColor": "#ffffff",
-                "hide_top_toolbar": false,
-                "hide_legend": false,
-                "save_image": false,
-                "container_id": "tradingview_chart",
-                "studies": [
-                    "MASimple@tv-basicstudies", // 이동평균선
-                    "MACD@tv-basicstudies",     // MACD
-                    "RSI@tv-basicstudies"       // RSI
-                ]
-            });
+            // tv.js 스크립트를 거치지 않고 직접 TradingView 서버의 차트를 iframe으로 강제 호출합니다.
+            const iframeUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(symbol)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22MACD%40tv-basicstudies%22%2C%22RSI%40tv-basicstudies%22%5D&theme=light&style=1&timezone=Asia%2FSeoul&withdateranges=1&showpopupbutton=1&locale=kr`;
+
+            container.innerHTML = `
+                <iframe 
+                    id="tradingview_chart" 
+                    src="${iframeUrl}" 
+                    style="width: 100%; height: 100%; border: none; border-radius: 0.5rem;" 
+                    allowtransparency="true" 
+                    scrolling="no" 
+                    frameborder="0">
+                </iframe>
+            `;
         }
 
         async function fetchDashboardData() {
