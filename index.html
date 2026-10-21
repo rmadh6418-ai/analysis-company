@@ -1024,23 +1024,14 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-        // 🌟 트레이딩뷰 차트 완벽 로드 함수 (코스피/코스닥 자동 식별)
+       // 🌟 트레이딩뷰 차트 완벽 로드 함수 (코스피/코스닥 모두 KRX 통일)
         function loadTradingView(ticker) {
             const container = document.getElementById('tv_container');
             container.innerHTML = '<div id="tradingview_chart" style="height: 100%; width: 100%;"></div>';
             
-            // 코스닥 종목인지 확인하여 정확한 거래소 태그 적용
-            let prefix = "KRX:";
-            for (const sector in KOSDAQ150_COMPANIES) {
-                for (const name in KOSDAQ150_COMPANIES[sector]) {
-                    if (KOSDAQ150_COMPANIES[sector][name] === ticker) {
-                        prefix = "KOSDAQ:";
-                        break;
-                    }
-                }
-            }
-            
-            const symbol = prefix + ticker.trim();
+            // 트레이딩뷰는 코스피/코스닥 상관없이 개별 종목은 모두 'KRX:' 접두사를 사용합니다.
+            // 불필요한 KOSDAQ 식별 로직을 제거하고 KRX로 통일합니다.
+            const symbol = "KRX:" + ticker.trim();
 
             new TradingView.widget({
                 "autosize": true,
