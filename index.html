@@ -1024,13 +1024,12 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-       // 🌟 트레이딩뷰 차트 완벽 로드 함수 (코스피/코스닥 모두 KRX 통일)
+       // 🌟 실시간 트레이딩뷰 캔들 차트 (애플 폴백 버그 완벽 해결)
         function loadTradingView(ticker) {
             const container = document.getElementById('tv_container');
             container.innerHTML = '<div id="tradingview_chart" style="height: 100%; width: 100%;"></div>';
             
-            // 트레이딩뷰는 코스피/코스닥 상관없이 개별 종목은 모두 'KRX:' 접두사를 사용합니다.
-            // 불필요한 KOSDAQ 식별 로직을 제거하고 KRX로 통일합니다.
+            // 트레이딩뷰는 코스피/코스닥 상관없이 무조건 'KRX:' 접두사만 사용해야 인식합니다.
             const symbol = "KRX:" + ticker.trim();
 
             new TradingView.widget({
