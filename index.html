@@ -25,7 +25,6 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
-        /* 동기화 인디케이터 */
         .sync-dot { display: inline-block; width: 8px; height: 8px; background-color: #3b82f6; border-radius: 50%; margin-right: 5px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
     </style>
@@ -78,7 +77,6 @@
                     </h2>
                     <p class="text-xs text-slate-500 mt-1">보유 종목들을 등록하고 투입 대기자금을 넣으면, AI가 대기자금을 어떻게 배분할지 최적의 대응 시나리오를 산출합니다.</p>
                 </div>
-                <!-- 투입 대기 자금 인풋 -->
                 <div class="flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-200">
                     <span class="text-xs font-bold text-blue-900 shrink-0">💰 총 투입 대기자금:</span>
                     <input type="number" id="portfolioStandbyCash" onchange="saveStandbyCashToCloud()" oninput="updatePortfolioSummary()" placeholder="예: 5000000" class="border border-blue-300 px-3 py-1 rounded text-sm font-extrabold text-blue-900 bg-white w-36 md:w-44 text-right focus:outline-none">
@@ -86,7 +84,6 @@
                 </div>
             </div>
 
-            <!-- 보유 종목 등록 폼 -->
             <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-2">
                 <div class="relative">
                     <input type="text" id="portSearchInput" oninput="showPortSuggestions()" placeholder="종목명(예: 삼성전자)" class="w-full border p-2 rounded text-sm font-medium focus:outline-none" autocomplete="off">
@@ -97,7 +94,6 @@
                 <button onclick="addPortfolioItem()" class="bg-emerald-600 text-white font-bold py-2 rounded text-sm hover:bg-emerald-700 transition shadow-sm">+ 종목 등록</button>
             </div>
 
-            <!-- 등록된 종목 목록 테이블 -->
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border-collapse">
                     <thead>
@@ -120,9 +116,7 @@
                 </table>
             </div>
 
-            <!-- 포트폴리오 합계 요약 바 & 비중 차트 -->
             <div class="flex flex-col lg:flex-row gap-4 mt-2">
-                <!-- 좌측: 기존 합계 요약 바 -->
                 <div class="flex-1 grid grid-cols-2 md:grid-cols-5 gap-2 bg-slate-900 text-white p-4 rounded-xl text-center text-xs content-center">
                     <div>
                         <span class="text-slate-400 block mb-0.5">총 매수원금</span>
@@ -146,7 +140,6 @@
                     </div>
                 </div>
 
-                <!-- 우측: 종목 비중 파이(도넛) 차트 -->
                 <div class="w-full lg:w-72 bg-white border border-slate-200 shadow-sm rounded-xl p-3 flex flex-col justify-center items-center">
                     <h4 class="text-[11px] font-bold text-slate-500 mb-2">📊 포트폴리오 비중</h4>
                     <div class="relative w-full h-24 flex justify-center">
@@ -155,14 +148,12 @@
                 </div>
             </div>
 
-            <!-- 포트폴리오 AI 분석 실행 버튼 -->
             <div class="text-center pt-1">
                 <button onclick="runPortfolioAiAnalysis()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-extrabold py-3 px-6 rounded-lg text-base shadow-md hover:from-purple-700 hover:to-indigo-700 transition flex items-center justify-center gap-2">
                     <span>🤖</span> 보유 포트폴리오 & 대기자금 최적 배분 AI 종합 분석 실행
                 </button>
             </div>
 
-            <!-- 포트폴리오 AI 분석 결과창 -->
             <details id="portfolioAiResultBox" class="hidden group bg-purple-50/50 border border-purple-200 rounded-xl overflow-hidden">
                 <summary class="p-4 cursor-pointer flex justify-between items-center border-b border-purple-200 bg-purple-100/50 hover:bg-purple-100 transition focus:outline-none">
                     <div class="flex items-center gap-2">
@@ -199,7 +190,6 @@
             </div>
         </div>
 
-        <!-- 퀵 버튼 영역 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
             <details class="group" open>
                 <summary class="flex justify-between items-center font-bold text-slate-800 cursor-pointer list-none focus:outline-none">
@@ -219,7 +209,6 @@
             </details>
         </div>
 
-        <!-- 대시보드 결과 영역 -->
         <div id="dashboardArea" class="hidden space-y-6">
             <div class="bg-slate-800 text-white p-4 rounded-xl flex justify-between items-center shadow">
                 <div>
@@ -229,7 +218,6 @@
                 <span class="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full font-semibold">데이터 연동 완료</span>
             </div>
 
-            <!-- 1. 요약 지표 -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-500 pl-3 mb-3">현재가 및 수급 현황</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -257,7 +245,6 @@
                 </div>
             </div>
 
-            <!-- 2. 타점 및 개별 시뮬레이터 -->
             <div>
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-3 gap-3">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-amber-500 pl-3 flex items-center">
@@ -348,7 +335,6 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <!-- 매수 타점 -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-rose-200">
                         <h3 class="text-sm font-bold text-rose-800 mb-3 flex items-center gap-1">📥 분할 매수 타점 <span class="text-xs font-normal text-rose-600 ml-1">(하락 시 매수 / 상승 시 돌파매수)</span></h3>
                         <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -385,7 +371,6 @@
                         </div>
                     </div>
 
-                    <!-- 매도 타점 -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-200">
                         <h3 class="text-sm font-bold text-blue-800 mb-3 flex items-center gap-1">📤 분할 매도 타점 <span class="text-xs font-normal text-blue-600 ml-1">(상승 시 익절 / 하락 시 손절)</span></h3>
                         <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -418,7 +403,6 @@
                 </div>
             </div>
 
-            <!-- 3. 밸류에이션 -->
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & 모닝스타 경제적 해자</h2>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -448,7 +432,6 @@
                 </div>
             </div>
 
-            <!-- 4. 재무제표 영역 -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2">
                     <div class="flex justify-between items-end mb-3">
@@ -471,7 +454,6 @@
                 </div>
             </div>
 
-            <!-- 5. 개별 종목 AI 분석 리포트 -->
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 맞춤형 AI 트레이딩 심층 분석 리포트</h2>
@@ -496,53 +478,63 @@
 
             let isValid = (pin.length === secretHash.length);
 
-         if (isValid) {
-             for (let i = 0; i < pin.length; i++) {
-                 if ((pin.charCodeAt(i) ^ xorKey) !== secretHash[i]) {
-                     isValid = false;
-                     break;
-                 }
-             }
-         }
-
-         if (isValid) { 
-             sessionStorage.setItem('aiQuantUnlocked', 'true');
-             document.getElementById('lockScreen').style.display = 'none';
-             document.getElementById('mainContent').classList.remove('hidden');
-         } else {
-             errorMsg.classList.remove('hidden');
-             document.getElementById('lockPin').value = '';
-             document.getElementById('lockPin').focus();
-         }
-     }
-
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxaxvLXEw7HTVEXDig_zWA5UhXU7s5fTxtvVrjlZLiUGd5yX-GwycVpxPLaRBHtS5v9/exec";
-
-        async function fetchStockDetails(ticker) {
-            try {
-                const url = `https://m.stock.naver.com/api/stock/${ticker}/integration`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&_nocache=${Date.now()}`;
-                const res = await fetch(proxyUrl);
-                const proxyData = await res.json();
-                const data = JSON.parse(proxyData.contents);
-                
-                let marketCap = "-";
-                let foreignRate = "-";
-
-                if(data && data.totalInfos) {
-                    data.totalInfos.forEach(info => {
-                        const comb = `${info.key} ${info.code} ${info.name} ${info.title}`.toLowerCase();
-                        if(comb.includes("marketvalue") || comb.includes("시가총액")) marketCap = info.value;
-                        if(comb.includes("foreign") || comb.includes("외국인")) foreignRate = info.value;
-                    });
+            if (isValid) {
+                for (let i = 0; i < pin.length; i++) {
+                    if ((pin.charCodeAt(i) ^ xorKey) !== secretHash[i]) {
+                        isValid = false;
+                        break;
+                    }
                 }
-                return { marketCap, foreignRate };
-            } catch(e) { 
-                return { marketCap: "-", foreignRate: "-" }; 
+            }
+
+            if (isValid) { 
+                sessionStorage.setItem('aiQuantUnlocked', 'true');
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('mainContent').classList.remove('hidden');
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('lockPin').value = '';
+                document.getElementById('lockPin').focus();
             }
         }
 
-        // 종목 리스트 데이터
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxaxvLXEw7HTVEXDig_zWA5UhXU7s5fTxtvVrjlZLiUGd5yX-GwycVpxPLaRBHtS5v9/exec";
+
+        function fetchNaverDirectJsonp(queryStr) {
+            return new Promise((resolve) => {
+                const cbName = "__nv_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+                const script = document.createElement("script");
+                const timer = setTimeout(() => {
+                    cleanup();
+                    resolve(null);
+                }, 3500);
+
+                function cleanup() {
+                    clearTimeout(timer);
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                    try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+                }
+
+                window[cbName] = function(res) {
+                    cleanup();
+                    if (res && res.result && Array.isArray(res.result.areas)) {
+                        resolve(res.result.areas);
+                    } else {
+                        resolve(null);
+                    }
+                };
+
+                script.onerror = function() {
+                    cleanup();
+                    resolve(null);
+                };
+
+                script.charset = "euc-kr";
+                script.src = `https://polling.finance.naver.com/api/realtime?query=${encodeURIComponent(queryStr)}&_callback=${cbName}&_=${Date.now()}_${Math.random()}`;
+                document.head.appendChild(script);
+            });
+        }
+
         const KOSPI200_COMPANIES = {
             "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
             "이차전지·소재": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "삼성SDI": "006400", "포스코퓨처엠": "003670", "에코프로머티": "450080", "엘앤에프": "066970", "코스모신소재": "005070", "코스모화학": "005420", "솔루스첨단소재": "336370", "금양": "001570", "더블유씨피": "393890", "롯데에너지머티리얼즈": "020150", "SK아이이테크놀로지": "361610"},
@@ -653,7 +645,6 @@
             } catch(e) {}
         };
 
-        // 🔄 수정됨: 개별 종목 실시간 주가 갱신 함수
         async function refreshRealTimePrice() {
             if (!lastFetchedData || !lastFetchedData.ticker) { window.location.reload(); return; }
 
@@ -663,17 +654,17 @@
             statusBox.innerHTML = `<p class="text-blue-600 font-semibold text-sm animate-pulse">실시간 주가 데이터를 연동 중입니다...</p>`;
 
             try {
-                const url = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&_nocache=${Date.now()}`;
-                const res = await fetch(proxyUrl);
-                const proxyData = await res.json();
-                const st = JSON.parse(proxyData.contents);
+                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
+                if (areas && areas[0] && areas[0].datas && areas[0].datas[0]) {
+                    const st = areas[0].datas[0];
+                    const rf = String(st.rf || "3");
+                    const isUp = ["1", "2"].includes(rf);
+                    const isDown = ["4", "5"].includes(rf);
 
-                if (st && st.closePrice) {
-                    const fluctuation = parseFloat(st.fluctuationsRatio || 0);
-                    lastFetchedData.price = st.closePrice;
-                    lastFetchedData.changeRate = (fluctuation > 0 ? "+" : (fluctuation < 0 ? "-" : "")) + Math.abs(fluctuation).toFixed(2) + "%";
-                    lastFetchedData.direction = fluctuation > 0 ? 'UP' : (fluctuation < 0 ? 'DOWN' : 'FLAT');
+                    lastFetchedData.price = Number(st.nv).toLocaleString('ko-KR');
+                    const cr = Math.abs(parseFloat(st.cr || 0)).toFixed(2);
+                    lastFetchedData.changeRate = (isUp ? "+" : (isDown ? "-" : "")) + cr + "%";
+                    lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
 
                     livePortfolioPrices[ticker] = lastFetchedData.price;
 
@@ -684,35 +675,37 @@
                     statusBox.innerHTML = `<p class="text-emerald-600 font-semibold text-sm">✅ 실시간 데이터 갱신 완료!</p>`;
                     setTimeout(() => statusBox.classList.add('hidden'), 2000);
                 } else {
-                    throw new Error("Invalid data");
+                    throw new Error("No data");
                 }
             } catch (e) {
-                statusBox.innerHTML = `<p class="text-red-600 font-semibold text-sm">❌ 실시간 데이터를 가져오는데 실패했습니다.</p>`;
+                statusBox.innerHTML = `<p class="text-red-600 font-semibold text-sm">❌ 실시간 갱신 실패 (네트워크 오류)</p>`;
                 setTimeout(() => statusBox.classList.add('hidden'), 3000);
             }
         }
 
-        // 🔄 수정됨: 포트폴리오 전체 실시간가 갱신 함수
         async function refreshPortfolioPrices() {
             await loadFromGoogleCloud();
             if (userPortfolio.length === 0) { alert("등록된 보유 종목이 없습니다."); return; }
             const btn = document.getElementById('portRefreshBtn');
             btn.textContent = "갱신 중..."; btn.disabled = true;
 
+            const allCodes = userPortfolio.map(p => p.ticker);
+            const chunks = [];
+            for (let i = 0; i < allCodes.length; i += 40) {
+                chunks.push(allCodes.slice(i, i + 40));
+            }
+
             try {
-                await Promise.all(userPortfolio.map(async (p) => {
-                    const url = `https://m.stock.naver.com/api/stock/${p.ticker}/basic`;
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&_nocache=${Date.now()}`;
-                    try {
-                        const res = await fetch(proxyUrl);
-                        const proxyData = await res.json();
-                        const st = JSON.parse(proxyData.contents);
-                        
-                        if (st && st.closePrice) {
-                            livePortfolioPrices[p.ticker] = st.closePrice;
+                await Promise.all(chunks.map(async (chunk) => {
+                    const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${chunk.join(',')}`);
+                    if (areas) {
+                        for (const area of areas) {
+                            for (const st of (area.datas || [])) {
+                                if (st.cd && st.nv) {
+                                    livePortfolioPrices[st.cd] = Number(st.nv).toLocaleString('ko-KR');
+                                }
+                            }
                         }
-                    } catch(e) {
-                        console.error(`[${p.ticker}] 갱신 실패:`, e);
                     }
                 }));
             } catch(e) {
@@ -762,7 +755,7 @@
             corpName = CODE_TO_NAME[ticker] || inputVal;
 
             if (!ticker || !/^\d{6}$/.test(ticker)) { alert('목록에서 유효한 종목명을 선택해주세요.'); return; }
-            if (isNaN(avgPrice) || avgPrice <= 0) { alert('올바른 매수 평단가를 입력해주세요.'); return; }
+            if (isNaN(avgPrice) || avgPrice <= 0) { alert('올바 매수 평단가를 입력해주세요.'); return; }
             if (isNaN(investAmount) || investAmount <= 0) { alert('올바른 총 매수금액을 입력해주세요.'); return; }
 
             const existingIndex = userPortfolio.findIndex(p => p.ticker === ticker);
@@ -974,7 +967,6 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-        // 🔄 수정됨: 초기 분석 시 프록시로 실시간가 연동
         async function fetchDashboardData() {
             const inputEl = document.getElementById('tickerInput'); const mode = document.getElementById('analysisModeSelect').value;
             let inputRaw = inputEl.value.trim(); let ticker = "", corpName = "";
@@ -1015,23 +1007,18 @@
             lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.fwdPer, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc };
 
             try {
-                const details = await fetchStockDetails(ticker);
-                if(details.marketCap !== "-") lastFetchedData.marketCap = details.marketCap;
-                if(details.foreignRate !== "-") lastFetchedData.foreignRate = details.foreignRate;
-            } catch (e) {}
+                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
+                if (areas && areas[0] && areas[0].datas && areas[0].datas[0]) {
+                    const st = areas[0].datas[0];
+                    const rf = String(st.rf || "3");
+                    const isUp = ["1", "2"].includes(rf);
+                    const isDown = ["4", "5"].includes(rf);
 
-            try {
-                const url = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&_nocache=${Date.now()}`;
-                const res = await fetch(proxyUrl);
-                const proxyData = await res.json();
-                const st = JSON.parse(proxyData.contents);
-
-                if (st && st.closePrice) {
-                    const fluctuation = parseFloat(st.fluctuationsRatio || 0);
-                    lastFetchedData.price = st.closePrice;
-                    lastFetchedData.changeRate = (fluctuation > 0 ? "+" : (fluctuation < 0 ? "-" : "")) + Math.abs(fluctuation).toFixed(2) + "%";
-                    lastFetchedData.direction = fluctuation > 0 ? 'UP' : (fluctuation < 0 ? 'DOWN' : 'FLAT');
+                    lastFetchedData.price = Number(st.nv).toLocaleString('ko-KR');
+                    const cr = Math.abs(parseFloat(st.cr || 0)).toFixed(2);
+                    lastFetchedData.changeRate = (isUp ? "+" : (isDown ? "-" : "")) + cr + "%";
+                    lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
+                    
                     livePortfolioPrices[ticker] = lastFetchedData.price;
                 }
             } catch (e) {
@@ -1097,7 +1084,7 @@
             });
 
             const prompt = `당신은 대한민국 최고의 퀀트 포트폴리오 매니저이자 실전 트레이딩 전문가입니다.
-사용자가 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로, 매크로적인 경제상황을 고려하여 "어떻게 행동하는 가장 합리적이고 수익을 극대화할 수 있는지" 솔루션을 제시하세요.
+사용자가 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로, 매크로적인 경제상황을 고려하여 "어떻게 행동하는 가장 합리적이고 수익을 극대화할 수 있는지" 솔 সমাধানের 제시하세요.
 
 [사용자 전체 포트폴리오 데이터]
 - 투입 가능 대기자금: ${standbyCash.toLocaleString()}원
