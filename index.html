@@ -141,10 +141,18 @@
                     </div>
                 </div>
 
-                <div class="w-full lg:w-72 bg-white border border-slate-200 shadow-sm rounded-xl p-3 flex flex-col justify-center items-center">
-                    <h4 class="text-[11px] font-bold text-slate-500 mb-2">📊 포트폴리오 비중</h4>
-                    <div class="relative w-full h-24 flex justify-center">
-                        <canvas id="portfolioPieChart"></canvas>
+                <!-- ✨ [수정된 부분] 포트폴리오 비중 차트와 커스텀 스크롤 범례 -->
+                <div class="w-full lg:w-72 bg-white border border-slate-200 shadow-sm rounded-xl p-3 flex flex-col justify-center">
+                    <h4 class="text-[11px] font-bold text-slate-500 mb-2 text-center">📊 포트폴리오 비중</h4>
+                    <div class="flex flex-row w-full h-24 items-center">
+                        <!-- 도넛 차트 캔버스 -->
+                        <div class="relative w-24 h-24 shrink-0 flex justify-center">
+                            <canvas id="portfolioPieChart"></canvas>
+                        </div>
+                        <!-- 커스텀 HTML 스크롤 범례 -->
+                        <div id="pieLegend" class="flex-1 h-24 overflow-y-auto pl-3 flex flex-col space-y-0.5">
+                            <!-- JS에서 동적 생성 -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -281,19 +289,15 @@
                 <div class="flex justify-between items-center mb-1 mt-2">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🔮 AI 5일 주가 예측 및 매수 지지선</h2>
                 </div>
-                <!-- items-stretch를 적용하여 좌우 박스의 높이를 완벽히 일치시킴 -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch lg:h-[350px]">
-                    <!-- Left: Smooth Line Chart -->
                     <div class="lg:col-span-2 bg-white p-4 rounded-xl shadow-sm border border-purple-200 flex flex-col relative h-full min-h-[300px] lg:min-h-0">
                         <div class="relative w-full h-full flex-1">
                             <canvas id="predLineChart"></canvas>
                         </div>
                     </div>
-                    <!-- Right: Data Table for 5 days -->
                     <div class="lg:col-span-1 bg-white p-5 rounded-xl shadow-sm border border-purple-200 flex flex-col justify-center h-full">
                         <h3 class="text-[13px] font-extrabold text-purple-800 mb-3 text-center bg-purple-50 py-1.5 rounded">📅 향후 5일 예상 종가 (D+1 ~ D+5)</h3>
                         <div class="space-y-2.5 flex-1 flex flex-col justify-center" id="predTableBody">
-                            <!-- JS에서 테이블 로우 주입 -->
                         </div>
                     </div>
                 </div>
@@ -923,22 +927,49 @@
             document.getElementById('portTotalAssets').textContent = Math.floor(totalValue + standbyCash).toLocaleString() + '원';
         }
 
+        // ✨ [수정된 부분] Chart.js 기본 범례를 없애고 스크롤 가능한 커스텀 범례 생성
         function renderPortfolioPieChart() {
             const ctx = document.getElementById('portfolioPieChart').getContext('2d');
             const labels = []; const dataValues = [];
-            const bgColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#14b8a6', '#f43f5e', '#84cc16', '#06b6d4', '#d946ef'];
+            
+            // 색상이 부족하지 않도록 넉넉하게 확장
+            const baseColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#14b8a6', '#f43f5e', '#84cc16', '#06b6d4', '#d946ef', '#6366f1', '#ec4899', '#f97316', '#0ea5e9', '#10b981'];
 
-            userPortfolio.forEach(item => { labels.push(item.corpName); dataValues.push(item._evalValue || item.investAmount); });
+            let totalValue = 0;
+            userPortfolio.forEach(item => { 
+                labels.push(item.corpName); 
+                const val = item._evalValue || item.investAmount;
+                dataValues.push(val); 
+                totalValue += val;
+            });
+            
+            // 종목이 많아도 무한 반복해서 색상 부여
+            const bgColors = dataValues.map((_, i) => baseColors[i % baseColors.length]);
+
             if (portfolioPieChart) portfolioPieChart.destroy();
-            if (userPortfolio.length === 0) return;
+            
+            const legendContainer = document.getElementById('pieLegend');
+            if (userPortfolio.length === 0) {
+                if (legendContainer) legendContainer.innerHTML = '';
+                return;
+            }
 
             portfolioPieChart = new Chart(ctx, {
                 type: 'doughnut', 
-                data: { labels: labels, datasets: [{ data: dataValues, backgroundColor: bgColors.slice(0, dataValues.length), borderWidth: 2, borderColor: '#ffffff', hoverOffset: 4 }] },
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        data: dataValues, 
+                        backgroundColor: bgColors, 
+                        borderWidth: 2, 
+                        borderColor: '#ffffff', 
+                        hoverOffset: 4 
+                    }] 
+                },
                 options: {
                     responsive: true, maintainAspectRatio: false, cutout: '60%', 
                     plugins: {
-                        legend: { display: true, position: 'right', labels: { boxWidth: 12, font: { size: 11 }, color: '#475569' } }, 
+                        legend: { display: false }, // 기존 잘리는 범례 숨김 (HTML로 대체)
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -951,6 +982,22 @@
                     }
                 }
             });
+
+            // 스크롤 가능한 커스텀 HTML 범례 생성
+            if (legendContainer) {
+                let legendHtml = '';
+                labels.forEach((label, i) => {
+                    let percentage = totalValue > 0 ? ((dataValues[i] / totalValue) * 100).toFixed(1) + '%' : '0.0%';
+                    legendHtml += `
+                        <div class="flex items-center text-[11px] text-slate-600 mb-1">
+                            <span class="w-2.5 h-2.5 rounded-full inline-block mr-1.5 shrink-0" style="background-color: ${bgColors[i]}"></span>
+                            <span class="truncate flex-1 font-medium" title="${label}">${label}</span>
+                            <span class="font-extrabold text-slate-700 ml-1 shrink-0">${percentage}</span>
+                        </div>
+                    `;
+                });
+                legendContainer.innerHTML = legendHtml;
+            }
         }
 
         function generateQuickButtons(targetId, companyData, btnClass) {
@@ -981,7 +1028,6 @@
             } else { box.classList.add('hidden'); }
         }
 
-        // ✨ [수정된 부분: 보유 종목 클릭 시 '기존 보유' 모드 자동 전환 및 평단가 연동]
         function selectCompany(name, code) {
             document.getElementById('tickerInput').value = `${name} (${code})`;
             document.getElementById('tickerInput').dataset.selectedCode = code;
@@ -989,14 +1035,12 @@
 
             const portItem = userPortfolio.find(p => p.ticker === code);
             if (portItem) {
-                // 보유 종목이면 기존 보유 모드로 셋팅
                 document.getElementById('analysisModeSelect').value = 'average';
                 toggleInputs();
                 document.getElementById('myAvgPriceInput').value = portItem.avgPrice;
                 document.getElementById('currentInvestInput').value = portItem.investAmount;
                 document.getElementById('standbyCashInput').value = document.getElementById('portfolioStandbyCash').value || 0;
             } else {
-                // 미보유 종목이면 신규 진입 모드로
                 document.getElementById('analysisModeSelect').value = 'current';
                 toggleInputs();
                 document.getElementById('investAmountInput').value = document.getElementById('portfolioStandbyCash').value || 0;
@@ -1039,7 +1083,6 @@
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
-       // 🌟 한국거래소(KRX) 보안 정책 우회용 하이브리드 차트 로더
         function loadTradingView(ticker) {
             const container = document.getElementById('tv_container');
             const cleanTicker = ticker.trim();
@@ -1050,7 +1093,6 @@
 
             container.innerHTML = `
                 <div class="flex flex-col h-full w-full bg-white">
-                    <!-- 상단 컨트롤 패널 -->
                     <div class="flex flex-col md:flex-row justify-between items-center mb-3 px-1 gap-2 border-b border-slate-100 pb-3">
                         <span class="text-[12px] font-bold text-slate-500 flex items-center gap-1">
                             <span class="text-rose-500 text-base">※</span> KRX 보안 정책으로 정밀 지표 조작은 팝업을 이용하세요
@@ -1065,7 +1107,6 @@
                         </div>
                     </div>
                     
-                    <!-- 대시보드 내장용 퀵뷰 차트 -->
                     <div class="flex-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden p-2 relative group">
                         <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/80 p-1 rounded backdrop-blur-sm">
                             <button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/day/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-blue-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">일봉</button>
@@ -1281,7 +1322,6 @@
             // 현재 날짜 구하기
             const today = new Date();
             const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
-            // ✨ [수정된 부분: AI 프롬프트에 보유 종목 개별 매수/매도 타점 포함 요청]
             const prompt = `당신은 전세계 상위 0.1% 퀀트 포트폴리오 매니저이자 실전 트레이딩 전문가입니다.
 사용자가 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로, 전 세계 매크로적인 경제상황과 환율, 미국채 금리, 달러 인덱스, 미국 빅테크 실적, 섹터별 보유 비중, 기업의 모멘텀, 차트의 기술적 분석, 현재 분석 요청 일자(${currentDate}) 기준으로 3개월의 투자자별 매매동향을 상세하게 분석하여 "어떻게 행동하는 가장 합리적이고 수익을 극대화할 수 있는지" 제시하고 만약 신규 투자를 생각한다면 어떤 섹터에 투자해야 하는지 제시하세요.
 
