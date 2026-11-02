@@ -141,7 +141,7 @@
                     </div>
                 </div>
 
-                <!-- ✨ [수정된 부분] 포트폴리오 비중 차트와 커스텀 스크롤 범례 -->
+                <!-- ✨ 포트폴리오 비중 차트와 커스텀 스크롤 범례 -->
                 <div class="w-full lg:w-72 bg-white border border-slate-200 shadow-sm rounded-xl p-3 flex flex-col justify-center">
                     <h4 class="text-[11px] font-bold text-slate-500 mb-2 text-center">📊 포트폴리오 비중</h4>
                     <div class="flex flex-row w-full h-24 items-center">
@@ -927,12 +927,10 @@
             document.getElementById('portTotalAssets').textContent = Math.floor(totalValue + standbyCash).toLocaleString() + '원';
         }
 
-        // ✨ [수정된 부분] Chart.js 기본 범례를 없애고 스크롤 가능한 커스텀 범례 생성
         function renderPortfolioPieChart() {
             const ctx = document.getElementById('portfolioPieChart').getContext('2d');
             const labels = []; const dataValues = [];
             
-            // 색상이 부족하지 않도록 넉넉하게 확장
             const baseColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#14b8a6', '#f43f5e', '#84cc16', '#06b6d4', '#d946ef', '#6366f1', '#ec4899', '#f97316', '#0ea5e9', '#10b981'];
 
             let totalValue = 0;
@@ -943,7 +941,6 @@
                 totalValue += val;
             });
             
-            // 종목이 많아도 무한 반복해서 색상 부여
             const bgColors = dataValues.map((_, i) => baseColors[i % baseColors.length]);
 
             if (portfolioPieChart) portfolioPieChart.destroy();
@@ -969,7 +966,7 @@
                 options: {
                     responsive: true, maintainAspectRatio: false, cutout: '60%', 
                     plugins: {
-                        legend: { display: false }, // 기존 잘리는 범례 숨김 (HTML로 대체)
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -983,7 +980,6 @@
                 }
             });
 
-            // 스크롤 가능한 커스텀 HTML 범례 생성
             if (legendContainer) {
                 let legendHtml = '';
                 labels.forEach((label, i) => {
@@ -1055,12 +1051,24 @@
             localStorage.setItem('geminiApiKey', key); alert('Gemini API Key가 안전하게 저장되었습니다.');
         }
 
+        // ==========================================
+        // 🔄 이 부분이 요청하신 내용에 맞게 수정되었습니다.
+        // ==========================================
         function toggleInputs() {
             const mode = document.getElementById('analysisModeSelect').value;
+            // 상단 포트폴리오의 '총 투입 대기자금'을 가져옵니다. 값이 없으면 빈 문자열을 줍니다.
+            const globalStandbyCash = document.getElementById('portfolioStandbyCash').value || ''; 
+
             if (mode === 'current') {
-                document.getElementById('currentModeInputs').classList.remove('hidden'); document.getElementById('averageModeInputs').classList.add('hidden');
+                document.getElementById('currentModeInputs').classList.remove('hidden'); 
+                document.getElementById('averageModeInputs').classList.add('hidden');
+                // 신규 진입 선택 시 '총 투자 준비금' 입력란에 상단의 투입 대기자금을 자동 입력
+                document.getElementById('investAmountInput').value = globalStandbyCash;
             } else {
-                document.getElementById('currentModeInputs').classList.add('hidden'); document.getElementById('averageModeInputs').classList.remove('hidden');
+                document.getElementById('currentModeInputs').classList.add('hidden'); 
+                document.getElementById('averageModeInputs').classList.remove('hidden');
+                // 기존 보유 선택 시 '투입 대기자금' 입력란에 상단의 투입 대기자금을 자동 입력
+                document.getElementById('standbyCashInput').value = globalStandbyCash;
             }
             calculateInvestment(); 
         }
@@ -1319,7 +1327,6 @@
                 portfolioSummaryString += `[종목${idx+1}: ${p.corpName}(${p.ticker})]\n- 평단가: ${p.avgPrice.toLocaleString()}원 | 매수금: ${p.investAmount.toLocaleString()}원\n- 현재가: ${currentPriceStr}원 (손익률: ${diffRate}) | 목표가: ${targetP}원 | PER: ${per} | PBR: ${pbr}\n\n`;
             });
 
-            // 현재 날짜 구하기
             const today = new Date();
             const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
             const prompt = `당신은 전세계 상위 0.1% 퀀트 포트폴리오 매니저이자 실전 스윙 트레이딩 전문가입니다.
@@ -1386,7 +1393,7 @@ ${portfolioSummaryString}
             if (mode === 'average') {
                 const a = document.getElementById('myAvgPriceInput').value || 0; const c = document.getElementById('currentInvestInput').value || 0; const s = document.getElementById('standbyCashInput').value || 0;
                 avgPriceContext = `[분석 모드: 기존 보유자] 평단가: ${a}원, 현재 투입금액: ${c}원, 물타기 대기금액: ${s}원. 이 평단가와 대기금을 기준으로 물타기/불타기/매도 타점을 계산하세요.`;
-                actionPlanContext = `사용자는 이 종목에 이미 ${c}원을 투입했고, ${s}원의 대기자금을 가지고 있습니다. 현재 주가와 평단가를 비교하여, 이 대기자금을 지금 전액 투입하는 것이 맞는지, 분할 투입해야 하는지, 혹은 현금으로 관망하는 것이 리스크 관리 차원에서 유리한지 '최적의 자금 배분 시나리오'를 반드시 분석해 주어야 합니다.`;
+                actionPlanContext = `사용자는 이 종목에 이미 ${c}원을 투입했고, ${s}원의 대기자금을 가지고 있습니다. 현재 주가와 평단가를 비교하여, 이 대기자금을 지금 전액 투입하는 큰 흐름이 맞는지, 분할 투입해야 하는지, 혹은 현금으로 관망하는 것이 리스크 관리 차원에서 유리한지 '최적의 자금 배분 시나리오'를 반드시 분석해 주어야 합니다.`;
             } else {
                 const inv = document.getElementById('investAmountInput').value || 0;
                 avgPriceContext = `[분석 모드: 신규 진입] 현재가(${ld.price})를 기준으로 신규 진입 타점을 계산하세요. 총 투자 준비금: ${inv}원.`;
