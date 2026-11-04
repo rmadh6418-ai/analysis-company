@@ -1403,6 +1403,9 @@ ${portfolioSummaryString}
             const today = new Date();
             const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트 및 스윙 트레이딩 전문가입니다. 오늘 날짜는 ${currentDate}입니다. 현재 시점을 기준으로 [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
+
+[오늘 날짜: ${currentDate}]
+
 [종목 기본 데이터]
 현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
 
