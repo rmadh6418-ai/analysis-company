@@ -28,9 +28,13 @@
         details > summary::-webkit-details-marker { display: none; }
         .sync-dot { display: inline-block; width: 8px; height: 8px; background-color: #3b82f6; border-radius: 50%; margin-right: 5px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        
+        /* 챗봇 스크롤바 커스텀 */
+        #chatMessages::-webkit-scrollbar { width: 4px; }
+        #chatMessages::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 2px; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans">
+<body class="bg-slate-100 min-h-screen font-sans relative">
 
     <!-- 🔒 암호 입력 잠금 화면 -->
     <div id="lockScreen" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col justify-center items-center">
@@ -45,7 +49,7 @@
     </div>
 
     <!-- 📈 메인 대시보드 -->
-    <div id="mainContent" class="hidden max-w-6xl mx-auto space-y-6 p-4 md:p-6">
+    <div id="mainContent" class="hidden max-w-6xl mx-auto space-y-6 p-4 md:p-6 pb-24">
         <!-- 헤더 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
@@ -525,6 +529,52 @@
 
         </div>
     </div>
+
+    <!-- 🤖 챗봇 플로팅 UI 추가부분 -->
+    <!-- 챗봇 토글 버튼 -->
+    <button id="chatbotToggleBtn" onclick="toggleChatbot()" class="fixed bottom-6 right-6 z-[9990] bg-indigo-600 text-white p-4 rounded-full shadow-2xl hover:bg-indigo-700 transition transform hover:scale-105 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+    </button>
+
+    <!-- 챗봇 윈도우 -->
+    <div id="chatbotWindow" class="fixed bottom-24 right-6 z-[9990] bg-white w-[350px] md:w-[400px] h-[550px] max-h-[75vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col hidden transform transition-all duration-300 origin-bottom-right">
+        <!-- 헤더 -->
+        <div class="bg-indigo-600 text-white p-4 rounded-t-2xl flex justify-between items-center shadow-sm shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">🤖</span>
+                <div>
+                    <h3 class="font-extrabold text-sm">AI 퀀트 어시스턴트</h3>
+                    <p class="text-[10px] text-indigo-200">종목에 대해 궁금한 점을 물어보세요</p>
+                </div>
+            </div>
+            <button onclick="toggleChatbot()" class="text-indigo-200 hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        
+        <!-- 메시지 영역 -->
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+            <!-- 초기 안내 메시지 -->
+            <div class="flex flex-col items-start">
+                <span class="text-[11px] font-bold text-slate-400 ml-1 mb-1">AI 어시스턴트</span>
+                <div class="bg-white border border-slate-200 text-slate-700 text-sm p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[85%]">
+                    안녕하세요! 현재 분석 중인 종목이나, 포트폴리오 관리에 대해 무엇이든 질문해주세요. 
+                    <br><br><span class="text-[11px] text-slate-500">* 우측 상단에 Gemini API Key가 입력되어 있어야 동작합니다.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 입력 영역 -->
+        <div class="p-3 bg-white border-t border-slate-200 rounded-b-2xl shrink-0">
+            <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-full border border-slate-200 focus-within:border-indigo-400 focus-within:bg-white transition-colors">
+                <input type="text" id="chatInput" onkeypress="if(event.key==='Enter') sendChatMessage()" placeholder="질문을 입력하세요..." class="flex-1 bg-transparent border-none text-sm px-3 py-2 focus:outline-none text-slate-700" autocomplete="off">
+                <button onclick="sendChatMessage()" class="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 transition shrink-0 flex items-center justify-center h-9 w-9">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         function checkPassword() {
@@ -1051,23 +1101,17 @@
             localStorage.setItem('geminiApiKey', key); alert('Gemini API Key가 안전하게 저장되었습니다.');
         }
 
-        // ==========================================
-        // 🔄 이 부분이 요청하신 내용에 맞게 수정되었습니다.
-        // ==========================================
         function toggleInputs() {
             const mode = document.getElementById('analysisModeSelect').value;
-            // 상단 포트폴리오의 '총 투입 대기자금'을 가져옵니다. 값이 없으면 빈 문자열을 줍니다.
             const globalStandbyCash = document.getElementById('portfolioStandbyCash').value || ''; 
 
             if (mode === 'current') {
                 document.getElementById('currentModeInputs').classList.remove('hidden'); 
                 document.getElementById('averageModeInputs').classList.add('hidden');
-                // 신규 진입 선택 시 '총 투자 준비금' 입력란에 상단의 투입 대기자금을 자동 입력
                 document.getElementById('investAmountInput').value = globalStandbyCash;
             } else {
                 document.getElementById('currentModeInputs').classList.add('hidden'); 
                 document.getElementById('averageModeInputs').classList.remove('hidden');
-                // 기존 보유 선택 시 '투입 대기자금' 입력란에 상단의 투입 대기자금을 자동 입력
                 document.getElementById('standbyCashInput').value = globalStandbyCash;
             }
             calculateInvestment(); 
@@ -1620,6 +1664,154 @@ PRED_D5: [예상종가]원
                 const netLoss = lossRevenue - totalInvest; const lossRate = (netLoss / totalInvest) * 100;
                 document.getElementById('simLossRate').textContent = `${lossRate.toFixed(2)}%`; document.getElementById('simLossMoney').textContent = `${Math.floor(netLoss).toLocaleString()}원 손실`;
             } else { document.getElementById('simLossRate').textContent = "-"; document.getElementById('simLossMoney').textContent = "타점 데이터 부족"; }
+        }
+
+        /* ============================================================== */
+        /* 🤖 챗봇 관련 로직 시작 */
+        /* ============================================================== */
+        let chatHistory = [];
+
+        function toggleChatbot() {
+            const chatWindow = document.getElementById('chatbotWindow');
+            chatWindow.classList.toggle('hidden');
+            if(!chatWindow.classList.contains('hidden')) {
+                document.getElementById('chatInput').focus();
+            }
+        }
+
+        function addMessageToUI(sender, text) {
+            const msgContainer = document.getElementById('chatMessages');
+            const msgDiv = document.createElement('div');
+            
+            if (sender === 'user') {
+                msgDiv.className = 'flex flex-col items-end';
+                msgDiv.innerHTML = `
+                    <span class="text-[11px] font-bold text-slate-400 mr-1 mb-1">나</span>
+                    <div class="bg-indigo-600 text-white text-sm p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] break-words">
+                        ${text}
+                    </div>
+                `;
+            } else {
+                // AI 마크다운 간단 파싱 (볼드체, 줄바꿈)
+                const formattedText = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br>');
+                    
+                msgDiv.className = 'flex flex-col items-start';
+                msgDiv.innerHTML = `
+                    <span class="text-[11px] font-bold text-slate-400 ml-1 mb-1">AI 어시스턴트</span>
+                    <div class="bg-white border border-slate-200 text-slate-700 text-sm p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] break-words leading-relaxed">
+                        ${formattedText}
+                    </div>
+                `;
+            }
+            
+            msgContainer.appendChild(msgDiv);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+
+        function addLoadingToUI() {
+            const msgContainer = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'chatLoading';
+            loadingDiv.className = 'flex flex-col items-start';
+            loadingDiv.innerHTML = `
+                <div class="bg-white border border-slate-200 text-slate-400 text-sm p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
+                    <span class="sync-dot bg-slate-400"></span>
+                    <span class="sync-dot bg-slate-400" style="animation-delay: 0.2s"></span>
+                    <span class="sync-dot bg-slate-400" style="animation-delay: 0.4s"></span>
+                </div>
+            `;
+            msgContainer.appendChild(loadingDiv);
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+
+        function removeLoadingFromUI() {
+            const loadingDiv = document.getElementById('chatLoading');
+            if(loadingDiv) loadingDiv.remove();
+        }
+
+        async function sendChatMessage() {
+            const inputEl = document.getElementById('chatInput');
+            const text = inputEl.value.trim();
+            if (!text) return;
+            
+            const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                alert('챗봇을 사용하려면 우측 상단에 Gemini API Key를 먼저 입력해주세요.');
+                return;
+            }
+
+            // UI 업데이트
+            addMessageToUI('user', text);
+            inputEl.value = '';
+            addLoadingToUI();
+
+            // 현재 보고있는 종목 컨텍스트 생성
+            let contextStr = "사용자는 현재 퀀트 대시보드를 보고 있습니다.";
+            if (lastFetchedData && lastFetchedData.corpName) {
+                contextStr = `사용자는 현재 [${lastFetchedData.corpName}(${lastFetchedData.ticker})] 종목을 분석 중입니다. 
+                현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.`;
+            }
+
+            // 시스템 프롬프트(최초 1회 추가)
+            if (chatHistory.length === 0) {
+                chatHistory.push({
+                    role: "user",
+                    parts: [{ text: `당신은 주식 퀀트 분석 대시보드의 AI 어시스턴트입니다. 친절하고 전문적으로 답변해주세요. 상황 정보: ${contextStr}` }]
+                });
+                chatHistory.push({
+                    role: "model",
+                    parts: [{ text: "네, 저는 AI 퀀트 어시스턴트입니다. 분석 중인 종목이나 주식 관련 질문에 대해 전문적이고 친절하게 답변해 드리겠습니다." }]
+                });
+            }
+
+            // 사용자 메시지 추가
+            chatHistory.push({
+                role: "user",
+                parts: [{ text: text }]
+            });
+
+            try {
+                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        contents: chatHistory, 
+                        generationConfig: { temperature: 0.7 } 
+                    }) 
+                });
+                
+                // Fallback (3.5 실패시 3.1)
+                if (!response.ok) {
+                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ 
+                            contents: chatHistory, 
+                            generationConfig: { temperature: 0.7 } 
+                        }) 
+                    });
+                }
+                
+                const data = await response.json();
+                const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 답변을 생성하지 못했습니다.";
+                
+                removeLoadingFromUI();
+                addMessageToUI('model', aiResponseText);
+                
+                // 모델 응답 히스토리에 추가
+                chatHistory.push({
+                    role: "model",
+                    parts: [{ text: aiResponseText }]
+                });
+
+            } catch (error) {
+                removeLoadingFromUI();
+                addMessageToUI('model', "통신 중 오류가 발생했습니다. API 키나 네트워크 상태를 확인해주세요.");
+                // 에러 발생 시 히스토리 마지막 메시지(유저 메시지) 롤백
+                chatHistory.pop();
+            }
         }
     </script>
 </body>
