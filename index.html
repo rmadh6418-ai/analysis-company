@@ -697,24 +697,46 @@
             });
         }
 
-        // 🌟 무적 프록시 서버 연동 (오류 방지)
+        // 🔥 [핵심 업데이트]: 다중 프록시 서버 순차 자동 폴백(Fallback) 기능 탑재
         async function fetchWithProxy(targetUrl) {
-            try {
-                let res = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-                if (res.ok) return await res.text();
-            } catch(e) {}
-            
-            try {
-                let res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
-                if (res.ok) return await res.text();
-            } catch(e) {}
-            
-            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
-            if (res.ok) {
-                const data = await res.json();
-                return data.contents;
+            // 프록시 리스트 (안정성이 높은 순서대로 배치)
+            const proxies = [
+                (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+            ];
+
+            let lastError = null;
+
+            for (const getProxyUrl of proxies) {
+                try {
+                    const proxyUrl = getProxyUrl(targetUrl);
+                    const controller = new AbortController();
+                    // 프록시당 8초 이상 응답이 없으면 다음 프록시로 강제 전환
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                    const res = await fetch(proxyUrl, { 
+                        signal: controller.signal,
+                        cache: 'no-store'
+                    });
+                    
+                    clearTimeout(timeoutId);
+
+                    if (res.ok) {
+                        const text = await res.text();
+                        // 빈 응답이나 비정상적인 오류 페이지 방어
+                        if (text && text.length > 50) {
+                            return text;
+                        }
+                    }
+                } catch (e) {
+                    lastError = e;
+                    console.warn(`프록시 우회 실패 (${getProxyUrl(targetUrl).split('?')[0]}):`, e.message);
+                }
             }
-            throw new Error("모든 프록시 서버 우회 실패");
+            
+            console.error("모든 무료 프록시 서버가 현재 차단되었거나 응답이 없습니다.", lastError);
+            throw new Error("네트워크 오류: 데이터를 가져올 수 없습니다.");
         }
 
         const KOSPI200_COMPANIES = {
@@ -1233,11 +1255,11 @@
             `;
         }
 
-        // 📰 실시간 뉴스 수집 (구글 뉴스 RSS 적용)
+        // 📰 [개선됨] 실시간 뉴스 수집 (구글 뉴스 RSS 적용)
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
-            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 실시간 뉴스를 수집하고 있습니다...</li>';
+            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 수집하고 있습니다...</li>';
             
             try {
                 const query = encodeURIComponent(corpName + ' 주식');
@@ -1274,11 +1296,12 @@
                 
                 newsListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
             } catch (e) {
-                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.</li>';
+                console.error("뉴스 수집 오류:", e);
+                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">우회 서버가 일시적으로 제한되었습니다. 잠시 후 시도해주세요.</span></li>';
             }
         }
 
-        // 📄 실시간 DART 전자공시 수집
+        // 📄 [개선됨] 실시간 DART 전자공시 수집
         async function loadDart(ticker, corpName) {
             const dartListEl = document.getElementById('dartList');
             if (!dartListEl) return;
@@ -1321,11 +1344,12 @@
                 
                 dartListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 공시가 없습니다.</li>';
             } catch (e) {
-                dartListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">공시를 불러오는 데 실패했습니다.</li>';
+                console.error("DART 수집 오류:", e);
+                dartListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">공시를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">우회 서버가 일시적으로 제한되었습니다. 잠시 후 시도해주세요.</span></li>';
             }
         }
 
-        // 💸 실시간 배당 내역 수집 및 배당성장 검증
+        // 💸 [개선됨] 실시간 배당 내역 수집 및 배당성장 검증
         async function loadDividendHistory(ticker) {
             const tbody = document.getElementById('dividendTableBody');
             const headerElement = document.getElementById('dividendHeader');
@@ -1342,7 +1366,7 @@
                 const doc = parser.parseFromString(htmlText, "text/html");
                 
                 const table = doc.querySelector('table.tb_type1_ifrs');
-                if (!table) throw new Error("재무 테이블을 찾을 수 없음");
+                if (!table) throw new Error("재무 테이블을 찾을 수 없음 (우회 서버에서 HTML을 제대로 받지 못함)");
 
                 const headers = Array.from(table.querySelectorAll('thead tr:nth-child(2) th')).map(th => th.textContent.trim());
                 const years = headers.slice(0, 3); 
@@ -1394,7 +1418,8 @@
                 
                 tbody.innerHTML = html;
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-sm font-bold text-red-500">배당 데이터를 불러오지 못했습니다.</td></tr>';
+                console.error("배당 데이터 수집 오류:", e);
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-sm font-bold text-red-500">배당 데이터를 불러오지 못했습니다.<br><span class="text-xs font-normal text-slate-500">우회 서버 문제이므로 다시 [분석] 버튼을 눌러보세요.</span></td></tr>`;
             }
         }
 
@@ -1609,7 +1634,6 @@
             const today = new Date();
             const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
             
-            // 🚨 할루시네이션 원천 차단 프롬프트 주입
             const prompt = `당신은 전세계 상위 0.1% 퀀트 포트폴리오 매니저 및 위험관리, 트레이딩 전문가입니다.
 사용자가 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로 분석하세요.
 
@@ -1635,7 +1659,6 @@ ${portfolioSummaryString}
 ### 5. 🚀 최종 행동 요약 (Action Plan)`;
 
             try {
-                // ⚠️ 유저 요청에 따라 모델명 절대 보존 (temperature 0.0 으로 왜곡 방지)
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
@@ -1689,7 +1712,6 @@ ${portfolioSummaryString}
             const today = new Date();
             const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
             
-            // 🚨 할루시네이션 원천 차단 프롬프트 주입
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트 및 트레이딩 전문가입니다. 
 
 🚨 [할루시네이션(정보 왜곡) 방지 절대 규칙]
@@ -1745,7 +1767,6 @@ PRED_D5: [예상종가]원
 6. 종합 총평`;
 
             try {
-                // ⚠️ 유저 요청에 따라 모델명 절대 보존 (temperature 0.0 으로 왜곡 방지)
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
@@ -2012,7 +2033,6 @@ PRED_D5: [예상종가]원
                     contextStr += `\n🚨 [특별 지시]: 이 종목은 현재 '🔥 3년 연속 배당성장' 배지가 활성화된 우량 배당 성장주입니다. 답변 시 배당 투자 및 장기 보유 관점의 매력도를 반드시 덧붙이세요.`;
                 }
 
-                // 🎯 챗봇 투자의견 명확화 및 할루시네이션(왜곡) 차단
                 contextStr += `\n🎯 [투자의견 명확화 지시]: 질문에 답변할 때 두리뭉실하게 말하지 마세요. 현재가, 최신 뉴스 등을 종합적으로 분석하여 반드시 답변의 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]** 중 하나를 골라 대괄호와 함께 제목으로 달아주세요. 그 직후에 명확한 논리를 서술하세요.`;
                 contextStr += `\n🚨 [할루시네이션 방지 절대 규칙]: 구글 실시간 검색 결과에 없는 허위 뉴스, 실적, 공시를 절대 창작(지어내기)하지 마세요. 검색된 팩트 기반으로만 답변하고, 정보가 없다면 '현재 관련 정보가 검색되지 않습니다'라고 명확히 답변하세요.`;
             }
@@ -2033,14 +2053,13 @@ PRED_D5: [예상종가]원
                 parts: [{ text: text }]
             });
 
-            // 🌟 실시간 구글 검색 연동 (온도 0.0 으로 왜곡 차단)
             const requestBody = { 
                 contents: chatHistory, 
                 generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 },
+                tools: [{ googleSearch: {} }] 
             };
 
             try {
-                // ⚠️ 유저 요청에 따라 챗봇 모델명 절대 보존 
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
