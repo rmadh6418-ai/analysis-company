@@ -696,31 +696,38 @@
             });
         }
 
-        // 🌟 무적 프록시 서버 연동 (오류 방지 및 다중 우회 적용)
+        // 🌟 무적 프록시 서버 연동 (오류 방지 및 다중 우회 완벽 적용)
         async function fetchWithProxy(targetUrl) {
-            const proxies = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-                `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
-                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
-            ];
-
-            for (let i = 0; i < proxies.length; i++) {
-                try {
-                    let res = await fetch(proxies[i]);
-                    if (res.ok) {
-                        if (proxies[i].includes('/get?url=')) {
-                            const data = await res.json();
-                            if (data.contents) return data.contents;
-                        } else {
-                            return await res.text();
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`프록시 ${i+1}차 시도 실패, 다음 서버로 우회합니다.`);
+            const encodedUrl = encodeURIComponent(targetUrl);
+            
+            // 1순위: AllOrigins (현재 가장 안정적)
+            try {
+                const res1 = await fetch(`https://api.allorigins.win/get?url=${encodedUrl}`);
+                if (res1.ok) {
+                    const data = await res1.json();
+                    if (data && data.contents) return data.contents;
                 }
-            }
-            throw new Error("모든 프록시 서버 연결 실패");
+            } catch(e) { console.warn("1순위 프록시 연결 실패"); }
+
+            // 2순위: CodeTabs
+            try {
+                const res2 = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`);
+                if (res2.ok) return await res2.text();
+            } catch(e) { console.warn("2순위 프록시 연결 실패"); }
+
+            // 3순위: ThingProxy
+            try {
+                const res3 = await fetch(`https://thingproxy.freeboard.io/fetch/${targetUrl}`);
+                if (res3.ok) return await res3.text();
+            } catch(e) { console.warn("3순위 프록시 연결 실패"); }
+
+            // 4순위: CorsProxy
+            try {
+                const res4 = await fetch(`https://corsproxy.io/?${encodedUrl}`);
+                if (res4.ok) return await res4.text();
+            } catch(e) { console.warn("4순위 프록시 연결 실패"); }
+
+            throw new Error("모든 프록시 서버 응답 실패");
         }
 
         const KOSPI200_COMPANIES = {
