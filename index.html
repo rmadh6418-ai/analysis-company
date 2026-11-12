@@ -3,22 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- PWA 및 모바일 태블릿 앱 설정 -->
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AI 퀀트 Pro">
     <meta name="theme-color" content="#1e293b">
-    
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2933/2933116.png">
-
     <title>AI 주식 퀀트 & 다종목 포트폴리오 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <style>
         .table-cell { padding: 0.75rem 0.5rem; border: 1px solid #e5e7eb; text-align: center; white-space: nowrap; }
         .table-header { background-color: #f8fafc; font-weight: 700; color: #334155; white-space: nowrap; }
@@ -28,15 +23,12 @@
         details > summary::-webkit-details-marker { display: none; }
         .sync-dot { display: inline-block; width: 8px; height: 8px; background-color: #3b82f6; border-radius: 50%; margin-right: 5px; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-        
-        /* 챗봇 스크롤바 커스텀 */
         #chatMessages::-webkit-scrollbar { width: 4px; }
         #chatMessages::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 2px; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans relative">
 
-    <!-- 🔒 암호 입력 잠금 화면 -->
     <div id="lockScreen" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col justify-center items-center">
         <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-[90%]">
             <div class="text-5xl mb-5">🔐</div>
@@ -48,9 +40,7 @@
         </div>
     </div>
 
-    <!-- 📈 메인 대시보드 -->
     <div id="mainContent" class="hidden max-w-6xl mx-auto space-y-6 p-4 md:p-6 pb-24">
-        <!-- 헤더 -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
                 <span class="text-3xl">💼</span>
@@ -70,9 +60,6 @@
             </div>
         </div>
 
-        <!-- ============================================================== -->
-        <!-- 🚀 1. 다종목 보유 포트폴리오 & 투입대기자금 통합 관리 영역 -->
-        <!-- ============================================================== -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-3">
                 <div>
@@ -179,9 +166,6 @@
             </details>
         </div>
 
-        <!-- ============================================================== -->
-        <!-- 🔍 2. 개별 종목 정밀 퀀트 분석기 -->
-        <!-- ============================================================== -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
             <h3 class="text-left text-sm font-bold text-slate-700 mb-2">🔍 개별 종목 퀀트 지표 & 매매 타점 상세 분석</h3>
             <div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-2 relative">
@@ -229,7 +213,7 @@
 
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-500 pl-3 mb-3">현재가 및 수급 현황</h2>
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">현재가</p>
                         <p id="naverPrice" class="text-2xl font-extrabold text-slate-800">-</p>
@@ -247,13 +231,8 @@
                         <p class="text-xs font-semibold text-slate-400 mb-1">시가총액</p>
                         <p id="naverMarketCap" class="text-2xl font-extrabold text-slate-700">-</p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-semibold text-slate-400 mb-1">외국인 소진율</p>
-                        <p id="naverForeign" class="text-2xl font-extrabold text-slate-700">-</p>
-                    </div>
                 </div>
 
-                <!-- 🌟 AI가 읽고 있는 기술적 지표 원본 현황판 -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                     <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
                         <p class="text-[11px] font-bold text-slate-500 mb-1">RSI (14일)</p>
@@ -274,7 +253,6 @@
                 </div>
             </div>
 
-            <!-- 🌟 실시간 트레이딩뷰 캔들 차트 -->
             <div>
                 <div class="flex justify-between items-center mb-3 mt-2">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-600 pl-3">📈 실시간 캔들 차트 (이평선·RSI·MACD 적용)</h2>
@@ -284,9 +262,7 @@
                 </div>
             </div>
 
-            <!-- 📰 실시간 뉴스 & 📄 DART 전자공시 통합 패널 -->
             <div id="infoSection" class="hidden mt-6 mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- 뉴스 패널 -->
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 mb-3 flex items-center justify-between">
                         <span>📰 실시간 주요 뉴스</span>
@@ -296,8 +272,6 @@
                         <ul id="newsList" class="space-y-1"></ul>
                     </div>
                 </div>
-
-                <!-- DART 공시 패널 -->
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-amber-500 pl-3 mb-3 flex items-center justify-between">
                         <span>📄 DART 전자공시</span>
@@ -309,7 +283,6 @@
                 </div>
             </div>
 
-            <!-- 🌟 AI 향후 5일 주가 예측 및 자동 지지선 -->
             <div id="aiPredictionSection" class="hidden space-y-4">
                 <div class="flex justify-between items-center mb-1 mt-2">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🔮 AI 5일 주가 예측 및 매수 지지선</h2>
@@ -488,7 +461,7 @@
 
             <div>
                 <h2 class="text-lg font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-3">핵심 밸류에이션 & 모닝스타 경제적 해자</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PER (주가수익비율)</p>
                         <p id="fnPer" class="text-2xl font-extrabold text-slate-800">-</p>
@@ -497,11 +470,6 @@
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">PBR (주가순자산비율)</p>
                         <p id="fnPbr" class="text-2xl font-extrabold text-slate-800">-</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-semibold text-slate-400 mb-1">PEG (주가수익성장비율)</p>
-                        <p id="fnPeg" class="text-2xl font-extrabold text-blue-600">-</p>
-                        <p id="fnPegDesc" class="text-xs text-slate-400 mt-1">서버에서 계산 중</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-300 bg-amber-50/30 text-center flex flex-col justify-center items-center h-full">
                         <p class="text-xs font-semibold text-amber-800 mb-1">경제적 해자 (Morningstar)</p>
@@ -524,7 +492,6 @@
                         </table>
                     </div>
                 </div>
-                
                 <div class="lg:col-span-1">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-cyan-500 pl-3 mb-3">📊 영업이익 트렌드</h2>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-64 flex items-center justify-center">
@@ -543,11 +510,9 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
-    <!-- 🤖 챗봇 플로팅 UI 추가부분 -->
     <button id="chatbotToggleBtn" onclick="toggleChatbot()" class="fixed bottom-6 right-6 z-[9990] bg-indigo-600 text-white p-4 rounded-full shadow-2xl hover:bg-indigo-700 transition transform hover:scale-105 flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
     </button>
@@ -565,7 +530,6 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </div>
-        
         <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
             <div class="flex flex-col items-start">
                 <span class="text-[11px] font-bold text-slate-400 ml-1 mb-1">AI 어시스턴트</span>
@@ -575,7 +539,6 @@
                 </div>
             </div>
         </div>
-
         <div class="p-3 bg-white border-t border-slate-200 rounded-b-2xl shrink-0">
             <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-full border border-slate-200 focus-within:border-indigo-400 focus-within:bg-white transition-colors">
                 <input type="text" id="chatInput" onkeypress="if(event.key==='Enter') sendChatMessage()" placeholder="질문을 입력하세요..." class="flex-1 bg-transparent border-none text-sm px-3 py-2 focus:outline-none text-slate-700" autocomplete="off">
@@ -587,46 +550,17 @@
     </div>
 
     <script>
-        // 전역 변수 모음
-        let lastFetchedData = null;
-        let globalQuantData = null;
-        let myChart = null;
-        let predChartObj = null;
-        let aiParsedStrategy = {}; 
-        let parsedAiTargetPrice = 0; 
-        
-        let userPortfolio = [];
-        let selectedPortCode = '';
-        let livePortfolioPrices = {};
-        let portfolioPieChart = null; 
+        let lastFetchedData = null; let globalQuantData = null; let myChart = null; let predChartObj = null;
+        let aiParsedStrategy = {}; let parsedAiTargetPrice = 0; 
+        let userPortfolio = []; let selectedPortCode = ''; let livePortfolioPrices = {}; let portfolioPieChart = null; 
 
         function checkPassword() {
-            const pin = document.getElementById('lockPin').value.trim();
-            const errorMsg = document.getElementById('lockError');
- 
-            const secretHash = [73, 64, 89, 91, 70, 75, 68, 89, 27, 11, 106];
-            const xorKey = 42;
-
+            const pin = document.getElementById('lockPin').value.trim(); const errorMsg = document.getElementById('lockError');
+            const secretHash = [73, 64, 89, 91, 70, 75, 68, 89, 27, 11, 106]; const xorKey = 42;
             let isValid = (pin.length === secretHash.length);
-
-            if (isValid) {
-                for (let i = 0; i < pin.length; i++) {
-                    if ((pin.charCodeAt(i) ^ xorKey) !== secretHash[i]) {
-                        isValid = false;
-                        break;
-                    }
-                }
-            }
-
-            if (isValid) { 
-                sessionStorage.setItem('aiQuantUnlocked', 'true');
-                document.getElementById('lockScreen').style.display = 'none';
-                document.getElementById('mainContent').classList.remove('hidden');
-            } else {
-                errorMsg.classList.remove('hidden');
-                document.getElementById('lockPin').value = '';
-                document.getElementById('lockPin').focus();
-            }
+            if (isValid) { for (let i = 0; i < pin.length; i++) { if ((pin.charCodeAt(i) ^ xorKey) !== secretHash[i]) { isValid = false; break; } } }
+            if (isValid) { sessionStorage.setItem('aiQuantUnlocked', 'true'); document.getElementById('lockScreen').style.display = 'none'; document.getElementById('mainContent').classList.remove('hidden'); } 
+            else { errorMsg.classList.remove('hidden'); document.getElementById('lockPin').value = ''; document.getElementById('lockPin').focus(); }
         }
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxaxvLXEw7HTVEXDig_zWA5UhXU7s5fTxtvVrjlZLiUGd5yX-GwycVpxPLaRBHtS5v9/exec";
@@ -635,96 +569,20 @@
             return new Promise((resolve) => {
                 const cbName = "__nv_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
                 const script = document.createElement("script");
-                const timer = setTimeout(() => {
-                    cleanup();
-                    resolve(null);
-                }, 3500);
-
-                function cleanup() {
-                    clearTimeout(timer);
-                    if (script.parentNode) script.parentNode.removeChild(script);
-                    try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
-                }
-
-                window[cbName] = function(res) {
-                    cleanup();
-                    if (res && res.result && Array.isArray(res.result.areas)) {
-                        resolve(res.result.areas);
-                    } else {
-                        resolve(null);
-                    }
-                };
-
-                script.onerror = function() {
-                    cleanup();
-                    resolve(null);
-                };
-
-                script.charset = "euc-kr";
+                const timer = setTimeout(() => { cleanup(); resolve(null); }, 3500);
+                function cleanup() { clearTimeout(timer); if (script.parentNode) script.parentNode.removeChild(script); try { delete window[cbName]; } catch (e) { window[cbName] = undefined; } }
+                window[cbName] = function(res) { cleanup(); if (res && res.result && Array.isArray(res.result.areas)) { resolve(res.result.areas); } else { resolve(null); } };
+                script.onerror = function() { cleanup(); resolve(null); }; script.charset = "euc-kr";
                 script.src = `https://polling.finance.naver.com/api/realtime?query=${encodeURIComponent(queryStr)}&_callback=${cbName}&_=${Date.now()}_${Math.random()}`;
                 document.head.appendChild(script);
             });
         }
 
-        // 🌟 무적 프록시 서버 연동 (오류 방지 및 다중 우회 완벽 적용)
-        async function fetchWithProxy(targetUrl) {
-            const encoded = encodeURIComponent(targetUrl);
-            const proxies = [
-                `https://api.codetabs.com/v1/proxy?quest=${targetUrl}`,
-                `https://api.allorigins.win/raw?url=${encoded}`,
-                `https://corsproxy.io/?${encoded}`
-            ];
-
-            for (let url of proxies) {
-                try {
-                    let res = await fetch(url);
-                    if (res.ok) {
-                        let text = await res.text();
-                        if (text && text.length > 300) return text;
-                    }
-                } catch(e) {}
-            }
-            throw new Error("모든 프록시 서버 차단됨");
-        }
-
-        const KOSPI200_COMPANIES = {
-            "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
-            "이차전지·소재": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "삼성SDI": "006400", "포스코퓨처엠": "003670", "에코프로머티": "450080", "엘앤에프": "066970", "코스모신소재": "005070", "코스모화학": "005420", "솔루스첨단소재": "336370", "금양": "001570", "더블유씨피": "393890", "롯데에너지머티리얼즈": "020150", "SK아이이테크놀로지": "361610"},
-            "플랫폼·게임·IT(S/W)": {"NAVER": "035420", "카카오": "035720", "크래프톤": "259960", "엔씨소프트": "036570", "넷마블": "251270", "카카오페이": "377300", "카카오뱅크": "323410", "삼성에스디에스": "018260", "현대오토에버": "307950", "롯데이노베이트": "286940", "더존비즈온": "012510", "포스코DX": "022100", "다우기술": "023590", "에스원": "012750"},
-            "통신·미디어": {"SK텔레콤": "017670", "KT": "030200", "LG유플러스": "032640", "제일기획": "030000", "이노션": "214320", "CJ ENM": "035760", "스튜디오드래곤": "253450"},
-            "자동차·부품·타이어": {"현대차": "005380", "기아": "000270", "현대모비스": "012330", "현대글로비스": "086280", "현대위아": "011210", "HL만도": "204320", "에스엘": "005850", "한국타이어앤테크놀로지": "161390", "금호타이어": "073240", "넥센타이어": "002350", "화신": "010690", "성우하이텍": "015750", "명신산업": "009900", "DN오토모티브": "007340"},
-            "조선·기계·운송": {"HD한국조선해양": "009540", "HD현대중공업": "329180", "삼성중공업": "010140", "한화오션": "042660", "HD현대미포": "010620", "한화엔진": "082740", "HD현대마린엔진": "071970", "HD현대마린솔루션": "443060", "HMM": "011200", "대한항공": "003490", "아시아나항공": "020560", "팬오션": "028670", "CJ대한통운": "000120", "두산밥캣": "241560", "HD현대건설기계": "267270", "HD현대인프라코어": "042670", "한국카본": "017960", "현대엘리베이": "017800", "두산로보틱스": "454910", "SK오션플랜트": "100090"},
-            "방위산업·우주항공": {"한화에어로스페이스": "012450", "현대로템": "064350", "한국항공우주": "047810", "LIG넥스원": "079550", "한화시스템": "272210", "풍산": "103140"},
-            "원전·전력설비": {"가온전선": "000500", "산일전기": "062040", "두산에너빌리티": "034020", "한국전력": "015760", "한전기술": "052690", "한전KPS": "051600", "LS ELECTRIC": "010120", "HD현대일렉트릭": "267260", "효성중공업": "298040", "대한전선": "001440", "일진전기": "103590", "두산퓨얼셀": "336260", "씨에스윈드": "112610", "LS에코에너지": "229640"},
-            "제약·바이오": {"삼성바이오로직스": "207940", "셀트리온": "068270", "유한양행": "000100", "한미약품": "128940", "SK바이오팜": "326030", "SK바이오사이언스": "302440", "녹십자": "006280", "종근당": "185750", "대웅제약": "069620", "대원제약": "003220", "보령": "003850", "JW중외제약": "001060", "영진약품": "003520", "일동제약": "249420", "환인제약": "016580", "한올바이오파마": "009420", "신풍제약": "019170", "에스디바이오센서": "137310", "대웅": "003090", "바이오노트": "377740"},
-            "화학·정유·에너지": {"LG화학": "051910", "SK이노베이션": "096770", "S-Oil": "010950", "한화솔루션": "009830", "롯데케미칼": "011170", "금호석유": "011780", "SKC": "011790", "효성첨단소재": "298050", "효성티앤씨": "298020", "OCI홀딩스": "010060", "대한유화": "006650", "한국가스공사": "036460", "SK가스": "018670", "롯데정밀화학": "004000", "애경케미칼": "161000", "태광산업": "003240", "후성": "093370", "케이카": "381970", "TKG휴켐스": "069260", "이수스페셜티케미컬": "457190", "PI첨단소재": "178920", "SK케미칼": "285130", "OCI": "456040"},
-            "철강·비철금속·소재": {"고려아연": "010130", "현대제철": "004020", "동국제강": "460860", "세아제강": "306200", "세아베스틸지주": "001430", "KG모빌리티": "003620", "영풍": "000670", "동원산업": "006040", "포스코인터내셔널": "047050", "세아제강지주": "003030", "삼아알미늄": "006110"},
-            "금융·지주사": {"KB금융": "105560", "신한지주": "055550", "하나금융지주": "086790", "우리금융지주": "316140", "메리츠금융지주": "138040", "기업은행": "024110", "BNK금융지주": "138930", "DGB금융지주": "139130", "JB금융지주": "175330", "SK": "034730", "LG": "003550", "HD현대": "267250", "CJ": "001040", "LS": "006260", "한화": "000880", "GS": "078930", "삼성물산": "028260", "두산": "000150", "효성": "004800", "BGF": "027410"},
-            "증권·보험": {"삼성생명": "032830", "삼성화재": "000810", "DB손해보험": "005830", "현대해상": "001450", "한화생명": "088350", "한화손해보험": "000370", "롯데손해보험": "000400", "코리안리": "003690", "미래에셋증권": "006800", "한국금융지주": "071050", "NH투자증권": "005940", "삼성증권": "016360", "키움증권": "039490", "대신증권": "003540", "한화투자증권": "003530", "동양생명": "082640"},
-            "건설·건자재": {"현대건설": "000720", "GS건설": "006360", "대우건설": "047040", "DL이앤씨": "375500", "HDC현대산업개발": "294870", "삼성E&A": "028050", "쌍용C&E": "003410", "KCC": "002380", "아세아시멘트": "183190", "한일시멘트": "300720", "동서": "026960"},
-            "화장품·의류·소비재": {"아모레퍼시픽": "090430", "LG생활건강": "051900", "한국콜마": "161890", "코스맥스": "192820", "아모레G": "002790", "애경산업": "018250", "F&F": "383220", "영원무역": "111110", "한섬": "020000", "휠라홀딩스": "081660", "코웨이": "021240", "쿠쿠홈시스": "284740", "에이피알": "278470", "영원무역홀딩스": "009970", "신세계인터내셔날": "031430"},
-            "음식료·유통·엔터": {"KT&G": "033780", "CJ제일제당": "097950", "삼양식품": "003230", "오리온": "271560", "농심": "004370", "롯데웰푸드": "280360", "하이트진로": "000080", "대상": "001680", "오뚜기": "007310", "롯데칠성": "005300", "동원F&B": "049770", "이마트": "139480", "BGF리테일": "282330", "GS리테일": "007070", "신세계": "004170", "롯데쇼핑": "023530", "현대백화점": "069960", "호텔신라": "008770", "강원랜드": "035250", "GKL": "114090", "현대홈쇼핑": "057050", "빙그레": "005180", "현대그린푸드": "453340"}
-        };
-
-        const KOSDAQ150_COMPANIES = {
-            "반도체·장비 (IT H/W)": {"씨엠티엑스": "388210", "리노공업": "058470", "HPSP": "403870", "이오테크닉스": "039030", "주성엔지니어링": "036930", "솔브레인": "357780", "동진쎄미켐": "005290", "하나머티리얼즈": "166090", "원익IPS": "240810", "테크윙": "089030", "ISC": "095340", "심텍": "222800", "대덕전자": "353200", "파크시스템스": "140860", "티씨케이": "064760", "원익QnC": "074600", "두산테스나": "131970", "유진테크": "084370", "SFA반도체": "036540", "네오셈": "253590", "덕산네오룩스": "213420", "피에스케이": "031980", "고영": "098460", "제주반도체": "080220", "테스": "095610", "원익홀딩스": "030530", "에스티아이": "039440", "아이쓰리시스템": "214430", "하나마이크론": "067310", "에스앤에스텍": "101490", "티에스이": "131290", "코미코": "183300", "와이씨": "232140", "퀄리타스반도체": "432720", "어보브반도체": "102120", "가온칩스": "399720", "오픈엣지테크놀로지": "394280", "에이직랜드": "445090", "텔레칩스": "054450", "넥스틴": "348210", "파두": "440110"},
-            "이차전지·소재": {"에코프로비엠": "247540", "에코프로": "086520", "대주전자재료": "078600", "엔켐": "348370", "나노신소재": "121600", "피엔티": "137400", "동화기업": "025900", "성일하이텍": "365340", "더블유씨피": "393890", "윤성에프앤씨": "372170", "천보": "278280", "에코프로에이치엔": "383310", "새빗켐": "107600", "씨아이에스": "222080", "신성델타테크": "065350", "레이크머티리얼즈": "281740", "포스코엠텍": "009520", "이녹스첨단소재": "272290", "유진테크놀로지": "439370", "탑머티리얼": "360070", "제이오": "418550", "신성에스티": "416180"},
-            "제약·바이오": {"알테오젠": "196170", "HLB": "028300", "삼천당제약": "000250", "리가켐바이오": "141080", "에스티팜": "237690", "휴젤": "145020", "클래시스": "214150", "파마리서치": "214450", "셀트리온제약": "068760", "케어젠": "214370", "에이비엘바이오": "298380", "메디톡스": "086900", "오스코텍": "039200", "펩트론": "087010", "차바이오텍": "085660", "보로노이": "310210", "HK이노엔": "195940", "네이처셀": "007390", "올릭스": "226950", "엘앤씨바이오": "290650", "씨젠": "096530", "동국제약": "086450", "디앤디파마텍": "347850", "제넥신": "095700", "현대바이오": "048410", "젬백스": "082270", "루닛": "328130", "뷰노": "338220", "제이엘케이": "322510", "코어라인소프트": "384470", "큐로셀": "372320", "신테카바이오": "226330", "툴젠": "199800", "바이오다인": "314930"},
-            "게임·IT(S/W)": {"펄어비스": "263750", "카카오게임즈": "293490", "위메이드": "112040", "넥슨게임즈": "225570", "컴투스": "078340", "네오위즈": "095660", "웹젠": "069080", "안랩": "053800", "위메이드맥스": "101730", "데브시스터즈": "194480", "한글과컴퓨터": "030520", "다우데이타": "032190", "엠게임": "058630", "아이티센": "124500", "코나아이": "052400", "NHN한국사이버결제": "060250", "엠로": "058970", "마음AI": "377220", "솔트룩스": "304100", "크라우드웍스": "355390", "폴라리스오피스": "041020", "이스트소프트": "047560"},
-            "엔터·미디어·플랫폼": {"JYP Ent.": "035900", "에스엠": "041510", "와이지엔터테인먼트": "122870", "SOOP": "067160", "CJ ENM": "035760", "스튜디오드래곤": "253450", "디어유": "376300", "초록뱀미디어": "047820", "삼화네트웍스": "046390", "카페24": "042000"},
-            "미용의료·화장품·소비재": {"실리콘투": "257720", "제이시스메디칼": "287410", "원텍": "336570", "브이티": "018290", "마녀공장": "439090", "아이패밀리에스씨": "393260", "코스메카코리아": "241710", "펌텍코리아": "251970", "감성코퍼레이션": "036620", "메가스터디교육": "215200", "아난티": "025980", "제이투케이바이오": "420570", "씨앤씨인터내셔널": "352480", "비올": "335890"},
-            "로봇·기계·부품": {"레인보우로보틱스": "277810", "에스에프에이": "056190", "로보티즈": "108490", "에스피지": "058610", "휴림로봇": "090710", "로보스타": "090360", "티로보틱스": "117730", "유일로보틱스": "388720", "에브리봇": "270660", "유진로봇": "056080", "알에스오토메이션": "140670", "하이젠알앤엠": "160190", "삼현": "437730", "성광벤드": "014620", "태광": "023160", "서진시스템": "178320", "비에이치아이": "083650", "엔젤로보틱스": "455900", "뉴로메카": "348340", "에스비비테크": "389500"},
-            "통신장비·기타": {"케이엠더블유": "032500", "쏠리드": "050890", "인텔리안테크": "189300", "RFHIC": "218410", "쎄트렉아이": "099320", "제룡전기": "033100", "LS마린솔루션": "060370", "동성화인텍": "033500", "시노펙스": "025320", "우리기술투자": "041190", "미래에셋벤처투자": "100790", "서부T&D": "006730", "삼표시멘트": "038500", "하림지주": "003380", "우진엔텍": "453040", "에코아이": "448280"}
-        };
-
-        const ALL_COMPANIES = {};
-        const CODE_TO_NAME = {};
-        for (const sector in KOSPI200_COMPANIES) {
-            for (const [name, code] of Object.entries(KOSPI200_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; }
-        }
-        for (const sector in KOSDAQ150_COMPANIES) {
-            for (const [name, code] of Object.entries(KOSDAQ150_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; }
-        }
+        const KOSPI200_COMPANIES={"반도체·IT (H/W)":{"삼성전자":"005930","SK하이닉스":"000660","삼성전기":"009150","LG이노텍":"011070","LG전자":"066570","LG디스플레이":"034220","한미반도체":"042700","DB하이텍":"000990","이수페타시스":"007660","해성디에스":"195870","LX세미콘":"108320","한솔케미칼":"014680"},"이차전지·소재":{"LG에너지솔루션":"373220","POSCO홀딩스":"005490","삼성SDI":"006400","포스코퓨처엠":"003670","에코프로머티":"450080","엘앤에프":"066970","코스모신소재":"005070","코스모화학":"005420","솔루스첨단소재":"336370","금양":"001570","더블유씨피":"393890","롯데에너지머티리얼즈":"020150","SK아이이테크놀로지":"361610"},"플랫폼·게임·IT(S/W)":{"NAVER":"035420","카카오":"035720","크래프톤":"259960","엔씨소프트":"036570","넷마블":"251270","카카오페이":"377300","카카오뱅크":"323410","삼성에스디에스":"018260","현대오토에버":"307950","롯데이노베이트":"286940","더존비즈온":"012510","포스코DX":"022100","다우기술":"023590","에스원":"012750"},"통신·미디어":{"SK텔레콤":"017670","KT":"030200","LG유플러스":"032640","제일기획":"030000","이노션":"214320","CJ ENM":"035760","스튜디오드래곤":"253450"},"자동차·부품·타이어":{"현대차":"005380","기아":"000270","현대모비스":"012330","현대글로비스":"086280","현대위아":"011210","HL만도":"204320","에스엘":"005850","한국타이어앤테크놀로지":"161390","금호타이어":"073240","넥센타이어":"002350","화신":"010690","성우하이텍":"015750","명신산업":"009900","DN오토모티브":"007340"},"조선·기계·운송":{"HD한국조선해양":"009540","HD현대중공업":"329180","삼성중공업":"010140","한화오션":"042660","HD현대미포":"010620","한화엔진":"082740","HD현대마린엔진":"071970","HD현대마린솔루션":"443060","HMM":"011200","대한항공":"003490","아시아나항공":"020560","팬오션":"028670","CJ대한통운":"000120","두산밥캣":"241560","HD현대건설기계":"267270","HD현대인프라코어":"042670","한국카본":"017960","현대엘리베이":"017800","두산로보틱스":"454910","SK오션플랜트":"100090"},"방위산업·우주항공":{"한화에어로스페이스":"012450","현대로템":"064350","한국항공우주":"047810","LIG넥스원":"079550","한화시스템":"272210","풍산":"103140"},"원전·전력설비":{"가온전선":"000500","산일전기":"062040","두산에너빌리티":"034020","한국전력":"015760","한전기술":"052690","한전KPS":"051600","LS ELECTRIC":"010120","HD현대일렉트릭":"267260","효성중공업":"298040","대한전선":"001440","일진전기":"103590","두산퓨얼셀":"336260","씨에스윈드":"112610","LS에코에너지":"229640"},"제약·바이오":{"삼성바이오로직스":"207940","셀트리온":"068270","유한양행":"000100","한미약품":"128940","SK바이오팜":"326030","SK바이오사이언스":"302440","녹십자":"006280","종근당":"185750","대웅제약":"069620","대원제약":"003220","보령":"003850","JW중외제약":"001060","영진약품":"003520","일동제약":"249420","환인제약":"016580","한올바이오파마":"009420","신풍제약":"019170","에스디바이오센서":"137310","대웅":"003090","바이오노트":"377740"},"화학·정유·에너지":{"LG화학":"051910","SK이노베이션":"096770","S-Oil":"010950","한화솔루션":"009830","롯데케미칼":"011170","금호석유":"011780","SKC":"011790","효성첨단소재":"298050","효성티앤씨":"298020","OCI홀딩스":"010060","대한유화":"006650","한국가스공사":"036460","SK가스":"018670","롯데정밀화학":"004000","애경케미칼":"161000","태광산업":"003240","후성":"093370","케이카":"381970","TKG휴켐스":"069260","이수스페셜티케미컬":"457190","PI첨단소재":"178920","SK케미칼":"285130","OCI":"456040"},"철강·비철금속·소재":{"고려아연":"010130","현대제철":"004020","동국제강":"460860","세아제강":"306200","세아베스틸지주":"001430","KG모빌리티":"003620","영풍":"000670","동원산업":"006040","포스코인터내셔널":"047050","세아제강지주":"003030","삼아알미늄":"006110"},"금융·지주사":{"KB금융":"105560","신한지주":"055550","하나금융지주":"086790","우리금융지주":"316140","메리츠금융지주":"138040","기업은행":"024110","BNK금융지주":"138930","DGB금융지주":"139130","JB금융지주":"175330","SK":"034730","LG":"003550","HD현대":"267250","CJ":"001040","LS":"006260","한화":"000880","GS":"078930","삼성물산":"028260","두산":"000150","효성":"004800","BGF":"027410"},"증권·보험":{"삼성생명":"032830","삼성화재":"000810","DB손해보험":"005830","현대해상":"001450","한화생명":"088350","한화손해보험":"000370","롯데손해보험":"000400","코리안리":"003690","미래에셋증권":"006800","한국금융지주":"071050","NH투자증권":"005940","삼성증권":"016360","키움증권":"039490","대신증권":"003540","한화투자증권":"003530","동양생명":"082640"},"건설·건자재":{"현대건설":"000720","GS건설":"006360","대우건설":"047040","DL이앤씨":"375500","HDC현대산업개발":"294870","삼성E&A":"028050","쌍용C&E":"003410","KCC":"002380","아세아시멘트":"183190","한일시멘트":"300720","동서":"026960"},"화장품·의류·소비재":{"아모레퍼시픽":"090430","LG생활건강":"051900","한국콜마":"161890","코스맥스":"192820","아모레G":"002790","애경산업":"018250","F&F":"383220","영원무역":"111110","한섬":"020000","휠라홀딩스":"081660","코웨이":"021240","쿠쿠홈시스":"284740","에이피알":"278470","영원무역홀딩스":"009970","신세계인터내셔날":"031430"},"음식료·유통·엔터":{"KT&G":"033780","CJ제일제당":"097950","삼양식품":"003230","오리온":"271560","농심":"004370","롯데웰푸드":"280360","하이트진로":"000080","대상":"001680","오뚜기":"007310","롯데칠성":"005300","동원F&B":"049770","이마트":"139480","BGF리테일":"282330","GS리테일":"007070","신세계":"004170","롯데쇼핑":"023530","현대백화점":"069960","호텔신라":"008770","강원랜드":"035250","GKL":"114090","현대홈쇼핑":"057050","빙그레":"005180","현대그린푸드":"453340"}};
+        const KOSDAQ150_COMPANIES={"반도체·장비 (IT H/W)":{"씨엠티엑스":"388210","리노공업":"058470","HPSP":"403870","이오테크닉스":"039030","주성엔지니어링":"036930","솔브레인":"357780","동진쎄미켐":"005290","하나머티리얼즈":"166090","원익IPS":"240810","테크윙":"089030","ISC":"095340","심텍":"222800","대덕전자":"353200","파크시스템스":"140860","티씨케이":"064760","원익QnC":"074600","두산테스나":"131970","유진테크":"084370","SFA반도체":"036540","네오셈":"253590","덕산네오룩스":"213420","피에스케이":"031980","고영":"098460","제주반도체":"080220","테스":"095610","원익홀딩스":"030530","에스티아이":"039440","아이쓰리시스템":"214430","하나마이크론":"067310","에스앤에스텍":"101490","티에스이":"131290","코미코":"183300","와이씨":"232140","퀄리타스반도체":"432720","어보브반도체":"102120","가온칩스":"399720","오픈엣지테크놀로지":"394280","에이직랜드":"445090","텔레칩스":"054450","넥스틴":"348210","파두":"440110"},"이차전지·소재":{"에코프로비엠":"247540","에코프로":"086520","대주전자재료":"078600","엔켐":"348370","나노신소재":"121600","피엔티":"137400","동화기업":"025900","성일하이텍":"365340","더블유씨피":"393890","윤성에프앤씨":"372170","천보":"278280","에코프로에이치엔":"383310","새빗켐":"107600","씨아이에스":"222080","신성델타테크":"065350","레이크머티리얼즈":"281740","포스코엠텍":"009520","이녹스첨단소재":"272290","유진테크놀로지":"439370","탑머티리얼":"360070","제이오":"418550","신성에스티":"416180"},"제약·바이오":{"알테오젠":"196170","HLB":"028300","삼천당제약":"000250","리가켐바이오":"141080","에스티팜":"237690","휴젤":"145020","클래시스":"214150","파마리서치":"214450","셀트리온제약":"068760","케어젠":"214370","에이비엘바이오":"298380","메디톡스":"086900","오스코텍":"039200","펩트론":"087010","차바이오텍":"085660","보로노이":"310210","HK이노엔":"195940","네이처셀":"007390","올릭스":"226950","엘앤씨바이오":"290650","씨젠":"096530","동국제약":"086450","디앤디파마텍":"347850","제넥신":"095700","현대바이오":"048410","젬백스":"082270","루닛":"328130","뷰노":"338220","제이엘케이":"322510","코어라인소프트":"384470","큐로셀":"372320","신테카바이오":"226330","툴젠":"199800","바이오다인":"314930"},"게임·IT(S/W)":{"펄어비스":"263750","카카오게임즈":"293490","위메이드":"112040","넥슨게임즈":"225570","컴투스":"078340","네오위즈":"095660","웹젠":"069080","안랩":"053800","위메이드맥스":"101730","데브시스터즈":"194480","한글과컴퓨터":"030520","다우데이타":"032190","엠게임":"058630","아이티센":"124500","코나아이":"052400","NHN한국사이버결제":"060250","엠로":"058970","마음AI":"377220","솔트룩스":"304100","크라우드웍스":"355390","폴라리스오피스":"041020","이스트소프트":"047560"},"엔터·미디어·플랫폼":{"JYP Ent.":"035900","에스엠":"041510","와이지엔터테인먼트":"122870","SOOP":"067160","CJ ENM":"035760","스튜디오드래곤":"253450","디어유":"376300","초록뱀미디어":"047820","삼화네트웍스":"046390","카페24":"042000"},"미용의료·화장품·소비재":{"실리콘투":"257720","제이시스메디칼":"287410","원텍":"336570","브이티":"018290","마녀공장":"439090","아이패밀리에스씨":"393260","코스메카코리아":"241710","펌텍코리아":"251970","감성코퍼레이션":"036620","메가스터디교육":"215200","아난티":"025980","제이투케이바이오":"420570","씨앤씨인터내셔널":"352480","비올":"335890"},"로봇·기계·부품":{"레인보우로보틱스":"277810","에스에프에이":"056190","로보티즈":"108490","에스피지":"058610","휴림로봇":"090710","로보스타":"090360","티로보틱스":"117730","유일로보틱스":"388720","에브리봇":"270660","유진로봇":"056080","알에스오토메이션":"140670","하이젠알앤엠":"160190","삼현":"437730","성광벤드":"014620","태광":"023160","서진시스템":"178320","비에이치아이":"083650","엔젤로보틱스":"455900","뉴로메카":"348340","에스비비테크":"389500"},"통신장비·기타":{"케이엠더블유":"032500","쏠리드":"050890","인텔리안테크":"189300","RFHIC":"218410","쎄트렉아이":"099320","제룡전기":"033100","LS마린솔루션":"060370","동성화인텍":"033500","시노펙스":"025320","우리기술투자":"041190","미래에셋벤처투자":"100790","서부T&D":"006730","삼표시멘트":"038500","하림지주":"003380","우진엔텍":"453040","에코아이":"448280"}};
+        const ALL_COMPANIES = {}; const CODE_TO_NAME = {};
+        for (const sector in KOSPI200_COMPANIES) { for (const [name, code] of Object.entries(KOSPI200_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; } }
+        for (const sector in KOSDAQ150_COMPANIES) { for (const [name, code] of Object.entries(KOSDAQ150_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; } }
 
         async function loadFromGoogleCloud() {
             if (GAS_URL === "여기에_구글_앱스스크립트_Web_App_URL을_넣으세요") {
@@ -738,230 +596,119 @@
             try {
                 const res = await fetch(GAS_URL + "?_=" + Date.now());
                 const data = await res.json();
-                
-                if (data && data.portfolio) {
-                    userPortfolio = data.portfolio;
-                    renderPortfolioTable();
-                }
-                if (data && data.standbyCash !== undefined) {
-                    document.getElementById('portfolioStandbyCash').value = data.standbyCash;
-                    updatePortfolioSummary();
-                }
-            } catch (e) {
-                console.error("구글 시트 로드 실패", e);
-            }
+                if (data && data.portfolio) { userPortfolio = data.portfolio; renderPortfolioTable(); }
+                if (data && data.standbyCash !== undefined) { document.getElementById('portfolioStandbyCash').value = data.standbyCash; updatePortfolioSummary(); }
+            } catch (e) { console.error("구글 시트 로드 실패", e); }
         }
 
         function saveToGoogleCloud() {
             if (GAS_URL === "여기에_구글_앱스스크립트_Web_App_URL을_넣으세요") return;
             const data = { portfolio: userPortfolio, standbyCash: document.getElementById('portfolioStandbyCash').value || 0 };
-            try { fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); } 
-            catch(e) {}
+            try { fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); } catch(e) {}
         }
 
         window.onload = async () => {
-            if (sessionStorage.getItem('aiQuantUnlocked') === 'true') {
-                document.getElementById('lockScreen').style.display = 'none';
-                document.getElementById('mainContent').classList.remove('hidden');
-            } else {
-                document.getElementById('lockPin').focus();
-            }
-
+            if (sessionStorage.getItem('aiQuantUnlocked') === 'true') { document.getElementById('lockScreen').style.display = 'none'; document.getElementById('mainContent').classList.remove('hidden'); } else { document.getElementById('lockPin').focus(); }
             const savedKey = localStorage.getItem('geminiApiKey');
             if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
-
             await loadFromGoogleCloud();
-
             generateQuickButtons('kospiQuickBtns', KOSPI200_COMPANIES, 'bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-800 border-blue-200');
             generateQuickButtons('kosdaqQuickBtns', KOSDAQ150_COMPANIES, 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border-emerald-200');
-            
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#tickerInput') && !e.target.closest('#suggestionBox')) document.getElementById('suggestionBox').classList.add('hidden');
                 if (!e.target.closest('#portSearchInput') && !e.target.closest('#portSuggestionBox')) document.getElementById('portSuggestionBox').classList.add('hidden');
             });
-
-            try {
-                const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' });
-                if(res.ok) globalQuantData = await res.json();
-            } catch(e) {}
+            try { const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' }); if(res.ok) globalQuantData = await res.json(); } catch(e) {}
         };
 
         async function refreshRealTimePrice() {
             if (!lastFetchedData || !lastFetchedData.ticker) { window.location.reload(); return; }
-
-            const ticker = lastFetchedData.ticker;
-            const statusBox = document.getElementById('statusBox');
-            statusBox.classList.remove('hidden');
-            statusBox.innerHTML = `<p class="text-blue-600 font-semibold text-sm animate-pulse">실시간 주가 데이터를 연동 중입니다...</p>`;
-
+            const ticker = lastFetchedData.ticker; const statusBox = document.getElementById('statusBox');
+            statusBox.classList.remove('hidden'); statusBox.innerHTML = `<p class="text-blue-600 font-semibold text-sm animate-pulse">실시간 주가 데이터를 연동 중입니다...</p>`;
             try {
                 const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
                 if (areas && areas[0] && areas[0].datas && areas[0].datas[0]) {
-                    const st = areas[0].datas[0];
-                    const rf = String(st.rf || "3");
-                    const isUp = ["1", "2"].includes(rf);
-                    const isDown = ["4", "5"].includes(rf);
-
-                    lastFetchedData.price = Number(st.nv).toLocaleString('ko-KR');
-                    const cr = Math.abs(parseFloat(st.cr || 0)).toFixed(2);
-                    lastFetchedData.changeRate = (isUp ? "+" : (isDown ? "-" : "")) + cr + "%";
-                    lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
-
+                    const st = areas[0].datas[0]; const rf = String(st.rf || "3"); const isUp = ["1", "2"].includes(rf); const isDown = ["4", "5"].includes(rf);
+                    lastFetchedData.price = Number(st.nv).toLocaleString('ko-KR'); const cr = Math.abs(parseFloat(st.cr || 0)).toFixed(2);
+                    lastFetchedData.changeRate = (isUp ? "+" : (isDown ? "-" : "")) + cr + "%"; lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
                     livePortfolioPrices[ticker] = lastFetchedData.price;
-
-                    updateTopDashboardUI(lastFetchedData);
-                    renderPortfolioTable();
-                    calculateInvestment();
-
+                    updateTopDashboardUI(lastFetchedData); renderPortfolioTable(); calculateInvestment();
                     statusBox.innerHTML = `<p class="text-emerald-600 font-semibold text-sm">✅ 실시간 데이터 갱신 완료!</p>`;
                     setTimeout(() => statusBox.classList.add('hidden'), 2000);
-                } else {
-                    throw new Error("No data");
-                }
+                } else { throw new Error("No data"); }
             } catch (e) {
-                statusBox.innerHTML = `<p class="text-red-600 font-semibold text-sm">❌ 실시간 갱신 실패 (네트워크 오류)</p>`;
-                setTimeout(() => statusBox.classList.add('hidden'), 3000);
+                statusBox.innerHTML = `<p class="text-red-600 font-semibold text-sm">❌ 실시간 갱신 실패 (네트워크 오류)</p>`; setTimeout(() => statusBox.classList.add('hidden'), 3000);
             }
         }
 
         async function refreshPortfolioPrices() {
             await loadFromGoogleCloud();
             if (userPortfolio.length === 0) { alert("등록된 보유 종목이 없습니다."); return; }
-            const btn = document.getElementById('portRefreshBtn');
-            btn.textContent = "갱신 중..."; btn.disabled = true;
-
-            const allCodes = userPortfolio.map(p => p.ticker);
-            const chunks = [];
-            for (let i = 0; i < allCodes.length; i += 40) {
-                chunks.push(allCodes.slice(i, i + 40));
-            }
-
+            const btn = document.getElementById('portRefreshBtn'); btn.textContent = "갱신 중..."; btn.disabled = true;
+            const allCodes = userPortfolio.map(p => p.ticker); const chunks = [];
+            for (let i = 0; i < allCodes.length; i += 40) { chunks.push(allCodes.slice(i, i + 40)); }
             try {
                 await Promise.all(chunks.map(async (chunk) => {
                     const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${chunk.join(',')}`);
-                    if (areas) {
-                        for (const area of areas) {
-                            for (const st of (area.datas || [])) {
-                                if (st.cd && st.nv) {
-                                    livePortfolioPrices[st.cd] = Number(st.nv).toLocaleString('ko-KR');
-                                }
-                            }
-                        }
-                    }
+                    if (areas) { for (const area of areas) { for (const st of (area.datas || [])) { if (st.cd && st.nv) { livePortfolioPrices[st.cd] = Number(st.nv).toLocaleString('ko-KR'); } } } }
                 }));
-            } catch(e) {
-                console.error("포트폴리오 갱신 중 오류 발생", e);
-            }
-
-            renderPortfolioTable();
-            calculateInvestment();
-            btn.textContent = "실시간가 🔄"; btn.disabled = false;
+            } catch(e) { console.error("포트폴리오 갱신 중 오류 발생", e); }
+            renderPortfolioTable(); calculateInvestment(); btn.textContent = "실시간가 🔄"; btn.disabled = false;
         }
 
         function showPortSuggestions() {
-            const inputEl = document.getElementById('portSearchInput');
-            selectedPortCode = '';
-            const input = inputEl.value.trim().toLowerCase();
-            const box = document.getElementById('portSuggestionBox');
+            const inputEl = document.getElementById('portSearchInput'); selectedPortCode = ''; const input = inputEl.value.trim().toLowerCase(); const box = document.getElementById('portSuggestionBox');
             if (!input) { box.classList.add('hidden'); return; }
-
             const matches = [];
-            for (const [name, code] of Object.entries(ALL_COMPANIES)) {
-                if (name.toLowerCase().includes(input) || code.includes(input)) matches.push({ name, code });
-            }
-
+            for (const [name, code] of Object.entries(ALL_COMPANIES)) { if (name.toLowerCase().includes(input) || code.includes(input)) matches.push({ name, code }); }
             if (matches.length > 0) {
                 box.innerHTML = matches.map(m => `<div onclick="selectPortCompany('${m.name}', '${m.code}')" class="p-2 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b text-xs"><span class="font-bold text-slate-800">${m.name}</span><span class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">${m.code}</span></div>`).join('');
                 box.classList.remove('hidden');
             } else { box.classList.add('hidden'); }
         }
 
-        function selectPortCompany(name, code) {
-            document.getElementById('portSearchInput').value = `${name} (${code})`;
-            selectedPortCode = code;
-            document.getElementById('portSuggestionBox').classList.add('hidden');
-        }
+        function selectPortCompany(name, code) { document.getElementById('portSearchInput').value = `${name} (${code})`; selectedPortCode = code; document.getElementById('portSuggestionBox').classList.add('hidden'); }
 
         function addPortfolioItem() {
-            const inputVal = document.getElementById('portSearchInput').value.trim();
-            const avgPrice = parseInt(document.getElementById('portAvgPriceInput').value);
-            const investAmount = parseInt(document.getElementById('portInvestAmountInput').value);
+            const inputVal = document.getElementById('portSearchInput').value.trim(); const avgPrice = parseInt(document.getElementById('portAvgPriceInput').value); const investAmount = parseInt(document.getElementById('portInvestAmountInput').value);
             let ticker = selectedPortCode; let corpName = "";
-
-            if (!ticker) {
-                const match = inputVal.match(/\d{6}/);
-                if (match) ticker = match[0];
-                else if (ALL_COMPANIES[inputVal]) ticker = ALL_COMPANIES[inputVal];
-            }
+            if (!ticker) { const match = inputVal.match(/\d{6}/); if (match) ticker = match[0]; else if (ALL_COMPANIES[inputVal]) ticker = ALL_COMPANIES[inputVal]; }
             corpName = CODE_TO_NAME[ticker] || inputVal;
-
             if (!ticker || !/^\d{6}$/.test(ticker)) { alert('목록에서 유효한 종목명을 선택해주세요.'); return; }
             if (isNaN(avgPrice) || avgPrice <= 0) { alert('올바른 매수 평단가를 입력해주세요.'); return; }
             if (isNaN(investAmount) || investAmount <= 0) { alert('올바른 총 매수금액을 입력해주세요.'); return; }
-
             const existingIndex = userPortfolio.findIndex(p => p.ticker === ticker);
-            if (existingIndex >= 0) {
-                if (confirm(`[${corpName}] 종목이 이미 등록되어 있습니다. 새 데이터로 수정하시겠습니까?`)) {
-                    userPortfolio[existingIndex] = { ticker, corpName, avgPrice, investAmount };
-                }
-            } else { userPortfolio.push({ ticker, corpName, avgPrice, investAmount }); }
-
+            if (existingIndex >= 0) { if (confirm(`[${corpName}] 종목이 이미 등록되어 있습니다. 새 데이터로 수정하시겠습니까?`)) { userPortfolio[existingIndex] = { ticker, corpName, avgPrice, investAmount }; } } 
+            else { userPortfolio.push({ ticker, corpName, avgPrice, investAmount }); }
             savePortfolioToLocal(); renderPortfolioTable();
-            document.getElementById('portSearchInput').value = ''; document.getElementById('portAvgPriceInput').value = ''; document.getElementById('portInvestAmountInput').value = '';
-            selectedPortCode = '';
+            document.getElementById('portSearchInput').value = ''; document.getElementById('portAvgPriceInput').value = ''; document.getElementById('portInvestAmountInput').value = ''; selectedPortCode = '';
         }
 
-        function removePortfolioItem(ticker) {
-            userPortfolio = userPortfolio.filter(p => p.ticker !== ticker);
-            savePortfolioToLocal(); renderPortfolioTable();
-        }
+        function removePortfolioItem(ticker) { userPortfolio = userPortfolio.filter(p => p.ticker !== ticker); savePortfolioToLocal(); renderPortfolioTable(); }
 
         function editPortfolioItem(ticker) {
-            const index = userPortfolio.findIndex(p => p.ticker === ticker);
-            if (index === -1) return;
-            const item = userPortfolio[index];
-            const newAvgPriceStr = prompt(`[${item.corpName}] 새로운 내 평단가를 입력하세요 (원):`, item.avgPrice);
-            if (newAvgPriceStr === null) return; 
-            const newAvgPrice = parseInt(newAvgPriceStr.replace(/,/g, ''));
-            if (isNaN(newAvgPrice) || newAvgPrice <= 0) { alert('올바른 숫자를 입력해주세요.'); return; }
-
-            const newInvestAmountStr = prompt(`[${item.corpName}] 새로운 총 매수금액을 입력하세요 (원):`, item.investAmount);
-            if (newInvestAmountStr === null) return; 
-            const newInvestAmount = parseInt(newInvestAmountStr.replace(/,/g, ''));
-            if (isNaN(newInvestAmount) || newInvestAmount <= 0) { alert('올바른 숫자를 입력해주세요.'); return; }
-
-            userPortfolio[index].avgPrice = newAvgPrice; userPortfolio[index].investAmount = newInvestAmount;
-            savePortfolioToLocal(); renderPortfolioTable(); 
+            const index = userPortfolio.findIndex(p => p.ticker === ticker); if (index === -1) return; const item = userPortfolio[index];
+            const newAvgPriceStr = prompt(`[${item.corpName}] 새로운 내 평단가를 입력하세요 (원):`, item.avgPrice); if (newAvgPriceStr === null) return; 
+            const newAvgPrice = parseInt(newAvgPriceStr.replace(/,/g, '')); if (isNaN(newAvgPrice) || newAvgPrice <= 0) { alert('올바른 숫자를 입력해주세요.'); return; }
+            const newInvestAmountStr = prompt(`[${item.corpName}] 새로운 총 매수금액을 입력하세요 (원):`, item.investAmount); if (newInvestAmountStr === null) return; 
+            const newInvestAmount = parseInt(newInvestAmountStr.replace(/,/g, '')); if (isNaN(newInvestAmount) || newInvestAmount <= 0) { alert('올바른 숫자를 입력해주세요.'); return; }
+            userPortfolio[index].avgPrice = newAvgPrice; userPortfolio[index].investAmount = newInvestAmount; savePortfolioToLocal(); renderPortfolioTable(); 
         }
 
-        function savePortfolioToLocal() {
-            localStorage.setItem('userPortfolioList', JSON.stringify(userPortfolio)); saveToGoogleCloud();
-        }
-
-        function saveStandbyCashToCloud() {
-            const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0;
-            localStorage.setItem('portfolioStandbyCash', standbyCash); saveToGoogleCloud();
-        }
+        function savePortfolioToLocal() { localStorage.setItem('userPortfolioList', JSON.stringify(userPortfolio)); saveToGoogleCloud(); }
+        function saveStandbyCashToCloud() { const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0; localStorage.setItem('portfolioStandbyCash', standbyCash); saveToGoogleCloud(); }
 
         function renderPortfolioTable() {
             const tbody = document.getElementById('portfolioTableBody');
-            if (userPortfolio.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-xs text-slate-400">등록된 보유 종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
-                updatePortfolioSummary(); renderPortfolioPieChart(); return;
-            }
-
+            if (userPortfolio.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-xs text-slate-400">등록된 보유 종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`; updatePortfolioSummary(); renderPortfolioPieChart(); return; }
             let totalValue = 0;
             userPortfolio.forEach(item => {
                 let currentPrice = 0; let priceStr = "";
-                if (livePortfolioPrices[item.ticker]) priceStr = livePortfolioPrices[item.ticker];
-                else if (globalQuantData && globalQuantData[item.ticker]) priceStr = String(globalQuantData[item.ticker].price);
+                if (livePortfolioPrices[item.ticker]) priceStr = livePortfolioPrices[item.ticker]; else if (globalQuantData && globalQuantData[item.ticker]) priceStr = String(globalQuantData[item.ticker].price);
                 currentPrice = parseInt(priceStr.replace(/,/g, '')) || 0;
-
-                const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0;
-                const evalValue = currentPrice > 0 ? Math.floor(shares * currentPrice) : item.investAmount;
+                const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0; const evalValue = currentPrice > 0 ? Math.floor(shares * currentPrice) : item.investAmount;
                 item._currentPrice = currentPrice; item._evalValue = evalValue; totalValue += evalValue;
             });
-
             userPortfolio.sort((a, b) => b._evalValue - a._evalValue);
             let html = '';
             userPortfolio.forEach(item => {
@@ -969,17 +716,7 @@
                 const profitRate = currentPrice > 0 ? (((currentPrice - item.avgPrice) / item.avgPrice) * 100) : 0;
                 const rateColor = profitRate > 0 ? 'text-red-600 font-bold' : (profitRate < 0 ? 'text-blue-600 font-bold' : 'text-slate-700');
                 const weightRate = totalValue > 0 ? ((evalValue / totalValue) * 100) : 0;
-
-                html += `<tr class="hover:bg-slate-50 transition border-b">
-                    <td class="p-2 text-left font-bold text-slate-800"><button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-blue-600 text-left underline underline-offset-2">${item.corpName}</button><span class="text-[11px] font-mono text-slate-400 block">${item.ticker}</span></td>
-                    <td class="p-2 text-right font-medium">${currentPrice > 0 ? currentPrice.toLocaleString() + '원' : '데이터연동'}</td>
-                    <td class="p-2 text-right font-semibold">${item.avgPrice.toLocaleString()}원</td>
-                    <td class="p-2 text-right ${rateColor}">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
-                    <td class="p-2 text-right font-medium">${item.investAmount.toLocaleString()}원</td>
-                    <td class="p-2 text-right font-semibold text-slate-900">${evalValue.toLocaleString()}원</td>
-                    <td class="p-2 text-right font-extrabold text-indigo-600">${weightRate.toFixed(1)}%</td>
-                    <td class="p-2 text-center whitespace-nowrap"><button onclick="editPortfolioItem('${item.ticker}')" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition mr-1">수정</button><button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button></td>
-                </tr>`;
+                html += `<tr class="hover:bg-slate-50 transition border-b"><td class="p-2 text-left font-bold text-slate-800"><button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-blue-600 text-left underline underline-offset-2">${item.corpName}</button><span class="text-[11px] font-mono text-slate-400 block">${item.ticker}</span></td><td class="p-2 text-right font-medium">${currentPrice > 0 ? currentPrice.toLocaleString() + '원' : '데이터연동'}</td><td class="p-2 text-right font-semibold">${item.avgPrice.toLocaleString()}원</td><td class="p-2 text-right ${rateColor}">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td><td class="p-2 text-right font-medium">${item.investAmount.toLocaleString()}원</td><td class="p-2 text-right font-semibold text-slate-900">${evalValue.toLocaleString()}원</td><td class="p-2 text-right font-extrabold text-indigo-600">${weightRate.toFixed(1)}%</td><td class="p-2 text-center whitespace-nowrap"><button onclick="editPortfolioItem('${item.ticker}')" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition mr-1">수정</button><button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button></td></tr>`;
             });
             tbody.innerHTML = html; updatePortfolioSummary(); renderPortfolioPieChart();
         }
@@ -987,92 +724,33 @@
         function updatePortfolioSummary() {
             let totalInvest = 0, totalValue = 0;
             userPortfolio.forEach(item => {
-                totalInvest += item.investAmount;
-                let currentPrice = 0;
+                totalInvest += item.investAmount; let currentPrice = 0;
                 if (livePortfolioPrices[item.ticker]) currentPrice = parseInt(livePortfolioPrices[item.ticker].replace(/,/g, '')) || 0;
                 else if (globalQuantData && globalQuantData[item.ticker]) currentPrice = parseInt(String(globalQuantData[item.ticker].price).replace(/,/g, '')) || 0;
-                const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0;
-                totalValue += currentPrice > 0 ? (shares * currentPrice) : item.investAmount;
+                const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0; totalValue += currentPrice > 0 ? (shares * currentPrice) : item.investAmount;
             });
-            const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0;
-            const totalProfit = totalValue - totalInvest;
-            const totalRate = totalInvest > 0 ? ((totalProfit / totalInvest) * 100) : 0;
-
-            document.getElementById('portTotalInvest').textContent = totalInvest.toLocaleString() + '원';
-            document.getElementById('portTotalValue').textContent = Math.floor(totalValue).toLocaleString() + '원';
-            const profitEl = document.getElementById('portTotalProfit');
-            profitEl.textContent = (totalProfit >= 0 ? '+' : '') + Math.floor(totalProfit).toLocaleString() + '원';
-            profitEl.className = `font-bold text-sm ${totalProfit > 0 ? 'text-red-400' : (totalProfit < 0 ? 'text-blue-400' : 'text-slate-300')}`;
-            const rateEl = document.getElementById('portTotalRate');
-            rateEl.textContent = (totalRate >= 0 ? '+' : '') + totalRate.toFixed(2) + '%';
-            rateEl.className = `font-bold text-sm ${totalRate > 0 ? 'text-red-400' : (totalRate < 0 ? 'text-blue-400' : 'text-slate-300')}`;
+            const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0; const totalProfit = totalValue - totalInvest; const totalRate = totalInvest > 0 ? ((totalProfit / totalInvest) * 100) : 0;
+            document.getElementById('portTotalInvest').textContent = totalInvest.toLocaleString() + '원'; document.getElementById('portTotalValue').textContent = Math.floor(totalValue).toLocaleString() + '원';
+            const profitEl = document.getElementById('portTotalProfit'); profitEl.textContent = (totalProfit >= 0 ? '+' : '') + Math.floor(totalProfit).toLocaleString() + '원'; profitEl.className = `font-bold text-sm ${totalProfit > 0 ? 'text-red-400' : (totalProfit < 0 ? 'text-blue-400' : 'text-slate-300')}`;
+            const rateEl = document.getElementById('portTotalRate'); rateEl.textContent = (totalRate >= 0 ? '+' : '') + totalRate.toFixed(2) + '%'; rateEl.className = `font-bold text-sm ${totalRate > 0 ? 'text-red-400' : (totalRate < 0 ? 'text-blue-400' : 'text-slate-300')}`;
             document.getElementById('portTotalAssets').textContent = Math.floor(totalValue + standbyCash).toLocaleString() + '원';
         }
 
         function renderPortfolioPieChart() {
-            const ctx = document.getElementById('portfolioPieChart').getContext('2d');
-            const labels = []; const dataValues = [];
-            
+            const ctx = document.getElementById('portfolioPieChart').getContext('2d'); const labels = []; const dataValues = [];
             const baseColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#14b8a6', '#f43f5e', '#84cc16', '#06b6d4', '#d946ef', '#6366f1', '#ec4899', '#f97316', '#0ea5e9', '#10b981'];
-
             let totalValue = 0;
-            userPortfolio.forEach(item => { 
-                labels.push(item.corpName); 
-                const val = item._evalValue || item.investAmount;
-                dataValues.push(val); 
-                totalValue += val;
-            });
-            
+            userPortfolio.forEach(item => { labels.push(item.corpName); const val = item._evalValue || item.investAmount; dataValues.push(val); totalValue += val; });
             const bgColors = dataValues.map((_, i) => baseColors[i % baseColors.length]);
-
             if (portfolioPieChart) portfolioPieChart.destroy();
-            
             const legendContainer = document.getElementById('pieLegend');
-            if (userPortfolio.length === 0) {
-                if (legendContainer) legendContainer.innerHTML = '';
-                return;
-            }
-
-            portfolioPieChart = new Chart(ctx, {
-                type: 'doughnut', 
-                data: { 
-                    labels: labels, 
-                    datasets: [{ 
-                        data: dataValues, 
-                        backgroundColor: bgColors, 
-                        borderWidth: 2, 
-                        borderColor: '#ffffff', 
-                        hoverOffset: 4 
-                    }] 
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false, cutout: '60%', 
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || ''; let value = context.raw || 0;
-                                    let percentage = ((value / context.chart._metasets[context.datasetIndex].total) * 100).toFixed(1) + '%';
-                                    return ` ${label}: ${value.toLocaleString()}원 (${percentage})`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
+            if (userPortfolio.length === 0) { if (legendContainer) legendContainer.innerHTML = ''; return; }
+            portfolioPieChart = new Chart(ctx, { type: 'doughnut', data: { labels: labels, datasets: [{ data: dataValues, backgroundColor: bgColors, borderWidth: 2, borderColor: '#ffffff', hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { let label = context.label || ''; let value = context.raw || 0; let percentage = ((value / context.chart._metasets[context.datasetIndex].total) * 100).toFixed(1) + '%'; return ` ${label}: ${value.toLocaleString()}원 (${percentage})`; } } } } } });
             if (legendContainer) {
                 let legendHtml = '';
                 labels.forEach((label, i) => {
                     let percentage = totalValue > 0 ? ((dataValues[i] / totalValue) * 100).toFixed(1) + '%' : '0.0%';
-                    legendHtml += `
-                        <div class="flex items-center text-[11px] text-slate-600 mb-1">
-                            <span class="w-2.5 h-2.5 rounded-full inline-block mr-1.5 shrink-0" style="background-color: ${bgColors[i]}"></span>
-                            <span class="truncate flex-1 font-medium" title="${label}">${label}</span>
-                            <span class="font-extrabold text-slate-700 ml-1 shrink-0">${percentage}</span>
-                        </div>
-                    `;
+                    legendHtml += `<div class="flex items-center text-[11px] text-slate-600 mb-1"><span class="w-2.5 h-2.5 rounded-full inline-block mr-1.5 shrink-0" style="background-color: ${bgColors[i]}"></span><span class="truncate flex-1 font-medium" title="${label}">${label}</span><span class="font-extrabold text-slate-700 ml-1 shrink-0">${percentage}</span></div>`;
                 });
                 legendContainer.innerHTML = legendHtml;
             }
@@ -1082,406 +760,161 @@
             const container = document.getElementById(targetId); let html = '';
             for (const sector in companyData) {
                 html += `<div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/80"><span class="text-xs font-extrabold text-slate-600 block mb-1.5">${sector}</span><div class="flex flex-wrap gap-1">`;
-                for (const [name, code] of Object.entries(companyData[sector])) {
-                    html += `<button onclick="selectCompany('${name}', '${code}')" class="text-xs px-2 py-0.5 rounded border ${btnClass} transition font-medium">${name}</button>`;
-                }
+                for (const [name, code] of Object.entries(companyData[sector])) { html += `<button onclick="selectCompany('${name}', '${code}')" class="text-xs px-2 py-0.5 rounded border ${btnClass} transition font-medium">${name}</button>`; }
                 html += `</div></div>`;
             }
             container.innerHTML = html;
         }
 
         function showSuggestions() {
-            const inputEl = document.getElementById('tickerInput'); inputEl.dataset.selectedCode = '';
-            const input = inputEl.value.trim().toLowerCase();
-            const box = document.getElementById('suggestionBox');
+            const inputEl = document.getElementById('tickerInput'); inputEl.dataset.selectedCode = ''; const input = inputEl.value.trim().toLowerCase(); const box = document.getElementById('suggestionBox');
             if (!input) { box.classList.add('hidden'); return; }
-
-            const matches = [];
-            for (const [name, code] of Object.entries(ALL_COMPANIES)) {
-                if (name.toLowerCase().includes(input) || code.includes(input)) matches.push({ name, code });
-            }
-            if (matches.length > 0) {
-                box.innerHTML = matches.map(m => `<div onclick="selectCompany('${m.name}', '${m.code}')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b text-sm"><span class="font-bold text-slate-800">${m.name}</span><span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">${m.code}</span></div>`).join('');
-                box.classList.remove('hidden');
-            } else { box.classList.add('hidden'); }
+            const matches = []; for (const [name, code] of Object.entries(ALL_COMPANIES)) { if (name.toLowerCase().includes(input) || code.includes(input)) matches.push({ name, code }); }
+            if (matches.length > 0) { box.innerHTML = matches.map(m => `<div onclick="selectCompany('${m.name}', '${m.code}')" class="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center border-b text-sm"><span class="font-bold text-slate-800">${m.name}</span><span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">${m.code}</span></div>`).join(''); box.classList.remove('hidden'); } else { box.classList.add('hidden'); }
         }
 
         function selectCompany(name, code) {
-            document.getElementById('tickerInput').value = `${name} (${code})`;
-            document.getElementById('tickerInput').dataset.selectedCode = code;
-            document.getElementById('suggestionBox').classList.add('hidden');
-
+            document.getElementById('tickerInput').value = `${name} (${code})`; document.getElementById('tickerInput').dataset.selectedCode = code; document.getElementById('suggestionBox').classList.add('hidden');
             const portItem = userPortfolio.find(p => p.ticker === code);
-            if (portItem) {
-                document.getElementById('analysisModeSelect').value = 'average';
-                toggleInputs();
-                document.getElementById('myAvgPriceInput').value = portItem.avgPrice;
-                document.getElementById('currentInvestInput').value = portItem.investAmount;
-                document.getElementById('standbyCashInput').value = document.getElementById('portfolioStandbyCash').value || 0;
-            } else {
-                document.getElementById('analysisModeSelect').value = 'current';
-                toggleInputs();
-                document.getElementById('investAmountInput').value = document.getElementById('portfolioStandbyCash').value || 0;
-            }
-
+            if (portItem) { document.getElementById('analysisModeSelect').value = 'average'; toggleInputs(); document.getElementById('myAvgPriceInput').value = portItem.avgPrice; document.getElementById('currentInvestInput').value = portItem.investAmount; document.getElementById('standbyCashInput').value = document.getElementById('portfolioStandbyCash').value || 0; } 
+            else { document.getElementById('analysisModeSelect').value = 'current'; toggleInputs(); document.getElementById('investAmountInput').value = document.getElementById('portfolioStandbyCash').value || 0; }
             fetchDashboardData();
         }
 
-        function saveApiKey() {
-            const key = document.getElementById('apiKeyInput').value.trim();
-            if(!key) { alert('API Key를 입력해주세요.'); return; }
-            localStorage.setItem('geminiApiKey', key); alert('Gemini API Key가 안전하게 저장되었습니다.');
-        }
+        function saveApiKey() { const key = document.getElementById('apiKeyInput').value.trim(); if(!key) { alert('API Key를 입력해주세요.'); return; } localStorage.setItem('geminiApiKey', key); alert('Gemini API Key가 안전하게 저장되었습니다.'); }
 
         function toggleInputs() {
-            const mode = document.getElementById('analysisModeSelect').value;
-            const globalStandbyCash = document.getElementById('portfolioStandbyCash').value || ''; 
-
-            if (mode === 'current') {
-                document.getElementById('currentModeInputs').classList.remove('hidden'); 
-                document.getElementById('averageModeInputs').classList.add('hidden');
-                document.getElementById('investAmountInput').value = globalStandbyCash;
-            } else {
-                document.getElementById('currentModeInputs').classList.add('hidden'); 
-                document.getElementById('averageModeInputs').classList.remove('hidden');
-                document.getElementById('standbyCashInput').value = globalStandbyCash;
-            }
+            const mode = document.getElementById('analysisModeSelect').value; const globalStandbyCash = document.getElementById('portfolioStandbyCash').value || ''; 
+            if (mode === 'current') { document.getElementById('currentModeInputs').classList.remove('hidden'); document.getElementById('averageModeInputs').classList.add('hidden'); document.getElementById('investAmountInput').value = globalStandbyCash; } 
+            else { document.getElementById('currentModeInputs').classList.add('hidden'); document.getElementById('averageModeInputs').classList.remove('hidden'); document.getElementById('standbyCashInput').value = globalStandbyCash; }
             calculateInvestment(); 
         }
 
         function updateTopDashboardUI(data) {
             const priceEl = document.getElementById('naverPrice'); const changeEl = document.getElementById('naverChange');
-            priceEl.textContent = data.price !== "N/A" ? `${data.price}원` : "N/A";
-            changeEl.textContent = data.changeRate;
-            const isUp = data.direction === "UP"; const isDown = data.direction === "DOWN";
-            const colorCls = isUp ? "text-red-600" : (isDown ? "text-blue-600" : "text-slate-800");
-            
+            priceEl.textContent = data.price !== "N/A" ? `${data.price}원` : "N/A"; changeEl.textContent = data.changeRate;
+            const isUp = data.direction === "UP"; const isDown = data.direction === "DOWN"; const colorCls = isUp ? "text-red-600" : (isDown ? "text-blue-600" : "text-slate-800");
             priceEl.className = `text-2xl font-extrabold ${colorCls}`; changeEl.className = `text-2xl font-extrabold ${colorCls}`;
-            document.getElementById('naverMarketCap').textContent = data.marketCap || "-";
-            document.getElementById('naverForeign').textContent = data.foreignRate || "-";
-            document.getElementById('fnPer').textContent = data.per && data.per !== "-" ? `${data.per}배` : "N/A";
-            document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer && data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
-            document.getElementById('fnPbr').textContent = data.pbr && data.pbr !== "-" ? `${data.pbr}배` : "N/A";
-            document.getElementById('fnPeg').textContent = data.peg && data.peg !== "N/A" ? data.peg : "N/A";
-            document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
+            document.getElementById('naverMarketCap').textContent = data.marketCap || "-"; document.getElementById('naverForeign').textContent = data.foreignRate || "-";
+            document.getElementById('fnPer').textContent = data.per && data.per !== "-" ? `${data.per}배` : "N/A"; document.getElementById('fnFwdPer').textContent = `12M Fwd PER: ${data.fwdPer && data.fwdPer !== "-" ? data.fwdPer + '배' : 'N/A'}`;
+            document.getElementById('fnPbr').textContent = data.pbr && data.pbr !== "-" ? `${data.pbr}배` : "N/A"; document.getElementById('fnPeg').textContent = data.peg && data.peg !== "N/A" ? data.peg : "N/A"; document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
         }
 
         function loadTradingView(ticker) {
-            const container = document.getElementById('tv_container');
-            const cleanTicker = ticker.trim();
-            const timestamp = new Date().getTime();
-
-            const tvLink = `https://kr.tradingview.com/chart/?symbol=KRX%3A${cleanTicker}`;
-            const naverLink = `https://finance.naver.com/item/fchart.naver?code=${cleanTicker}`;
-
-            container.innerHTML = `
-                <div class="flex flex-col h-full w-full bg-white">
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-3 px-1 gap-2 border-b border-slate-100 pb-3">
-                        <span class="text-[12px] font-bold text-slate-500 flex items-center gap-1">
-                            <span class="text-rose-500 text-base">※</span> KRX 보안 정책으로 정밀 지표 조작은 팝업을 이용하세요
-                        </span>
-                        <div class="flex gap-2 w-full md:w-auto">
-                            <button onclick="window.open('${tvLink}', '_blank', 'width=1300,height=800,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes')" class="flex-1 md:flex-none text-xs font-extrabold bg-slate-800 text-white hover:bg-slate-700 px-4 py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1">
-                                📈 트레이딩뷰 (풀버전)
-                            </button>
-                            <button onclick="window.open('${naverLink}', '_blank', 'width=1100,height=750,menubar=no,toolbar=no,location=no,status=no')" class="flex-1 md:flex-none text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1">
-                                📊 네이버 동적차트
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden p-2 relative group">
-                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/80 p-1 rounded backdrop-blur-sm">
-                            <button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/day/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-blue-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">일봉</button>
-                            <button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/week/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-emerald-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">주봉</button>
-                            <button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/month/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-purple-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">월봉</button>
-                        </div>
-                        <img id="naver_img" src="https://ssl.pstatic.net/imgfinance/chart/item/candle/day/${cleanTicker}.png?sidcode=${timestamp}" alt="대시보드 요약 차트" class="w-full h-full object-contain mix-blend-multiply">
-                    </div>
-                </div>
-            `;
+            const container = document.getElementById('tv_container'); const cleanTicker = ticker.trim(); const timestamp = new Date().getTime();
+            const tvLink = `https://kr.tradingview.com/chart/?symbol=KRX%3A${cleanTicker}`; const naverLink = `https://finance.naver.com/item/fchart.naver?code=${cleanTicker}`;
+            container.innerHTML = `<div class="flex flex-col h-full w-full bg-white"><div class="flex flex-col md:flex-row justify-between items-center mb-3 px-1 gap-2 border-b border-slate-100 pb-3"><span class="text-[12px] font-bold text-slate-500 flex items-center gap-1"><span class="text-rose-500 text-base">※</span> KRX 보안 정책으로 정밀 지표 조작은 팝업을 이용하세요</span><div class="flex gap-2 w-full md:w-auto"><button onclick="window.open('${tvLink}', '_blank', 'width=1300,height=800,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes')" class="flex-1 md:flex-none text-xs font-extrabold bg-slate-800 text-white hover:bg-slate-700 px-4 py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1">📈 트레이딩뷰 (풀버전)</button><button onclick="window.open('${naverLink}', '_blank', 'width=1100,height=750,menubar=no,toolbar=no,location=no,status=no')" class="flex-1 md:flex-none text-xs font-extrabold bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2.5 rounded-lg transition shadow-md flex items-center justify-center gap-1">📊 네이버 동적차트</button></div></div><div class="flex-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden p-2 relative group"><div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/80 p-1 rounded backdrop-blur-sm"><button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/day/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-blue-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">일봉</button><button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/week/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-emerald-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">주봉</button><button onclick="document.getElementById('naver_img').src='https://ssl.pstatic.net/imgfinance/chart/item/candle/month/${cleanTicker}.png?sidcode=' + new Date().getTime()" class="text-[11px] font-bold bg-white border border-slate-300 hover:bg-purple-50 text-slate-700 px-2.5 py-1 rounded shadow-sm">월봉</button></div><img id="naver_img" src="https://ssl.pstatic.net/imgfinance/chart/item/candle/day/${cleanTicker}.png?sidcode=${timestamp}" alt="대시보드 요약 차트" class="w-full h-full object-contain mix-blend-multiply"></div></div>`;
         }
 
-        // 📰 실시간 뉴스 수집 (구글 뉴스 RSS로 완벽 교체)
         async function loadNews(corpName) {
-            const newsListEl = document.getElementById('newsList');
-            if (!newsListEl) return;
+            const newsListEl = document.getElementById('newsList'); if (!newsListEl) return;
             newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 수집하고 있습니다...</li>';
-            
             try {
-                const query = encodeURIComponent(corpName + ' 주식');
-                const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
-                const jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
-                
-                const res = await fetch(jsonUrl);
-                const data = await res.json();
-                
+                const query = encodeURIComponent(corpName + ' 주식'); const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`; const jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+                const res = await fetch(jsonUrl); const data = await res.json();
                 if (data.status !== 'ok') throw new Error("구글 뉴스 변환 실패");
-                
-                let html = '';
-                let count = 0;
-                
+                let html = ''; let count = 0;
                 for (let i = 0; i < data.items.length; i++) {
-                    if (count >= 5) break; 
-                    const item = data.items[i];
-                    const dateObj = new Date(item.pubDate.replace(/-/g, '/'));
-                    const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
+                    if (count >= 5) break; const item = data.items[i];
+                    const dateObj = new Date(item.pubDate.replace(/-/g, '/')); const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
                     const cleanTitle = item.title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "").split(' - ')[0];
-
-                    html += `
-                        <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
-                            <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
-                            <a href="${item.link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
-                                ${cleanTitle}
-                            </a>
-                        </li>
-                    `;
+                    html += `<li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0"><span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span><a href="${item.link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">${cleanTitle}</a></li>`;
                     count++;
                 }
-                
                 newsListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
-                
-                try {
-                    const badge = newsListEl.parentElement.parentElement.querySelector('h2 span:last-child');
-                    if(badge) badge.textContent = "Google News";
-                } catch(e) {}
-            } catch (e) {
-                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.</li>';
-            }
+                try { const badge = newsListEl.parentElement.parentElement.querySelector('h2 span:last-child'); if(badge) badge.textContent = "Google News"; } catch(e) {}
+            } catch (e) { newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.</li>'; }
         }
 
-        // 📄 내 DART 대시보드 직접 연동
         async function loadDart(ticker, corpName) {
-            const dartListEl = document.getElementById('dartList');
-            if (!dartListEl) return;
-            
+            const dartListEl = document.getElementById('dartList'); if (!dartListEl) return;
             const myDartUrl = `https://rmadh6418-ai.github.io/dart-dashboard/`;
-            
-            dartListEl.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full space-y-4 pt-2">
-                    <p class="text-sm font-bold text-slate-600 text-center leading-relaxed">
-                        <span class="text-amber-500 text-xl block mb-1">💡</span>
-                        회원님의 <strong>개인 DART 대시보드</strong>에서<br><span class="text-slate-800">[${corpName}]</span>의 상세 공시를 확인하세요.
-                    </p>
-                    <a href="${myDartUrl}" target="_blank" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-extrabold py-3 px-6 rounded-xl shadow-md transition transform hover:scale-105 flex items-center gap-2">
-                        <span>🔍 내 DART 대시보드 바로가기</span>
-                    </a>
-                </div>
-            `;
-            
-            try {
-                const badge = dartListEl.parentElement.parentElement.querySelector('h2 span:last-child');
-                if(badge) badge.textContent = "My DART 연동";
-            } catch(e) {}
+            dartListEl.innerHTML = `<div class="flex flex-col items-center justify-center h-full space-y-4 pt-2"><p class="text-sm font-bold text-slate-600 text-center leading-relaxed"><span class="text-amber-500 text-xl block mb-1">💡</span>회원님의 <strong>개인 DART 대시보드</strong>에서<br><span class="text-slate-800">[${corpName}]</span>의 상세 공시를 확인하세요.</p><a href="${myDartUrl}" target="_blank" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-extrabold py-3 px-6 rounded-xl shadow-md transition transform hover:scale-105 flex items-center gap-2"><span>🔍 내 DART 대시보드 바로가기</span></a></div>`;
+            try { const badge = dartListEl.parentElement.parentElement.querySelector('h2 span:last-child'); if(badge) badge.textContent = "My DART 연동"; } catch(e) {}
         }
 
         async function fetchDashboardData() {
             const inputEl = document.getElementById('tickerInput'); const mode = document.getElementById('analysisModeSelect').value;
             let inputRaw = inputEl.value.trim(); let ticker = "", corpName = "";
-
-            if (inputEl.dataset.selectedCode && /^\d{6}$/.test(inputEl.dataset.selectedCode)) {
-                ticker = inputEl.dataset.selectedCode; corpName = CODE_TO_NAME[ticker] || inputRaw;
-            } else if (ALL_COMPANIES[inputRaw]) { ticker = ALL_COMPANIES[inputRaw]; corpName = inputRaw;
-            } else {
-                const match = inputRaw.match(/\d{6}/);
-                if (match) { ticker = match[0]; corpName = CODE_TO_NAME[ticker] || "해당 기업"; }
-                else {
-                    corpName = inputRaw;
-                    const found = Object.entries(ALL_COMPANIES).find(([k]) => k.toLowerCase().includes(inputRaw.toLowerCase()));
-                    if (found) { corpName = found[0]; ticker = found[1]; } else { ticker = inputRaw; }
-                }
-            }
-
+            if (inputEl.dataset.selectedCode && /^\d{6}$/.test(inputEl.dataset.selectedCode)) { ticker = inputEl.dataset.selectedCode; corpName = CODE_TO_NAME[ticker] || inputRaw; } 
+            else if (ALL_COMPANIES[inputRaw]) { ticker = ALL_COMPANIES[inputRaw]; corpName = inputRaw; } 
+            else { const match = inputRaw.match(/\d{6}/); if (match) { ticker = match[0]; corpName = CODE_TO_NAME[ticker] || "해당 기업"; } else { corpName = inputRaw; const found = Object.entries(ALL_COMPANIES).find(([k]) => k.toLowerCase().includes(inputRaw.toLowerCase())); if (found) { corpName = found[0]; ticker = found[1]; } else { ticker = inputRaw; } } }
             if (!/^\d{6}$/.test(ticker)) { alert('올바른 기업명을 선택하거나 종목코드 6자리를 입력해주세요.'); return; }
             if (!globalQuantData || !globalQuantData[ticker]) { alert(`[${corpName}] 종목은 로컬 데이터베이스에 없습니다.`); return; }
-
             const data = globalQuantData[ticker];
             
-            document.getElementById('statusBox').classList.remove('hidden');
-            document.getElementById('dashboardArea').classList.remove('hidden');
-            document.getElementById('expectedReturnBox').classList.add('hidden'); 
-            document.getElementById('aiPredictionSection').classList.add('hidden');
+            document.getElementById('statusBox').classList.remove('hidden'); document.getElementById('dashboardArea').classList.remove('hidden'); document.getElementById('expectedReturnBox').classList.add('hidden'); document.getElementById('aiPredictionSection').classList.add('hidden');
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 맞춤 심층 분석 및 타점을 생성 중입니다...</span>";
-            
             setTimeout(() => { loadTradingView(ticker); }, 100);
-
-            // 🌟 뉴스, DART 공시 로드 실행부
-            document.getElementById('infoSection').classList.remove('hidden');
-            loadNews(corpName);
-            loadDart(ticker, corpName);
-
+            
+            document.getElementById('infoSection').classList.remove('hidden'); loadNews(corpName); loadDart(ticker, corpName);
             const tech = data.tech || { ma5: '-', ma20: '-', ma33: '-', ma60: '-', ma120: '-', rsi: '-', macd: '-' };
-            document.getElementById('uiRsiValue').textContent = tech.rsi !== '-' ? tech.rsi : "데이터 부족";
-            document.getElementById('uiMacdValue').textContent = tech.macd !== '-' ? tech.macd : "데이터 부족";
-            document.getElementById('uiMa20Value').textContent = tech.ma20 !== '-' ? tech.ma20 + "원" : "데이터 부족";
-            document.getElementById('uiMa60Value').textContent = tech.ma60 !== '-' ? tech.ma60 + "원" : "데이터 부족";
+            document.getElementById('uiRsiValue').textContent = tech.rsi !== '-' ? tech.rsi : "데이터 부족"; document.getElementById('uiMacdValue').textContent = tech.macd !== '-' ? tech.macd : "데이터 부족"; document.getElementById('uiMa20Value').textContent = tech.ma20 !== '-' ? tech.ma20 + "원" : "데이터 부족"; document.getElementById('uiMa60Value').textContent = tech.ma60 !== '-' ? tech.ma60 + "원" : "데이터 부족";
 
             aiParsedStrategy = {}; parsedAiTargetPrice = 0;
             const aiFields = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3', 'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3', 'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'];
-            aiFields.forEach(id => {
-                document.getElementById(id).textContent = "대기중"; document.getElementById(id).className = "text-base font-bold text-slate-400";
-                const calcDiv = document.getElementById('calc_' + id); if(calcDiv) calcDiv.classList.add('hidden');
-            });
+            aiFields.forEach(id => { document.getElementById(id).textContent = "대기중"; document.getElementById(id).className = "text-base font-bold text-slate-400"; const calcDiv = document.getElementById('calc_' + id); if(calcDiv) calcDiv.classList.add('hidden'); });
 
-            document.getElementById('corpNameTitle').textContent = data.name; document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
-            document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
-
+            document.getElementById('corpNameTitle').textContent = data.name; document.getElementById('corpCodeTitle').textContent = `(${ticker})`; document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
             lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.fwdPer, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc };
 
             try {
                 const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
                 if (areas && areas[0] && areas[0].datas && areas[0].datas[0]) {
-                    const st = areas[0].datas[0];
-                    const rf = String(st.rf || "3");
-                    const isUp = ["1", "2"].includes(rf);
-                    const isDown = ["4", "5"].includes(rf);
-
-                    lastFetchedData.price = Number(st.nv).toLocaleString('ko-KR');
-                    const cr = Math.abs(parseFloat(st.cr || 0)).toFixed(2);
-                    lastFetchedData.changeRate = (isUp ? "+" : (isDown ? "-" : "")) + cr + "%";
-                    lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
-                    
+                    const st = areas[0].datas[0]; const rf = String(st.rf || "3"); const isUp = ["1", "2"].includes(rf); const isDown = ["4", "5"].includes(rf);
+                    lastFetchedData.price = Number(st.nv).toLocaleString('ko-KR'); const cr = Math.abs(parseFloat(st.cr || 0)).toFixed(2);
+                    lastFetchedData.changeRate = (isUp ? "+" : (isDown ? "-" : "")) + cr + "%"; lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
                     livePortfolioPrices[ticker] = lastFetchedData.price;
                 }
-            } catch (e) {
-                console.warn("초기 실시간가 연동 실패. 퀀트 데이터를 대신 사용합니다.", e);
-            }
+            } catch (e) { console.warn("초기 실시간가 연동 실패. 퀀트 데이터를 대신 사용합니다.", e); }
 
             updateTopDashboardUI(lastFetchedData);
 
-            let theadHtml = `<tr><th class="table-cell table-header">재무 항목</th>`;
-            data.finance.years.forEach(y => { theadHtml += `<th class="table-cell table-header ${y.includes('E') ? 'bg-indigo-50 text-indigo-700' : ''}">${y}</th>`; });
-            theadHtml += `</tr>`; document.getElementById('financeTableHead').innerHTML = theadHtml;
-
+            let theadHtml = `<tr><th class="table-cell table-header">재무 항목</th>`; data.finance.years.forEach(y => { theadHtml += `<th class="table-cell table-header ${y.includes('E') ? 'bg-indigo-50 text-indigo-700' : ''}">${y}</th>`; }); theadHtml += `</tr>`; document.getElementById('financeTableHead').innerHTML = theadHtml;
             const rowsData = [ { label: "매출(억)", data: data.finance.revs, bold: true }, { label: "영익(억)", data: data.finance.ops, bold: false }, { label: "영익률(%)", data: data.finance.opMs, bold: true }, { label: "순익률(%)", data: data.finance.npMs, bold: true }, { label: "부채(%)", data: data.finance.debts, bold: false }, { label: "EPS(원)", data: data.finance.epss, bold: false } ];
-            let tbodyHtml = "";
-            rowsData.forEach(r => {
-                tbodyHtml += `<tr><td class="table-cell bg-slate-50 font-bold text-slate-700 text-left pl-2">${r.label}</td>`;
-                r.data.forEach(val => {
-                    const str = String(val); const isNeg = str.startsWith('-');
-                    const cls = isNeg ? 'text-blue-600' : (r.bold && str !== '-' ? 'text-slate-900 font-semibold' : 'text-slate-600');
-                    tbodyHtml += `<td class="table-cell ${cls}">${str}</td>`;
-                });
-                tbodyHtml += `</tr>`;
-            });
-            document.getElementById('financeTableBody').innerHTML = tbodyHtml;
+            let tbodyHtml = ""; rowsData.forEach(r => { tbodyHtml += `<tr><td class="table-cell bg-slate-50 font-bold text-slate-700 text-left pl-2">${r.label}</td>`; r.data.forEach(val => { const str = String(val); const isNeg = str.startsWith('-'); const cls = isNeg ? 'text-blue-600' : (r.bold && str !== '-' ? 'text-slate-900 font-semibold' : 'text-slate-600'); tbodyHtml += `<td class="table-cell ${cls}">${str}</td>`; }); tbodyHtml += `</tr>`; }); document.getElementById('financeTableBody').innerHTML = tbodyHtml;
             
-            renderChart(data.finance.years, data.finance.ops);
-            document.getElementById('statusBox').classList.add('hidden');
-            
+            renderChart(data.finance.years, data.finance.ops); document.getElementById('statusBox').classList.add('hidden');
             await runGeminiAnalysisOnly(mode);
         }
 
         function renderChart(labels, dataArr) {
-            const ctx = document.getElementById('opChart').getContext('2d');
-            const numericData = dataArr.map(val => { const num = parseFloat(String(val).replace(/,/g, '')); return isNaN(num) ? 0 : num; });
-            const bgColors = numericData.map(val => val >= 0 ? 'rgba(220, 38, 38, 0.7)' : 'rgba(37, 99, 235, 0.7)');
-            const borderColors = numericData.map(val => val >= 0 ? 'rgba(220, 38, 38, 1)' : 'rgba(37, 99, 235, 1)');
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: '영업이익 (억원)', data: numericData, backgroundColor: bgColors, borderColor: borderColors, borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            const ctx = document.getElementById('opChart').getContext('2d'); const numericData = dataArr.map(val => { const num = parseFloat(String(val).replace(/,/g, '')); return isNaN(num) ? 0 : num; });
+            const bgColors = numericData.map(val => val >= 0 ? 'rgba(220, 38, 38, 0.7)' : 'rgba(37, 99, 235, 0.7)'); const borderColors = numericData.map(val => val >= 0 ? 'rgba(220, 38, 38, 1)' : 'rgba(37, 99, 235, 1)');
+            if (myChart) myChart.destroy(); myChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: '영업이익 (억원)', data: numericData, backgroundColor: bgColors, borderColor: borderColors, borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
         }
 
         function renderPredChartAndTable(curPrice, preds, supports) {
-            const tableBody = document.getElementById('predTableBody');
-            let tableHtml = '';
-            
+            const tableBody = document.getElementById('predTableBody'); let tableHtml = '';
             preds.forEach((p, i) => {
-                const diff = p - curPrice;
-                const rate = ((diff / curPrice) * 100).toFixed(2);
-                const color = diff > 0 ? 'text-red-600' : (diff < 0 ? 'text-blue-600' : 'text-slate-700');
-                const sign = diff > 0 ? '+' : '';
-                const bgClass = i % 2 === 0 ? 'bg-slate-50' : 'bg-white';
-                
-                tableHtml += `
-                    <div class="flex justify-between items-center ${bgClass} p-2.5 rounded border border-slate-200/60 shadow-sm transition hover:bg-purple-50">
-                        <span class="text-xs font-extrabold text-slate-500 w-10">D+${i+1}</span>
-                        <span class="text-base font-extrabold text-slate-800 flex-1 text-center">${p.toLocaleString()}원</span>
-                        <span class="text-[13px] font-extrabold ${color} w-16 text-right">${sign}${rate}%</span>
-                    </div>
-                `;
+                const diff = p - curPrice; const rate = ((diff / curPrice) * 100).toFixed(2); const color = diff > 0 ? 'text-red-600' : (diff < 0 ? 'text-blue-600' : 'text-slate-700'); const sign = diff > 0 ? '+' : ''; const bgClass = i % 2 === 0 ? 'bg-slate-50' : 'bg-white';
+                tableHtml += `<div class="flex justify-between items-center ${bgClass} p-2.5 rounded border border-slate-200/60 shadow-sm transition hover:bg-purple-50"><span class="text-xs font-extrabold text-slate-500 w-10">D+${i+1}</span><span class="text-base font-extrabold text-slate-800 flex-1 text-center">${p.toLocaleString()}원</span><span class="text-[13px] font-extrabold ${color} w-16 text-right">${sign}${rate}%</span></div>`;
             });
             tableBody.innerHTML = tableHtml;
-
-            const ctx = document.getElementById('predLineChart').getContext('2d');
-            if(predChartObj) predChartObj.destroy();
-
-            const labels = ['현재가', 'D+1', 'D+2', 'D+3', 'D+4', 'D+5'];
-            const dataPoints = [curPrice, ...preds];
-
-            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-            gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-            gradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
-
-            const datasets = [{
-                label: 'AI 5일 주가 예측경로',
-                data: dataPoints,
-                borderColor: '#8b5cf6',
-                backgroundColor: gradient,
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#8b5cf6',
-                pointRadius: 4,
-                pointHoverRadius: 7
-            }];
-
+            const ctx = document.getElementById('predLineChart').getContext('2d'); if(predChartObj) predChartObj.destroy();
+            const labels = ['현재가', 'D+1', 'D+2', 'D+3', 'D+4', 'D+5']; const dataPoints = [curPrice, ...preds];
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300); gradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)'); gradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
+            const datasets = [{ label: 'AI 5일 주가 예측경로', data: dataPoints, borderColor: '#8b5cf6', backgroundColor: gradient, borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#8b5cf6', pointRadius: 4, pointHoverRadius: 7 }];
             const colors = ['#ef4444', '#f97316', '#eab308'];
-            supports.forEach((val, idx) => {
-                if(val > 0) {
-                    datasets.push({
-                        label: `방어 지지선 ${idx+1}차`,
-                        data: [val, val, val, val, val, val],
-                        borderColor: colors[idx],
-                        borderWidth: 1.5,
-                        borderDash: [5, 5],
-                        pointRadius: 0,
-                        fill: false
-                    });
-                }
-            });
-
-            predChartObj = new Chart(ctx, {
-                type: 'line',
-                data: { labels, datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'sans-serif', size: 11 } } },
-                        tooltip: { mode: 'index', intersect: false }
-                    },
-                    interaction: { mode: 'nearest', axis: 'x', intersect: false },
-                    scales: { y: { beginAtZero: false } }
-                }
-            });
+            supports.forEach((val, idx) => { if(val > 0) { datasets.push({ label: `방어 지지선 ${idx+1}차`, data: [val, val, val, val, val, val], borderColor: colors[idx], borderWidth: 1.5, borderDash: [5, 5], pointRadius: 0, fill: false }); } });
+            predChartObj = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'sans-serif', size: 11 } } }, tooltip: { mode: 'index', intersect: false } }, interaction: { mode: 'nearest', axis: 'x', intersect: false }, scales: { y: { beginAtZero: false } } } });
         }
 
         async function runPortfolioAiAnalysis() {
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) { alert('우측 상단에 Gemini API Key를 먼저 입력하고 [키 저장]을 눌러주세요.'); return; }
             if (userPortfolio.length === 0) { alert('포트폴리오에 분석할 보유 종목이 없습니다. 최소 1개 이상의 종목을 등록해주세요.'); return; }
-
-            const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0;
-            const resultBox = document.getElementById('portfolioAiResultBox');
-            const resultText = document.getElementById('portfolioAiResultText');
-
-            resultBox.classList.remove('hidden'); resultBox.open = true; 
-            resultText.innerHTML = `<span class="text-purple-600 font-bold animate-pulse">보유 중인 ${userPortfolio.length}개 종목과 대기자금(${standbyCash.toLocaleString()}원)을 종합 모델링하여 최적의 자금 배분 및 타점을 분석 중입니다...</span>`;
-
+            const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0; const resultBox = document.getElementById('portfolioAiResultBox'); const resultText = document.getElementById('portfolioAiResultText');
+            resultBox.classList.remove('hidden'); resultBox.open = true; resultText.innerHTML = `<span class="text-purple-600 font-bold animate-pulse">보유 중인 ${userPortfolio.length}개 종목과 대기자금(${standbyCash.toLocaleString()}원)을 종합 모델링하여 최적의 자금 배분 및 타점을 분석 중입니다...</span>`;
             let portfolioSummaryString = '';
             userPortfolio.forEach((p, idx) => {
                 let currentPriceStr = '데이터 없음'; let per = '-', pbr = '-', targetP = '-';
-                if (livePortfolioPrices[p.ticker]) currentPriceStr = livePortfolioPrices[p.ticker];
-                else if (globalQuantData && globalQuantData[p.ticker]) currentPriceStr = globalQuantData[p.ticker].price;
+                if (livePortfolioPrices[p.ticker]) currentPriceStr = livePortfolioPrices[p.ticker]; else if (globalQuantData && globalQuantData[p.ticker]) currentPriceStr = globalQuantData[p.ticker].price;
                 if (globalQuantData && globalQuantData[p.ticker]) { const q = globalQuantData[p.ticker]; per = q.per; pbr = q.pbr; targetP = q.targetPrice; }
-                let diffRate = '계산불가';
-                if (currentPriceStr !== '데이터 없음') { const curPNum = parseInt(currentPriceStr.replace(/,/g,'')); diffRate = (((curPNum - p.avgPrice) / p.avgPrice) * 100).toFixed(2) + '%'; }
-                
+                let diffRate = '계산불가'; if (currentPriceStr !== '데이터 없음') { const curPNum = parseInt(currentPriceStr.replace(/,/g,'')); diffRate = (((curPNum - p.avgPrice) / p.avgPrice) * 100).toFixed(2) + '%'; }
                 portfolioSummaryString += `[종목${idx+1}: ${p.corpName}(${p.ticker})]\n- 평단가: ${p.avgPrice.toLocaleString()}원 | 매수금: ${p.investAmount.toLocaleString()}원\n- 현재가: ${currentPriceStr}원 (손익률: ${diffRate}) | 목표가: ${targetP}원 | PER: ${per} | PBR: ${pbr}\n\n`;
             });
-
-            const today = new Date();
-            const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+            const today = new Date(); const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
             
             const prompt = `당신은 전세계 상위 0.1% 퀀트 포트폴리오 매니저 및 위험관리, 트레이딩 전문가입니다.
 사용자가 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로 분석하세요.
@@ -1508,35 +941,26 @@ ${portfolioSummaryString}
 ### 5. 🚀 최종 행동 요약 (Action Plan)`;
 
             try {
-                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } }) 
+                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 }, safetySettings: [{category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE"}] }) 
                 });
                 if (!response.ok) {
-                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } }) 
+                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { 
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 }, safetySettings: [{category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE"}] }) 
                     });
                 }
                 const data = await response.json();
-                let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "분석 실패";
+                if (data.error) throw new Error(`${data.error.message} (코드: ${data.error.code})`);
+                let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "분석 실패 (구글 서버가 응답을 차단했습니다.)";
                 resultText.innerHTML = aiText.replace(/### (.*?)\n/g, '<h4 class="text-base font-extrabold text-purple-950 mt-4 mb-2 pb-1 border-b border-purple-200">$1</h4>').replace(/## (.*?)\n/g, '<h3 class="text-lg font-black text-indigo-950 mt-5 mb-2">$1</h3>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-yellow-200/60 px-1 rounded">$1</strong>').replace(/\n/g, '<br>');
-            } catch(e) { resultText.innerHTML = `<div class="p-3 bg-red-100 text-red-700 rounded-lg">❌ AI 분석 호출 오류: ${e.message}</div>`; }
+            } catch(e) { resultText.innerHTML = `<div class="p-3 bg-red-100 text-red-700 font-bold rounded-lg border border-red-300">❌ AI 분석 차단됨: ${e.message}</div>`; }
         }
 
         async function runGeminiAnalysisOnly(mode) {
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
-            if (!apiKey) {
-                document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 심층 분석 리포트가 출력됩니다.</div>`;
-                return;
-            }
+            if (!apiKey) { document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 rounded-lg border">💡 우측 상단에 <b>Gemini API Key</b>를 입력하고 [키 저장]을 누르시면 심층 분석 리포트가 출력됩니다.</div>`; return; }
 
-            const ld = lastFetchedData;
-            const qData = globalQuantData[ld.ticker] || {};
-            const tech = qData.tech || { ma5: '-', ma20: '-', ma33: '-', ma60: '-', ma120: '-', rsi: '-', macd: '-' };
-            
+            const ld = lastFetchedData; const qData = globalQuantData[ld.ticker] || {}; const tech = qData.tech || { ma5: '-', ma20: '-', ma33: '-', ma60: '-', ma120: '-', rsi: '-', macd: '-' };
             if (mode === 'current') {
                 document.getElementById('labelBuyDown1').textContent = "신규 하락매수 1차"; document.getElementById('labelBuyDown2').textContent = "신규 하락매수 2차"; document.getElementById('labelBuyDown3').textContent = "신규 하락매수 3차";
                 document.getElementById('labelBuyUp1').textContent = "신규 돌파매수 1차"; document.getElementById('labelBuyUp2').textContent = "신규 돌파매수 2차"; document.getElementById('labelBuyUp3').textContent = "신규 돌파매수 3차";
@@ -1558,8 +982,7 @@ ${portfolioSummaryString}
                 actionPlanContext = `사용자는 이 종목에 신규로 ${inv}원을 투입하려고 합니다. 현재가 기준으로 이 금액을 한 번에 진입하는 것이 좋은지, 아니면 분할 매수나 관망 후 진입이 안전한지 '최적의 진입 시나리오'를 분석해 주어야 합니다.`;
             }
 
-            const today = new Date();
-            const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+            const today = new Date(); const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
             
             const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트 및 트레이딩 전문가입니다. 
 
@@ -1616,26 +1039,21 @@ PRED_D5: [예상종가]원
 6. 종합 총평`;
 
             try {
-                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } }) 
+                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 }, safetySettings: [{category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE"}] }) 
                 });
                 if (!response.ok) { 
-                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } }) 
+                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { 
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 }, safetySettings: [{category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE"}] }) 
                     }); 
                 }
                 const data = await response.json();
-                let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "분석 완료";
+                if (data.error) throw new Error(`${data.error.message} (코드: ${data.error.code})`);
+                let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!aiText) { document.getElementById('aiResult').innerHTML = `<div class="p-3 bg-red-100 text-red-700 font-bold rounded-lg border border-red-300">❌ AI 응답 생성 실패 (안전 필터 등에 의해 차단되었습니다.)</div>`; return; }
                 
                 const extractAndClean = (regex, text) => { const match = text.match(regex); if (match) return { val: match[1].replace(/\*/g, '').trim(), remainingText: text.replace(regex, '').trim() }; return { val: null, remainingText: text }; };
-
-                let result = extractAndClean(/MOAT_RATING:\s*(.+)/i, aiText);
-                if (result.val) { document.getElementById('moatRating').textContent = result.val; document.getElementById('moatRating').className = "text-lg font-extrabold text-amber-700 my-0"; aiText = result.remainingText; }
-
+                let result = extractAndClean(/MOAT_RATING:\s*(.+)/i, aiText); if (result.val) { document.getElementById('moatRating').textContent = result.val; document.getElementById('moatRating').className = "text-lg font-extrabold text-amber-700 my-0"; aiText = result.remainingText; }
                 result = extractAndClean(/AI_TARGET_PRICE:\s*(.+)/i, aiText);
                 if (result.val) {
                     document.getElementById('aiTargetPrice').textContent = result.val; document.getElementById('aiTargetPrice').className = "text-2xl font-extrabold text-purple-700";
@@ -1651,110 +1069,69 @@ PRED_D5: [예상종가]원
 
                 const tradeFields = ['BUY_DOWN_1', 'BUY_DOWN_2', 'BUY_DOWN_3', 'BUY_UP_1', 'BUY_UP_2', 'BUY_UP_3', 'SELL_PROFIT_1', 'SELL_PROFIT_2', 'SELL_PROFIT_3', 'SELL_LOSS_1', 'SELL_LOSS_2', 'SELL_LOSS_3'];
                 const tradeIds = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3', 'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3', 'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'];
-                
                 for(let i=0; i<tradeFields.length; i++) {
                     const regex = new RegExp(`${tradeFields[i]}:\\s*(.+)`, 'i'); const m = aiText.match(regex);
                     if(m) {
                         const rawStr = m[1].replace(/\*/g, '').trim(); 
                         document.getElementById(tradeIds[i]).textContent = rawStr; document.getElementById(tradeIds[i]).className = "text-base font-extrabold text-slate-800";
                         const numbers = rawStr.match(/[\d,]+/g);
-                        if (numbers && numbers.length >= 1) {
-                            const parsedPrice = parseInt(numbers[0].replace(/,/g, '')); const parsedWeight = numbers.length >= 2 ? parseInt(numbers[1].replace(/,/g, '')) : 33; 
-                            aiParsedStrategy[tradeIds[i]] = { price: parsedPrice, weight: parsedWeight };
-                        }
+                        if (numbers && numbers.length >= 1) { const parsedPrice = parseInt(numbers[0].replace(/,/g, '')); const parsedWeight = numbers.length >= 2 ? parseInt(numbers[1].replace(/,/g, '')) : 33; aiParsedStrategy[tradeIds[i]] = { price: parsedPrice, weight: parsedWeight }; }
                         aiText = aiText.replace(regex, '').trim();
                     }
                 }
 
-                let preds = [];
-                const curPriceNum = parseInt(String(ld.price).replace(/,/g, '')) || 0;
-                
+                let preds = []; const curPriceNum = parseInt(String(ld.price).replace(/,/g, '')) || 0;
                 for(let i=1; i<=5; i++) {
-                    const regex = new RegExp(`PRED_D${i}:\\s*([\\d,]+)`, 'i');
-                    const pMatch = aiText.match(regex);
-                    if(pMatch) {
-                        preds.push(parseInt(pMatch[1].replace(/,/g, '')));
-                        aiText = aiText.replace(new RegExp(`PRED_D${i}:.*\\n?`, 'i'), ''); 
-                    } else {
-                        preds.push(curPriceNum);
-                    }
+                    const regex = new RegExp(`PRED_D${i}:\\s*([\\d,]+)`, 'i'); const pMatch = aiText.match(regex);
+                    if(pMatch) { preds.push(parseInt(pMatch[1].replace(/,/g, ''))); aiText = aiText.replace(new RegExp(`PRED_D${i}:.*\\n?`, 'i'), ''); } else { preds.push(curPriceNum); }
                 }
 
                 document.getElementById('aiResult').innerHTML = aiText.replace(/### (.*?)\n/g, '<h3 class="text-lg font-extrabold text-slate-800 mt-4 mb-2">$1</h3>').replace(/## (.*?)\n/g, '<h2 class="text-xl font-extrabold text-slate-900 mt-5 mb-2 border-b pb-1">$1</h2>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold bg-yellow-100/60 px-1 rounded">$1</strong>').replace(/\n/g, '<br>');
                 calculateInvestment();
-
-                const supportLines = [
-                    aiParsedStrategy['aiBuyDown1']?.price || 0,
-                    aiParsedStrategy['aiBuyDown2']?.price || 0,
-                    aiParsedStrategy['aiBuyDown3']?.price || 0
-                ];
+                const supportLines = [ aiParsedStrategy['aiBuyDown1']?.price || 0, aiParsedStrategy['aiBuyDown2']?.price || 0, aiParsedStrategy['aiBuyDown3']?.price || 0 ];
                 renderPredChartAndTable(curPriceNum, preds, supportLines);
                 document.getElementById('aiPredictionSection').classList.remove('hidden');
 
-            } catch (error) { document.getElementById('aiResult').innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-lg">❌ AI 분석 호출 실패: ${error.message}</div>`; }
+            } catch (error) { document.getElementById('aiResult').innerHTML = `<div class="p-3 bg-red-100 text-red-700 font-bold rounded-lg border border-red-300">❌ AI 분석 차단됨: ${error.message}</div>`; }
         }
 
         function reRunAiAnalysis() {
-            if (!lastFetchedData) return;
-            const mode = document.getElementById('analysisModeSelect').value;
-            if (mode === 'average') {
-                const avg = document.getElementById('myAvgPriceInput').value; const cur = document.getElementById('currentInvestInput').value;
-                if (!avg || isNaN(avg) || !cur || isNaN(cur)) { alert("기존 보유 분석을 위해 평단가와 현재 투자금액을 정확히 입력해주세요."); return; }
-            } else {
-                const inv = document.getElementById('investAmountInput').value;
-                if (!inv || isNaN(inv)) { alert("총 투자 준비금을 입력해주세요."); return; }
-            }
+            if (!lastFetchedData) return; const mode = document.getElementById('analysisModeSelect').value;
+            if (mode === 'average') { const avg = document.getElementById('myAvgPriceInput').value; const cur = document.getElementById('currentInvestInput').value; if (!avg || isNaN(avg) || !cur || isNaN(cur)) { alert("기존 보유 분석을 위해 평단가와 현재 투자금액을 정확히 입력해주세요."); return; } } 
+            else { const inv = document.getElementById('investAmountInput').value; if (!inv || isNaN(inv)) { alert("총 투자 준비금을 입력해주세요."); return; } }
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>새로운 설정값으로 최적의 타점을 다시 분석 중입니다...</span>";
-            document.getElementById('expectedReturnBox').classList.add('hidden'); 
-            document.getElementById('aiPredictionSection').classList.add('hidden');
+            document.getElementById('expectedReturnBox').classList.add('hidden'); document.getElementById('aiPredictionSection').classList.add('hidden');
             runGeminiAnalysisOnly(mode);
         }
         
         function calculateInvestment() {
-            const mode = document.getElementById('analysisModeSelect').value;
-            const returnBox = document.getElementById('expectedReturnBox');
+            const mode = document.getElementById('analysisModeSelect').value; const returnBox = document.getElementById('expectedReturnBox');
             const simCurrentView = document.getElementById('simCurrentView'); const simAverageView = document.getElementById('simAverageView');
             const buyIds = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3'];
             buyIds.forEach(id => { const el = document.getElementById('calc_' + id); if (el) el.classList.add('hidden'); });
 
             if (mode === 'current') {
-                const investAmt = parseInt(document.getElementById('investAmountInput').value);
-                if (isNaN(investAmt) || investAmt <= 0) { returnBox.classList.add('hidden'); return; }
-
+                const investAmt = parseInt(document.getElementById('investAmountInput').value); if (isNaN(investAmt) || investAmt <= 0) { returnBox.classList.add('hidden'); return; }
                 let totalShares = 0;
                 ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3'].forEach(id => {
                     const data = aiParsedStrategy[id]; const calcDiv = document.getElementById('calc_' + id);
-                    if (data && data.price > 0 && calcDiv) {
-                        const allocatedMoney = investAmt * (data.weight / 100); const shares = Math.floor(allocatedMoney / data.price);
-                        totalShares += shares;
-                        if(shares > 0) { calcDiv.innerHTML = `${shares.toLocaleString()}주 <span class="font-normal text-slate-500">(${(shares*data.price).toLocaleString()}원)</span>`; calcDiv.classList.remove('hidden'); }
-                    }
+                    if (data && data.price > 0 && calcDiv) { const allocatedMoney = investAmt * (data.weight / 100); const shares = Math.floor(allocatedMoney / data.price); totalShares += shares; if(shares > 0) { calcDiv.innerHTML = `${shares.toLocaleString()}주 <span class="font-normal text-slate-500">(${(shares*data.price).toLocaleString()}원)</span>`; calcDiv.classList.remove('hidden'); } }
                 });
                 ['aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3'].forEach(id => {
                     const data = aiParsedStrategy[id]; const calcDiv = document.getElementById('calc_' + id);
-                    if (data && data.price > 0 && calcDiv) {
-                        const allocatedMoney = investAmt * (data.weight / 100); const shares = Math.floor(allocatedMoney / data.price);
-                        if(shares > 0) { calcDiv.innerHTML = `(예비) ${shares.toLocaleString()}주`; calcDiv.classList.remove('hidden'); }
-                    }
+                    if (data && data.price > 0 && calcDiv) { const allocatedMoney = investAmt * (data.weight / 100); const shares = Math.floor(allocatedMoney / data.price); if(shares > 0) { calcDiv.innerHTML = `(예비) ${shares.toLocaleString()}주`; calcDiv.classList.remove('hidden'); } }
                 });
-
                 document.getElementById('simModeBadge').textContent = "신규 진입 시나리오"; simCurrentView.classList.remove('hidden'); simAverageView.classList.add('hidden');
                 document.getElementById('simTotalInvestNew').textContent = investAmt.toLocaleString() + '원'; document.getElementById('simTotalSharesNew').textContent = totalShares.toLocaleString() + '주 예상';
                 runSellSimulation(totalShares, investAmt); returnBox.classList.remove('hidden');
             } else {
                 const avgPrice = parseInt(document.getElementById('myAvgPriceInput').value); const currentInvest = parseInt(document.getElementById('currentInvestInput').value); const standbyCash = parseInt(document.getElementById('standbyCashInput').value) || 0; 
                 if (isNaN(avgPrice) || isNaN(currentInvest) || avgPrice <= 0 || currentInvest <= 0) { returnBox.classList.add('hidden'); return; }
-
                 const currentShares = currentInvest / avgPrice; let addedShares = 0; let actualStandbyUsed = 0;
                 ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3'].forEach(id => {
                     const data = aiParsedStrategy[id]; const calcDiv = document.getElementById('calc_' + id);
-                    if (data && data.price > 0 && calcDiv && standbyCash > 0) {
-                        const allocatedMoney = standbyCash * (data.weight / 100); const shares = Math.floor(allocatedMoney / data.price);
-                        addedShares += shares; actualStandbyUsed += shares * data.price;
-                        if(shares > 0) { calcDiv.innerHTML = `+${shares.toLocaleString()}주 <span class="font-normal text-slate-500">(${(shares*data.price).toLocaleString()}원)</span>`; calcDiv.classList.remove('hidden'); }
-                    }
+                    if (data && data.price > 0 && calcDiv && standbyCash > 0) { const allocatedMoney = standbyCash * (data.weight / 100); const shares = Math.floor(allocatedMoney / data.price); addedShares += shares; actualStandbyUsed += shares * data.price; if(shares > 0) { calcDiv.innerHTML = `+${shares.toLocaleString()}주 <span class="font-normal text-slate-500">(${(shares*data.price).toLocaleString()}원)</span>`; calcDiv.classList.remove('hidden'); } }
                 });
-
                 const newTotalShares = currentShares + addedShares; const newTotalInvest = currentInvest + actualStandbyUsed; const newAvgPrice = newTotalShares > 0 ? (newTotalInvest / newTotalShares) : 0;
                 document.getElementById('simModeBadge').textContent = "기존보유/물타기 시나리오"; simCurrentView.classList.add('hidden'); simAverageView.classList.remove('hidden');
                 document.getElementById('simOldAvgPrice').textContent = avgPrice.toLocaleString() + '원'; document.getElementById('simInvestedStandby').textContent = standbyCash > 0 ? `+${actualStandbyUsed.toLocaleString()}원` : '0원 (대기금 없음)';
@@ -1765,173 +1142,86 @@ PRED_D5: [예상종가]원
 
         function runSellSimulation(totalShares, totalInvest) {
             let profitRevenue = 0; let profitCount = 0;
-            ['aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3'].forEach(id => {
-                const data = aiParsedStrategy[id];
-                if (data && data.price > 0) { profitRevenue += (totalShares * (data.weight / 100)) * data.price; profitCount++; }
-            });
-
-            if (profitCount > 0 && totalInvest > 0) {
-                const netProfit = profitRevenue - totalInvest; const profitRate = (netProfit / totalInvest) * 100;
-                document.getElementById('simProfitRate').textContent = `+${profitRate.toFixed(2)}%`; document.getElementById('simProfitMoney').textContent = `+${Math.floor(netProfit).toLocaleString()}원 예상`;
-            } else { document.getElementById('simProfitRate').textContent = "-"; document.getElementById('simProfitMoney').textContent = "타점 데이터 부족"; }
-
+            ['aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3'].forEach(id => { const data = aiParsedStrategy[id]; if (data && data.price > 0) { profitRevenue += (totalShares * (data.weight / 100)) * data.price; profitCount++; } });
+            if (profitCount > 0 && totalInvest > 0) { const netProfit = profitRevenue - totalInvest; const profitRate = (netProfit / totalInvest) * 100; document.getElementById('simProfitRate').textContent = `+${profitRate.toFixed(2)}%`; document.getElementById('simProfitMoney').textContent = `+${Math.floor(netProfit).toLocaleString()}원 예상`; } else { document.getElementById('simProfitRate').textContent = "-"; document.getElementById('simProfitMoney').textContent = "타점 데이터 부족"; }
             let lossRevenue = 0; let lossCount = 0;
-            ['aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'].forEach(id => {
-                const data = aiParsedStrategy[id];
-                if (data && data.price > 0) { lossRevenue += (totalShares * (data.weight / 100)) * data.price; lossCount++; }
-            });
-
-            if (lossCount > 0 && totalInvest > 0) {
-                const netLoss = lossRevenue - totalInvest; const lossRate = (netLoss / totalInvest) * 100;
-                document.getElementById('simLossRate').textContent = `${lossRate.toFixed(2)}%`; document.getElementById('simLossMoney').textContent = `${Math.floor(netLoss).toLocaleString()}원 손실`;
-            } else { document.getElementById('simLossRate').textContent = "-"; document.getElementById('simLossMoney').textContent = "타점 데이터 부족"; }
+            ['aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'].forEach(id => { const data = aiParsedStrategy[id]; if (data && data.price > 0) { lossRevenue += (totalShares * (data.weight / 100)) * data.price; lossCount++; } });
+            if (lossCount > 0 && totalInvest > 0) { const netLoss = lossRevenue - totalInvest; const lossRate = (netLoss / totalInvest) * 100; document.getElementById('simLossRate').textContent = `${lossRate.toFixed(2)}%`; document.getElementById('simLossMoney').textContent = `${Math.floor(netLoss).toLocaleString()}원 손실`; } else { document.getElementById('simLossRate').textContent = "-"; document.getElementById('simLossMoney').textContent = "타점 데이터 부족"; }
         }
 
-        /* ============================================================== */
-        /* 🤖 챗봇 관련 로직 시작 */
-        /* ============================================================== */
         let chatHistory = [];
 
         function toggleChatbot() {
-            const chatWindow = document.getElementById('chatbotWindow');
-            chatWindow.classList.toggle('hidden');
-            if(!chatWindow.classList.contains('hidden')) {
-                document.getElementById('chatInput').focus();
-            }
+            const chatWindow = document.getElementById('chatbotWindow'); chatWindow.classList.toggle('hidden'); if(!chatWindow.classList.contains('hidden')) { document.getElementById('chatInput').focus(); }
         }
 
         function addMessageToUI(sender, text) {
-            const msgContainer = document.getElementById('chatMessages');
-            const msgDiv = document.createElement('div');
-            
-            if (sender === 'user') {
-                msgDiv.className = 'flex flex-col items-end';
-                msgDiv.innerHTML = `
-                    <span class="text-[11px] font-bold text-slate-400 mr-1 mb-1">나</span>
-                    <div class="bg-indigo-600 text-white text-sm p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] break-words">
-                        ${text}
-                    </div>
-                `;
-            } else {
-                const formattedText = text
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br>');
-                    
+            const msgContainer = document.getElementById('chatMessages'); const msgDiv = document.createElement('div');
+            if (sender === 'user') { msgDiv.className = 'flex flex-col items-end'; msgDiv.innerHTML = `<span class="text-[11px] font-bold text-slate-400 mr-1 mb-1">나</span><div class="bg-indigo-600 text-white text-sm p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] break-words">${text}</div>`; } 
+            else {
+                const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
                 let bubbleClass = "bg-white border border-slate-200 text-slate-700";
-                if (formattedText.includes('[적극 매수]') || formattedText.includes('[분할 매수]')) {
-                    bubbleClass = "bg-red-50 border border-red-200 text-slate-800";
-                } else if (formattedText.includes('[관망]')) {
-                    bubbleClass = "bg-slate-100 border border-slate-300 text-slate-600";
-                }
-                    
-                msgDiv.className = 'flex flex-col items-start';
-                msgDiv.innerHTML = `
-                    <span class="text-[11px] font-bold text-slate-400 ml-1 mb-1">AI 어시스턴트</span>
-                    <div class="${bubbleClass} text-sm p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] break-words leading-relaxed">
-                        ${formattedText}
-                    </div>
-                `;
+                if (formattedText.includes('[적극 매수]') || formattedText.includes('[분할 매수]')) { bubbleClass = "bg-red-50 border border-red-200 text-slate-800"; } else if (formattedText.includes('[관망]')) { bubbleClass = "bg-slate-100 border border-slate-300 text-slate-600"; }
+                msgDiv.className = 'flex flex-col items-start'; msgDiv.innerHTML = `<span class="text-[11px] font-bold text-slate-400 ml-1 mb-1">AI 어시스턴트</span><div class="${bubbleClass} text-sm p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] break-words leading-relaxed">${formattedText}</div>`;
             }
-            
-            msgContainer.appendChild(msgDiv);
-            msgContainer.scrollTop = msgContainer.scrollHeight;
+            msgContainer.appendChild(msgDiv); msgContainer.scrollTop = msgContainer.scrollHeight;
         }
 
         function addLoadingToUI() {
-            const msgContainer = document.getElementById('chatMessages');
-            const loadingDiv = document.createElement('div');
-            loadingDiv.id = 'chatLoading';
-            loadingDiv.className = 'flex flex-col items-start';
-            loadingDiv.innerHTML = `
-                <div class="bg-white border border-slate-200 text-slate-400 text-sm p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
-                    <span class="sync-dot bg-slate-400"></span>
-                    <span class="sync-dot bg-slate-400" style="animation-delay: 0.2s"></span>
-                    <span class="sync-dot bg-slate-400" style="animation-delay: 0.4s"></span>
-                </div>
-            `;
-            msgContainer.appendChild(loadingDiv);
-            msgContainer.scrollTop = msgContainer.scrollHeight;
+            const msgContainer = document.getElementById('chatMessages'); const loadingDiv = document.createElement('div'); loadingDiv.id = 'chatLoading'; loadingDiv.className = 'flex flex-col items-start';
+            loadingDiv.innerHTML = `<div class="bg-white border border-slate-200 text-slate-400 text-sm p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1"><span class="sync-dot bg-slate-400"></span><span class="sync-dot bg-slate-400" style="animation-delay: 0.2s"></span><span class="sync-dot bg-slate-400" style="animation-delay: 0.4s"></span></div>`;
+            msgContainer.appendChild(loadingDiv); msgContainer.scrollTop = msgContainer.scrollHeight;
         }
 
-        function removeLoadingFromUI() {
-            const loadingDiv = document.getElementById('chatLoading');
-            if(loadingDiv) loadingDiv.remove();
-        }
+        function removeLoadingFromUI() { const loadingDiv = document.getElementById('chatLoading'); if(loadingDiv) loadingDiv.remove(); }
 
         async function sendChatMessage() {
-            const inputEl = document.getElementById('chatInput');
-            const text = inputEl.value.trim();
-            if (!text) return;
-            
+            const inputEl = document.getElementById('chatInput'); const text = inputEl.value.trim(); if (!text) return;
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
-            if (!apiKey) {
-                alert('챗봇을 사용하려면 우측 상단에 Gemini API Key를 먼저 입력해주세요.');
-                return;
-            }
+            if (!apiKey) { alert('챗봇을 사용하려면 우측 상단에 Gemini API Key를 먼저 입력해주세요.'); return; }
 
-            addMessageToUI('user', text);
-            inputEl.value = '';
-            addLoadingToUI();
+            addMessageToUI('user', text); inputEl.value = ''; addLoadingToUI();
 
             let contextStr = "사용자는 현재 퀀트 대시보드를 보고 있습니다.";
             if (lastFetchedData && lastFetchedData.corpName) {
-                contextStr = `사용자는 현재 [${lastFetchedData.corpName}(${lastFetchedData.ticker})] 종목을 분석 중입니다. 
-                현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.`;
-                
+                contextStr = `사용자는 현재 [${lastFetchedData.corpName}(${lastFetchedData.ticker})] 종목을 분석 중입니다. 현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.`;
                 contextStr += `\n🎯 [투자의견 명확화 지시]: 질문에 답변할 때 두리뭉실하게 말하지 마세요. 현재가, 최신 뉴스 등을 종합적으로 분석하여 반드시 답변의 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]** 중 하나를 골라 대괄호와 함께 제목으로 달아주세요. 그 직후에 명확한 논리를 서술하세요.`;
                 contextStr += `\n🚨 [할루시네이션 방지 절대 규칙]: 허위 뉴스, 실적, 공시를 절대 창작(지어내기)하지 마세요. 검색된 팩트 기반으로만 답변하고, 정보가 없다면 '현재 관련 정보가 검색되지 않습니다'라고 명확히 답변하세요.`;
             }
 
             if (chatHistory.length === 0) {
-                chatHistory.push({
-                    role: "user",
-                    parts: [{ text: `당신은 주식 퀀트 분석 대시보드의 AI 어시스턴트입니다. 상황 정보: ${contextStr}` }]
-                });
-                chatHistory.push({
-                    role: "model",
-                    parts: [{ text: "네, 실시간 정보를 바탕으로 팩트에 기반하여 분석해 드리겠습니다." }]
-                });
+                chatHistory.push({ role: "user", parts: [{ text: `당신은 주식 퀀트 분석 대시보드의 AI 어시스턴트입니다. 상황 정보: ${contextStr}` }] });
+                chatHistory.push({ role: "model", parts: [{ text: "네, 실시간 정보를 바탕으로 팩트에 기반하여 분석해 드리겠습니다." }] });
             }
-
-            chatHistory.push({
-                role: "user",
-                parts: [{ text: text }]
-            });
+            chatHistory.push({ role: "user", parts: [{ text: text }] });
 
             const requestBody = { 
                 contents: chatHistory, 
-                generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 }
+                generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 },
+                safetySettings: [{category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE"}]
             };
 
             try {
-                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(requestBody) 
+                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) 
                 });
                 
                 if (!response.ok) {
-                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(requestBody) 
+                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { 
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) 
                     });
                 }
                 
                 const data = await response.json();
-                const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 답변을 생성하지 못했습니다.";
+                if (data.error) throw new Error(`${data.error.message} (코드: ${data.error.code})`);
+                const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!aiResponseText) throw new Error("구글 안전 필터에 의해 답변이 차단되었습니다.");
                 
-                removeLoadingFromUI();
-                addMessageToUI('model', aiResponseText);
-                
-                chatHistory.push({
-                    role: "model",
-                    parts: [{ text: aiResponseText }]
-                });
-
+                removeLoadingFromUI(); addMessageToUI('model', aiResponseText);
+                chatHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
             } catch (error) {
                 removeLoadingFromUI();
-                addMessageToUI('model', `통신 중 오류가 발생했습니다. API 키나 네트워크 상태를 확인해주세요. (오류: ${error.message})`);
+                addMessageToUI('model', `🚨 오류 발생: ${error.message}`);
                 chatHistory.pop();
             }
         }
