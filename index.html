@@ -285,7 +285,6 @@
             </div>
 
             <!-- 📰 실시간 뉴스 & 📄 DART 전자공시 통합 패널 -->
-            <!-- 높이를 400px로 키워 대시보드가 잘 보이도록 수정 -->
             <div id="infoSection" class="hidden mt-6 mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- 뉴스 패널 -->
                 <div class="flex flex-col">
@@ -1187,7 +1186,6 @@
             `;
         }
 
-        // 📰 [수정 완료] 구글 뉴스 (rss2json API 활용으로 에러 원천 차단)
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
@@ -1210,7 +1208,7 @@
                 
                 for (let i = 0; i < Math.min(items.length, 6); i++) {
                     const item = items[i];
-                    const title = item.title.replace(/<\/?[^>]+(>|$)/g, ""); // HTML 태그 제거
+                    const title = item.title.replace(/<\/?[^>]+(>|$)/g, "");
                     const link = item.link;
                     const pubDate = new Date(item.pubDate);
                     const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
@@ -1232,11 +1230,9 @@
             }
         }
 
-        // 📄 [수정 완료] DART 공시 (대표님 대시보드 직접 임베딩)
         function loadDart(ticker, corpName) {
             const iframe = document.getElementById('dartIframe');
             if (iframe) {
-                // 대표님의 대시보드 URL 연결 (프록시나 스크래핑 없이 iframe으로 안전하게 띄웁니다)
                 iframe.src = `https://rmadh6418-ai.github.io/dart-dashboard/`;
             }
         }
@@ -1271,7 +1267,6 @@
             
             setTimeout(() => { loadTradingView(ticker); }, 100);
 
-            // 🌟 뉴스 및 DART 공시 로드 실행
             document.getElementById('infoSection').classList.remove('hidden');
             loadNews(corpName);
             loadDart(ticker, corpName);
@@ -1432,7 +1427,7 @@
             const resultText = document.getElementById('portfolioAiResultText');
 
             resultBox.classList.remove('hidden'); resultBox.open = true; 
-            resultText.innerHTML = `<span class="text-purple-600 font-bold animate-pulse">보유 중인 ${userPortfolio.length}개 종목과 대기자금(${standbyCash.toLocaleString()}원)을 종합 모델링하여 최적의 자금 배분 및 타점을 분석 중입니다...</span>`;
+            resultText.innerHTML = `<span class="text-purple-600 font-bold animate-pulse">보유 중인 ${userPortfolio.length}개 종목과 대기자금(${standbyCash.toLocaleString()}원)을 종합 모델링하여 최적 자금 배분 및 타점을 분석 중입니다...</span>`;
 
             let portfolioSummaryString = '';
             userPortfolio.forEach((p, idx) => {
@@ -1845,7 +1840,7 @@ PRED_D5: [예상종가]원
                 현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.`;
                 
                 contextStr += `\n🎯 [투자의견 명확화 지시]: 질문에 답변할 때 두리뭉실하게 말하지 마세요. 현재가, 최신 뉴스 등을 종합적으로 분석하여 반드시 답변의 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]** 중 하나를 골라 대괄호와 함께 제목으로 달아주세요. 그 직후에 명확한 논리를 서술하세요.`;
-                contextStr += `\n🚨 [할루시네이션 방지 절대 규칙]: 구글 실시간 검색 결과에 없는 허위 뉴스, 실적, 공시를 절대 창작(지어내기)하지 마세요. 검색된 팩트 기반으로만 답변하고, 정보가 없다면 '현재 관련 정보가 검색되지 않습니다'라고 명확히 답변하세요.`;
+                contextStr += `\n🚨 [할루시네이션 방지 절대 규칙]: 정보가 없다면 창작하지 말고 '관련 정보가 검색되지 않습니다'라고 명확히 답변하세요.`;
             }
 
             if (chatHistory.length === 0) {
@@ -1864,10 +1859,10 @@ PRED_D5: [예상종가]원
                 parts: [{ text: text }]
             });
 
+            // 🌟 챗봇 에러의 진짜 원인이었던 검색 연동 파라미터를 완전히 제거하여 메인 분석과 동일한 안정성 확보
             const requestBody = { 
                 contents: chatHistory, 
-                generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 },
-                tools: [{ googleSearch: {} }] 
+                generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 }
             };
 
             try {
