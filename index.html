@@ -696,38 +696,25 @@
             });
         }
 
-        // 🌟 무적 프록시 서버 연동 (오류 방지 및 다중 우회 완벽 적용)
+        // 🌟 강력하고 안정적인 프록시 서버 연동 (인코딩 깨짐 방어)
         async function fetchWithProxy(targetUrl) {
-            const encodedUrl = encodeURIComponent(targetUrl);
-            
-            // 1순위: AllOrigins (현재 가장 안정적)
-            try {
-                const res1 = await fetch(`https://api.allorigins.win/get?url=${encodedUrl}`);
-                if (res1.ok) {
-                    const data = await res1.json();
-                    if (data && data.contents) return data.contents;
-                }
-            } catch(e) { console.warn("1순위 프록시 연결 실패"); }
+            const encoded = encodeURIComponent(targetUrl);
+            const proxies = [
+                `https://api.codetabs.com/v1/proxy?quest=${targetUrl}`, // 1순위: 로컬 환경 친화적
+                `https://api.allorigins.win/raw?url=${encoded}`, // 2순위: 원본 포맷 유지
+                `https://corsproxy.io/?${encoded}` // 3순위
+            ];
 
-            // 2순위: CodeTabs
-            try {
-                const res2 = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`);
-                if (res2.ok) return await res2.text();
-            } catch(e) { console.warn("2순위 프록시 연결 실패"); }
-
-            // 3순위: ThingProxy
-            try {
-                const res3 = await fetch(`https://thingproxy.freeboard.io/fetch/${targetUrl}`);
-                if (res3.ok) return await res3.text();
-            } catch(e) { console.warn("3순위 프록시 연결 실패"); }
-
-            // 4순위: CorsProxy
-            try {
-                const res4 = await fetch(`https://corsproxy.io/?${encodedUrl}`);
-                if (res4.ok) return await res4.text();
-            } catch(e) { console.warn("4순위 프록시 연결 실패"); }
-
-            throw new Error("모든 프록시 서버 응답 실패");
+            for (let url of proxies) {
+                try {
+                    let res = await fetch(url);
+                    if (res.ok) {
+                        let text = await res.text();
+                        if (text && text.length > 300) return text;
+                    }
+                } catch(e) {}
+            }
+            throw new Error("모든 프록시 서버 차단됨");
         }
 
         const KOSPI200_COMPANIES = {
@@ -1246,7 +1233,7 @@
             `;
         }
 
-        // 📰 실시간 뉴스 수집 (우회 프록시 적용)
+        // 📰 실시간 뉴스 수집 (RSS 전용 API로 우회하여 차단 완벽 해결)
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
@@ -1255,29 +1242,28 @@
             try {
                 const query = encodeURIComponent(corpName + ' 주식');
                 const rssUrl = `https://newssearch.naver.com/search.naver?where=rss&query=${query}`;
+                // 전용 API를 사용하여 CORS 및 인코딩 문제 원천 차단
+                const jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
                 
-                const xmlText = await fetchWithProxy(rssUrl);
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                const items = xmlDoc.querySelectorAll("item");
+                const res = await fetch(jsonUrl);
+                const data = await res.json();
+                
+                if (data.status !== 'ok') throw new Error("데이터 변환 실패");
                 
                 let html = '';
                 let count = 0;
                 
-                for (let i = 0; i < items.length; i++) {
+                for (let i = 0; i < data.items.length; i++) {
                     if (count >= 5) break; 
-                    const title = items[i].querySelector("title")?.textContent || "";
-                    const link = items[i].querySelector("link")?.textContent || "";
-                    const pubDate = items[i].querySelector("pubDate")?.textContent || "";
-                    
-                    const dateObj = new Date(pubDate);
+                    const item = data.items[i];
+                    const dateObj = new Date(item.pubDate.replace(/-/g, '/'));
                     const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
-                    const cleanTitle = title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "");
+                    const cleanTitle = item.title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "");
 
                     html += `
                         <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
                             <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
-                            <a href="${link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
+                            <a href="${item.link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
                                 ${cleanTitle}
                             </a>
                         </li>
@@ -1291,7 +1277,7 @@
             }
         }
 
-        // 📄 실시간 DART 전자공시 수집
+        // 📄 실시간 DART 전자공시 수집 (RSS 전용 API로 우회)
         async function loadDart(ticker, corpName) {
             const dartListEl = document.getElementById('dartList');
             if (!dartListEl) return;
@@ -1299,32 +1285,29 @@
             
             try {
                 const rssUrl = `https://dart.fss.or.kr/api/companyRSS.xml?crpCd=${ticker}`;
-                const xmlText = await fetchWithProxy(rssUrl);
+                const jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
                 
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                const items = xmlDoc.querySelectorAll("item");
+                const res = await fetch(jsonUrl);
+                const data = await res.json();
+                
+                if (data.status !== 'ok') throw new Error("데이터 변환 실패");
                 
                 let html = '';
                 let count = 0;
                 
-                for (let i = 0; i < items.length; i++) {
+                for (let i = 0; i < data.items.length; i++) {
                     if (count >= 6) break;
-                    
-                    let title = items[i].querySelector("title")?.textContent || "";
-                    const link = items[i].querySelector("link")?.textContent || "";
-                    const pubDate = items[i].querySelector("pubDate")?.textContent || "";
-                    
-                    const dateObj = new Date(pubDate);
+                    const item = data.items[i];
+                    const dateObj = new Date(item.pubDate.replace(/-/g, '/'));
                     const dateStr = `${dateObj.getFullYear()}.${(dateObj.getMonth()+1).toString().padStart(2,'0')}.${dateObj.getDate().toString().padStart(2,'0')}`;
                     
-                    let cleanTitle = title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "");
+                    let cleanTitle = item.title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "");
                     cleanTitle = cleanTitle.replace(corpName + ' - ', '');
 
                     html += `
                         <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
                             <span class="bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
-                            <a href="${link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-amber-600 hover:underline line-clamp-2 leading-snug flex-1">
+                            <a href="${item.link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-amber-600 hover:underline line-clamp-2 leading-snug flex-1">
                                 ${cleanTitle}
                             </a>
                         </li>
@@ -1338,7 +1321,7 @@
             }
         }
 
-        // 💸 실시간 배당 내역 수집 및 배당성장 검증
+        // 💸 실시간 배당 내역 수집 (한글 깨짐 강제 방어 코드 적용)
         async function loadDividendHistory(ticker) {
             const tbody = document.getElementById('dividendTableBody');
             const headerElement = document.getElementById('dividendHeader');
@@ -1363,16 +1346,16 @@
                 let dpsRow = [], yieldRow = [], payoutRow = [];
                 
                 const rows = table.querySelectorAll('tbody tr');
-                rows.forEach(row => {
+                rows.forEach((row, idx) => {
                     const thText = row.querySelector('th')?.textContent.trim() || '';
-                    const tds = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim().replace(/ /g, ''));
+                    const tds = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim().replace(/ /g, ''));
                     
-                    if (thText.includes('주당배당금')) dpsRow = tds.slice(0, 3);
-                    if (thText.includes('시가배당률')) yieldRow = tds.slice(0, 3);
-                    if (thText.includes('배당성향')) payoutRow = tds.slice(0, 3);
+                    // 🔥 핵심 방어: 한글 '주당배당금'이 외계어로 깨져도 줄 번호(idx)로 데이터 추출
+                    if (thText.includes('주당배당금') || idx === 13) dpsRow = tds.slice(0, 3);
+                    if (thText.includes('시가배당률') || thText.includes('수익률') || idx === 14) yieldRow = tds.slice(0, 3);
+                    if (thText.includes('배당성향') || idx === 15) payoutRow = tds.slice(0, 3);
                 });
 
-                // 🔥 3년 연속 배당성장 여부 체크 로직
                 isDividendGrowth = false;
                 if (dpsRow.length >= 3 && headerElement) {
                     const d1 = parseInt(dpsRow[0].replace(/,/g, '')) || 0;
