@@ -61,7 +61,7 @@
                             <span class="sync-dot"></span>구글 시트 연동중
                         </span>
                     </h1>
-                    <p class="text-xs text-slate-500 mt-1">Multi-Asset Portfolio Optimizer · Gemini 3.5 Flash Lite · Automated Quant Engine</p>
+                    <p class="text-xs text-slate-500 mt-1">Multi-Asset Portfolio Optimizer · Automated Quant Engine</p>
                 </div>
             </div>
             <div class="flex space-x-2 w-full md:w-auto">
@@ -145,17 +145,13 @@
                     </div>
                 </div>
 
-                <!-- ✨ 포트폴리오 비중 차트와 커스텀 스크롤 범례 -->
                 <div class="w-full lg:w-72 bg-white border border-slate-200 shadow-sm rounded-xl p-3 flex flex-col justify-center">
                     <h4 class="text-[11px] font-bold text-slate-500 mb-2 text-center">📊 포트폴리오 비중</h4>
                     <div class="flex flex-row w-full h-24 items-center">
-                        <!-- 도넛 차트 캔버스 -->
                         <div class="relative w-24 h-24 shrink-0 flex justify-center">
                             <canvas id="portfolioPieChart"></canvas>
                         </div>
-                        <!-- 커스텀 HTML 스크롤 범례 -->
                         <div id="pieLegend" class="flex-1 h-24 overflow-y-auto pl-3 flex flex-col space-y-0.5">
-                            <!-- JS에서 동적 생성 -->
                         </div>
                     </div>
                 </div>
@@ -338,7 +334,7 @@
                 </div>
             </div>
 
-            <!-- 🌟 AI 향후 5일 주가 예측 및 자동 지지선 깔끔한 UI -->
+            <!-- 🌟 AI 향후 5일 주가 예측 및 자동 지지선 -->
             <div id="aiPredictionSection" class="hidden space-y-4">
                 <div class="flex justify-between items-center mb-1 mt-2">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🔮 AI 5일 주가 예측 및 매수 지지선</h2>
@@ -698,6 +694,26 @@
                 script.src = `https://polling.finance.naver.com/api/realtime?query=${encodeURIComponent(queryStr)}&_callback=${cbName}&_=${Date.now()}_${Math.random()}`;
                 document.head.appendChild(script);
             });
+        }
+
+        // 🌟 무적 프록시 서버 연동 (오류 방지)
+        async function fetchWithProxy(targetUrl) {
+            try {
+                let res = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
+                if (res.ok) return await res.text();
+            } catch(e) {}
+            
+            try {
+                let res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
+                if (res.ok) return await res.text();
+            } catch(e) {}
+            
+            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.contents;
+            }
+            throw new Error("모든 프록시 서버 우회 실패");
         }
 
         const KOSPI200_COMPANIES = {
@@ -1216,7 +1232,7 @@
             `;
         }
 
-        // 📰 실시간 뉴스 수집 함수 (CORS 우회 적용)
+        // 📰 실시간 뉴스 수집 (우회 프록시 적용)
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
@@ -1225,13 +1241,10 @@
             try {
                 const query = encodeURIComponent(corpName + ' 주식');
                 const rssUrl = `https://newssearch.naver.com/search.naver?where=rss&query=${query}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
                 
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                
+                const xmlText = await fetchWithProxy(rssUrl);
                 const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
                 const items = xmlDoc.querySelectorAll("item");
                 
                 let html = '';
@@ -1264,21 +1277,18 @@
             }
         }
 
-        // 📄 실시간 DART 전자공시 수집 함수
+        // 📄 실시간 DART 전자공시 수집
         async function loadDart(ticker, corpName) {
             const dartListEl = document.getElementById('dartList');
             if (!dartListEl) return;
             dartListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📄 DART 공시를 수집하고 있습니다...</li>';
             
             try {
-                const rssUrl = `http://dart.fss.or.kr/api/companyRSS.xml?crpCd=${ticker}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
-                
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
+                const rssUrl = `https://dart.fss.or.kr/api/companyRSS.xml?crpCd=${ticker}`;
+                const xmlText = await fetchWithProxy(rssUrl);
                 
                 const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
                 const items = xmlDoc.querySelectorAll("item");
                 
                 let html = '';
@@ -1314,7 +1324,7 @@
             }
         }
 
-        // 💸 실시간 배당 내역 수집 및 배당성장 검증 함수
+        // 💸 실시간 배당 내역 수집 및 배당성장 검증
         async function loadDividendHistory(ticker) {
             const tbody = document.getElementById('dividendTableBody');
             const headerElement = document.getElementById('dividendHeader');
@@ -1325,13 +1335,10 @@
             
             try {
                 const url = `https://finance.naver.com/item/main.naver?code=${ticker}`;
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-                
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
+                const htmlText = await fetchWithProxy(url);
                 
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(data.contents, "text/html");
+                const doc = parser.parseFromString(htmlText, "text/html");
                 
                 const table = doc.querySelector('table.tb_type1_ifrs');
                 if (!table) throw new Error("재무 테이블을 찾을 수 없음");
@@ -1344,7 +1351,7 @@
                 const rows = table.querySelectorAll('tbody tr');
                 rows.forEach(row => {
                     const thText = row.querySelector('th')?.textContent.trim() || '';
-                    const tds = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim().replace(/&nbsp;/g, ''));
+                    const tds = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim().replace(/ /g, ''));
                     
                     if (thText.includes('주당배당금')) dpsRow = tds.slice(0, 3);
                     if (thText.includes('시가배당률')) yieldRow = tds.slice(0, 3);
@@ -1600,8 +1607,14 @@
 
             const today = new Date();
             const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+            
+            // 🚨 할루시네이션 원천 차단 프롬프트 주입
             const prompt = `당신은 전세계 상위 0.1% 퀀트 포트폴리오 매니저 및 위험관리, 트레이딩 전문가입니다.
-사용자가 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로 전 세계 매크로적인 경제상황과 미국의 정치와 경제, 환율, 미국채 금리, 달러 인덱스, 미국 빅테크 실적, 섹터별 보유 비중, 기업의 모멘텀, 공매도 현황, 차트의 기술적 분석, 현재 분석 요청 일자(${currentDate}) 기준으로 3개월의 투자자별 매매동향의 추세를 상세하게 분석하여 "어떻게 행동하는 가장 합리적이고 수익을 극대화할 수 있는지" 제시하고 만약 신규 투자를 해서 상승 종목을 잡아 손실을 헷지한다고 생각한다면 어떤 섹터에 투자해야 하는지 제시하세요.
+사용자가 보유하고 있는 다종목 주식 포트폴리오 현황과 투입 가능한 대기자금을 바탕으로 분석하세요.
+
+🚨 [할루시네이션(정보 왜곡) 방지 절대 규칙]
+1. 제공된 [사용자 전체 포트폴리오 데이터]의 수치만 정확히 인용하세요. 절대 임의의 금액이나 종목을 지어내지 마세요.
+2. 분석 근거가 부족하면 임의로 창작하지 말고 "데이터 부족으로 판단 불가"라고 명확히 명시하세요.
 
 [분석 기준일: ${currentDate}]
 
@@ -1621,16 +1634,17 @@ ${portfolioSummaryString}
 ### 5. 🚀 최종 행동 요약 (Action Plan)`;
 
             try {
+                // ⚠️ 유저 요청에 따라 모델명 절대 보존 (temperature 0.0 으로 왜곡 방지)
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1 } }) 
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } }) 
                 });
                 if (!response.ok) {
                     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { 
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1 } }) 
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } }) 
                     });
                 }
                 const data = await response.json();
@@ -1673,9 +1687,17 @@ ${portfolioSummaryString}
 
             const today = new Date();
             const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
-            const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트 및 스윙 및 모멘텀 트레이딩 전문가입니다. 오늘 날짜는 ${currentDate}입니다. 현재 시점을 기준으로 [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
+            
+            // 🚨 할루시네이션 원천 차단 프롬프트 주입
+            const prompt = `당신은 전세계 상위 0.1% 주식 퀀트 애널리스트 및 트레이딩 전문가입니다. 
+
+🚨 [할루시네이션(정보 왜곡) 방지 절대 규칙]
+1. 아래 제공된 [종목 기본 데이터] 및 [기술적 지표 데이터]의 수치만 정확하게 인용하세요.
+2. 프롬프트에 제공되지 않은 과거 주가 흐름, 존재하지 않는 뉴스, 실적 등을 임의로 절대 창작하거나 지어내지 마세요.
+3. 데이터가 부족하여 분석이 불가능한 항목은 "데이터 부족으로 판단 불가"라고 명확히 기재하세요.
 
 [오늘 날짜: ${currentDate}]
+현재 시점을 기준으로 [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
 
 [종목 기본 데이터]
 현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
@@ -1716,22 +1738,23 @@ PRED_D5: [예상종가]원
 위 내용 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가 등을 명시하여 반영)
 2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
-3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정하세요. 매수 타점의 기술적 근거는 반드시 프롬프트 상단에 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 작성해야 단, 제공되지 않은 차트 흐름을 지어내지 마세요.
-4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차 설정 근거를 구체적으로 제시하세요. 매도 타점 역시 제공된 기술적 지표 데이터 저항선 이탈 여부를 기반으로 작성하세요.
-5. 향후 5일 예상 주가: 제공된 기술적 지표와 투자자별 매매동향, 기업의 모멘텀, 전 세계 매크로적인 경제상황과 미국의 정치와 경제, 환율, 미국채 금리, 달러 인덱스, 미국 빅테크 실적, 섹터별 보유 비중, 공매도 현황의 추세를 바탕으로 향후 5거래일(D+1~D+5)의 주가 흐름을 시뮬레이션하고 예측 근거를 객관적으로 평가하세요.
+3. 맞춤형 실전 매수 전략 및 근거: 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 매수 타점을 작성하세요. 없는 차트 데이터를 절대 지어내지 마세요.
+4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차 설정 근거를 기술적 지표 기반으로 구체적으로 제시하세요.
+5. 향후 5일 예상 주가: 제공된 수치만 기반으로 향후 5거래일(D+1~D+5)의 주가 흐름을 시뮬레이션 하세요.
 6. 종합 총평`;
 
             try {
+                // ⚠️ 유저 요청에 따라 모델명 절대 보존 (temperature 0.0 으로 왜곡 방지)
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1 } }) 
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } }) 
                 });
                 if (!response.ok) { 
                     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { 
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1 } }) 
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } }) 
                     }); 
                 }
                 const data = await response.json();
@@ -1923,8 +1946,7 @@ PRED_D5: [예상종가]원
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\n/g, '<br>');
                     
-                // 답변 내용 중 투자의견 여부에 따른 배경색 처리 로직
-                let bubbleClass = "bg-white border border-slate-200 text-slate-700"; // 기본값
+                let bubbleClass = "bg-white border border-slate-200 text-slate-700";
                 if (formattedText.includes('[적극 매수]') || formattedText.includes('[분할 매수]')) {
                     bubbleClass = "bg-red-50 border border-red-200 text-slate-800";
                 } else if (formattedText.includes('[관망]')) {
@@ -1985,15 +2007,13 @@ PRED_D5: [예상종가]원
                 contextStr = `사용자는 현재 [${lastFetchedData.corpName}(${lastFetchedData.ticker})] 종목을 분석 중입니다. 
                 현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.`;
                 
-                // 🌟 배당성장주 특별 코멘트
                 if (isDividendGrowth) {
                     contextStr += `\n🚨 [특별 지시]: 이 종목은 현재 '🔥 3년 연속 배당성장' 배지가 활성화된 우량 배당 성장주입니다. 답변 시 배당 투자 및 장기 보유 관점의 매력도를 반드시 덧붙이세요.`;
                 }
 
-                // 🎯 [투자의견 명확화 지시]
-                contextStr += `\n🎯 [투자의견 명확화 지시]: 질문에 답변할 때 절대로 두리뭉실하게 말하지 마세요. 현재가, 등락률, 최신 뉴스, 실적(검색 결과) 등을 종합적으로 분석하여 반드시 답변의 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]** 중 하나를 골라 대괄호와 함께 제목으로 달아주세요. 그 직후에 명확한 논리와 근거를 서술하세요.`;
-
-                contextStr += `\n당신은 구글 실시간 검색 기능이 활성화되어 있습니다. 질문을 받으면 반드시 해당 기업의 최신 뉴스, DART 전자공시 주요 내용, 실적 등을 검색하여 최신 팩트 기반으로 답변하세요.`;
+                // 🎯 챗봇 투자의견 명확화 및 할루시네이션(왜곡) 차단
+                contextStr += `\n🎯 [투자의견 명확화 지시]: 질문에 답변할 때 두리뭉실하게 말하지 마세요. 현재가, 최신 뉴스 등을 종합적으로 분석하여 반드시 답변의 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]** 중 하나를 골라 대괄호와 함께 제목으로 달아주세요. 그 직후에 명확한 논리를 서술하세요.`;
+                contextStr += `\n🚨 [할루시네이션 방지 절대 규칙]: 구글 실시간 검색 결과에 없는 허위 뉴스, 실적, 공시를 절대 창작(지어내기)하지 마세요. 검색된 팩트 기반으로만 답변하고, 정보가 없다면 '현재 관련 정보가 검색되지 않습니다'라고 명확히 답변하세요.`;
             }
 
             if (chatHistory.length === 0) {
@@ -2003,7 +2023,7 @@ PRED_D5: [예상종가]원
                 });
                 chatHistory.push({
                     role: "model",
-                    parts: [{ text: "네, 실시간 뉴스 및 공시 정보를 바탕으로 분석해 드리겠습니다." }]
+                    parts: [{ text: "네, 실시간 정보를 바탕으로 팩트에 기반하여 분석해 드리겠습니다." }]
                 });
             }
 
@@ -2012,15 +2032,15 @@ PRED_D5: [예상종가]원
                 parts: [{ text: text }]
             });
 
-            // 🌟 실시간 구글 검색(Grounding) 적용
+            // 🌟 실시간 구글 검색 연동 (온도 0.0 으로 왜곡 차단)
             const requestBody = { 
                 contents: chatHistory, 
-                generationConfig: { temperature: 0.4 },
+                generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 },
                 tools: [{ googleSearch: {} }] 
             };
 
             try {
-                // ⚠️ 사용자의 요청에 따라 3.5-flash-lite / 3.1-flash-lite 그대로 유지 
+                // ⚠️ 유저 요청에 따라 챗봇 모델명 절대 보존 
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
