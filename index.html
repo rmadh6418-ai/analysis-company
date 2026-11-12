@@ -278,7 +278,7 @@
                 </div>
             </div>
 
-            <!-- 🌟 실시간 트레이딩뷰 캔들 차트 (애플 폴백 버그 완벽 해결) -->
+            <!-- 🌟 실시간 트레이딩뷰 캔들 차트 -->
             <div>
                 <div class="flex justify-between items-center mb-3 mt-2">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-emerald-600 pl-3">📈 실시간 캔들 차트 (이평선·RSI·MACD 적용)</h2>
@@ -288,7 +288,57 @@
                 </div>
             </div>
 
-            <!-- 🌟 AI 향후 5일 주가 예측 및 자동 지지선 깔끔한 UI (높이 동기화 완벽 적용) -->
+            <!-- 📰 실시간 뉴스 & 📄 DART 전자공시 통합 패널 -->
+            <div id="infoSection" class="hidden mt-6 mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 뉴스 패널 -->
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 mb-3 flex items-center justify-between">
+                        <span>📰 실시간 주요 뉴스</span>
+                        <span class="text-[11px] bg-rose-50 text-rose-600 px-2 py-1 rounded-full font-bold">네이버 금융</span>
+                    </h2>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-64 overflow-y-auto">
+                        <ul id="newsList" class="space-y-1"></ul>
+                    </div>
+                </div>
+
+                <!-- DART 공시 패널 -->
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 border-l-4 border-amber-500 pl-3 mb-3 flex items-center justify-between">
+                        <span>📄 DART 전자공시</span>
+                        <span class="text-[11px] bg-amber-50 text-amber-600 px-2 py-1 rounded-full font-bold">금융감독원</span>
+                    </h2>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-64 overflow-y-auto">
+                        <ul id="dartList" class="space-y-1"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 💸 3년 배당 히스토리 패널 -->
+            <div id="dividendSection" class="hidden mt-6 mb-2">
+                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-pink-500 pl-3 mb-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2" id="dividendHeader">
+                        <span>💸 최근 3년 배당 히스토리</span>
+                    </div>
+                    <span class="text-[11px] bg-pink-50 text-pink-600 px-2 py-1 rounded-full font-bold shrink-0">네이버 금융 실시간 연동</span>
+                </h2>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                    <table class="w-full text-sm border-collapse text-center">
+                        <thead class="bg-slate-50 text-slate-700">
+                            <tr>
+                                <th class="p-3 border-b border-slate-200">결산 연도</th>
+                                <th class="p-3 border-b border-slate-200">주당 배당금</th>
+                                <th class="p-3 border-b border-slate-200">배당수익률</th>
+                                <th class="p-3 border-b border-slate-200">배당성향</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dividendTableBody">
+                            <!-- JS로 렌더링 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 🌟 AI 향후 5일 주가 예측 및 자동 지지선 깔끔한 UI -->
             <div id="aiPredictionSection" class="hidden space-y-4">
                 <div class="flex justify-between items-center mb-1 mt-2">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🔮 AI 5일 주가 예측 및 매수 지지선</h2>
@@ -531,14 +581,11 @@
     </div>
 
     <!-- 🤖 챗봇 플로팅 UI 추가부분 -->
-    <!-- 챗봇 토글 버튼 -->
     <button id="chatbotToggleBtn" onclick="toggleChatbot()" class="fixed bottom-6 right-6 z-[9990] bg-indigo-600 text-white p-4 rounded-full shadow-2xl hover:bg-indigo-700 transition transform hover:scale-105 flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
     </button>
 
-    <!-- 챗봇 윈도우 -->
     <div id="chatbotWindow" class="fixed bottom-24 right-6 z-[9990] bg-white w-[350px] md:w-[400px] h-[550px] max-h-[75vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col hidden transform transition-all duration-300 origin-bottom-right">
-        <!-- 헤더 -->
         <div class="bg-indigo-600 text-white p-4 rounded-t-2xl flex justify-between items-center shadow-sm shrink-0">
             <div class="flex items-center gap-2">
                 <span class="text-xl">🤖</span>
@@ -552,9 +599,7 @@
             </button>
         </div>
         
-        <!-- 메시지 영역 -->
         <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-            <!-- 초기 안내 메시지 -->
             <div class="flex flex-col items-start">
                 <span class="text-[11px] font-bold text-slate-400 ml-1 mb-1">AI 어시스턴트</span>
                 <div class="bg-white border border-slate-200 text-slate-700 text-sm p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[85%]">
@@ -564,7 +609,6 @@
             </div>
         </div>
 
-        <!-- 입력 영역 -->
         <div class="p-3 bg-white border-t border-slate-200 rounded-b-2xl shrink-0">
             <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-full border border-slate-200 focus-within:border-indigo-400 focus-within:bg-white transition-colors">
                 <input type="text" id="chatInput" onkeypress="if(event.key==='Enter') sendChatMessage()" placeholder="질문을 입력하세요..." class="flex-1 bg-transparent border-none text-sm px-3 py-2 focus:outline-none text-slate-700" autocomplete="off">
@@ -575,8 +619,21 @@
         </div>
     </div>
 
-
     <script>
+        // 전역 변수 모음
+        let lastFetchedData = null;
+        let globalQuantData = null;
+        let myChart = null;
+        let predChartObj = null;
+        let aiParsedStrategy = {}; 
+        let parsedAiTargetPrice = 0; 
+        
+        let userPortfolio = [];
+        let selectedPortCode = '';
+        let livePortfolioPrices = {};
+        let portfolioPieChart = null; 
+        let isDividendGrowth = false; // 🌟 3년 연속 배당성장 상태 저장
+
         function checkPassword() {
             const pin = document.getElementById('lockPin').value.trim();
             const errorMsg = document.getElementById('lockError');
@@ -681,18 +738,6 @@
         for (const sector in KOSDAQ150_COMPANIES) {
             for (const [name, code] of Object.entries(KOSDAQ150_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; }
         }
-
-        let lastFetchedData = null;
-        let globalQuantData = null;
-        let myChart = null;
-        let predChartObj = null;
-        let aiParsedStrategy = {}; 
-        let parsedAiTargetPrice = 0; 
-        
-        let userPortfolio = [];
-        let selectedPortCode = '';
-        let livePortfolioPrices = {};
-        let portfolioPieChart = null; 
 
         async function loadFromGoogleCloud() {
             if (GAS_URL === "여기에_구글_앱스스크립트_Web_App_URL을_넣으세요") {
@@ -1171,6 +1216,180 @@
             `;
         }
 
+        // 📰 실시간 뉴스 수집 함수 (CORS 우회 적용)
+        async function loadNews(corpName) {
+            const newsListEl = document.getElementById('newsList');
+            if (!newsListEl) return;
+            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 실시간 뉴스를 수집하고 있습니다...</li>';
+            
+            try {
+                const query = encodeURIComponent(corpName + ' 주식');
+                const rssUrl = `https://newssearch.naver.com/search.naver?where=rss&query=${query}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+                
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+                const items = xmlDoc.querySelectorAll("item");
+                
+                let html = '';
+                let count = 0;
+                
+                for (let i = 0; i < items.length; i++) {
+                    if (count >= 5) break; 
+                    const title = items[i].querySelector("title")?.textContent || "";
+                    const link = items[i].querySelector("link")?.textContent || "";
+                    const pubDate = items[i].querySelector("pubDate")?.textContent || "";
+                    
+                    const dateObj = new Date(pubDate);
+                    const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
+                    const cleanTitle = title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "");
+
+                    html += `
+                        <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
+                            <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
+                            <a href="${link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
+                                ${cleanTitle}
+                            </a>
+                        </li>
+                    `;
+                    count++;
+                }
+                
+                newsListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
+            } catch (e) {
+                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.</li>';
+            }
+        }
+
+        // 📄 실시간 DART 전자공시 수집 함수
+        async function loadDart(ticker, corpName) {
+            const dartListEl = document.getElementById('dartList');
+            if (!dartListEl) return;
+            dartListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📄 DART 공시를 수집하고 있습니다...</li>';
+            
+            try {
+                const rssUrl = `http://dart.fss.or.kr/api/companyRSS.xml?crpCd=${ticker}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+                
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+                const items = xmlDoc.querySelectorAll("item");
+                
+                let html = '';
+                let count = 0;
+                
+                for (let i = 0; i < items.length; i++) {
+                    if (count >= 6) break;
+                    
+                    let title = items[i].querySelector("title")?.textContent || "";
+                    const link = items[i].querySelector("link")?.textContent || "";
+                    const pubDate = items[i].querySelector("pubDate")?.textContent || "";
+                    
+                    const dateObj = new Date(pubDate);
+                    const dateStr = `${dateObj.getFullYear()}.${(dateObj.getMonth()+1).toString().padStart(2,'0')}.${dateObj.getDate().toString().padStart(2,'0')}`;
+                    
+                    let cleanTitle = title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "");
+                    cleanTitle = cleanTitle.replace(corpName + ' - ', '');
+
+                    html += `
+                        <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
+                            <span class="bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
+                            <a href="${link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-amber-600 hover:underline line-clamp-2 leading-snug flex-1">
+                                ${cleanTitle}
+                            </a>
+                        </li>
+                    `;
+                    count++;
+                }
+                
+                dartListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 공시가 없습니다.</li>';
+            } catch (e) {
+                dartListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">공시를 불러오는 데 실패했습니다.</li>';
+            }
+        }
+
+        // 💸 실시간 배당 내역 수집 및 배당성장 검증 함수
+        async function loadDividendHistory(ticker) {
+            const tbody = document.getElementById('dividendTableBody');
+            const headerElement = document.getElementById('dividendHeader');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-sm font-semibold text-slate-500 animate-pulse">배당 데이터를 수집하고 있습니다...</td></tr>';
+            if (headerElement) headerElement.innerHTML = `<span>💸 최근 3년 배당 히스토리</span>`;
+            
+            try {
+                const url = `https://finance.naver.com/item/main.naver?code=${ticker}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data.contents, "text/html");
+                
+                const table = doc.querySelector('table.tb_type1_ifrs');
+                if (!table) throw new Error("재무 테이블을 찾을 수 없음");
+
+                const headers = Array.from(table.querySelectorAll('thead tr:nth-child(2) th')).map(th => th.textContent.trim());
+                const years = headers.slice(0, 3); 
+                
+                let dpsRow = [], yieldRow = [], payoutRow = [];
+                
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    const thText = row.querySelector('th')?.textContent.trim() || '';
+                    const tds = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim().replace(/&nbsp;/g, ''));
+                    
+                    if (thText.includes('주당배당금')) dpsRow = tds.slice(0, 3);
+                    if (thText.includes('시가배당률')) yieldRow = tds.slice(0, 3);
+                    if (thText.includes('배당성향')) payoutRow = tds.slice(0, 3);
+                });
+
+                // 🔥 3년 연속 배당성장 여부 체크 로직
+                isDividendGrowth = false;
+                if (dpsRow.length >= 3 && headerElement) {
+                    const d1 = parseInt(dpsRow[0].replace(/,/g, '')) || 0;
+                    const d2 = parseInt(dpsRow[1].replace(/,/g, '')) || 0;
+                    const d3 = parseInt(dpsRow[2].replace(/,/g, '')) || 0;
+                    
+                    if (d1 > 0 && d1 < d2 && d2 < d3) {
+                        isDividendGrowth = true;
+                        headerElement.innerHTML = `
+                            <span>💸 최근 3년 배당 히스토리</span>
+                            <span class="text-[11px] bg-red-50 text-red-600 px-2 py-0.5 rounded font-extrabold border border-red-200 shadow-sm animate-pulse">🔥 3년 연속 배당성장</span>
+                        `;
+                    }
+                }
+
+                let html = '';
+                years.forEach((year, i) => {
+                    if (!year) return;
+                    const dps = (dpsRow[i] && dpsRow[i] !== '-' && dpsRow[i] !== '') ? dpsRow[i] + '원' : '배당 없음';
+                    const divYield = (yieldRow[i] && yieldRow[i] !== '-' && yieldRow[i] !== '') ? yieldRow[i] + '%' : '-';
+                    const payout = (payoutRow[i] && payoutRow[i] !== '-' && payoutRow[i] !== '') ? payoutRow[i] + '%' : '-';
+                    
+                    html += `
+                        <tr class="border-b border-slate-100 hover:bg-pink-50/30 transition">
+                            <td class="p-3 font-bold text-slate-700">${year}</td>
+                            <td class="p-3 font-extrabold ${dps === '배당 없음' ? 'text-slate-400 font-medium' : 'text-slate-900'}">${dps}</td>
+                            <td class="p-3 font-bold text-pink-600">${divYield}</td>
+                            <td class="p-3 font-medium text-slate-500">${payout}</td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-sm font-bold text-red-500">배당 데이터를 불러오지 못했습니다.</td></tr>';
+            }
+        }
+
         async function fetchDashboardData() {
             const inputEl = document.getElementById('tickerInput'); const mode = document.getElementById('analysisModeSelect').value;
             let inputRaw = inputEl.value.trim(); let ticker = "", corpName = "";
@@ -1200,6 +1419,14 @@
             document.getElementById('aiResult').innerHTML = "<span class='text-purple-600 font-semibold animate-pulse'>AI 맞춤 심층 분석 및 타점을 생성 중입니다...</span>";
             
             setTimeout(() => { loadTradingView(ticker); }, 100);
+
+            // 🌟 뉴스, DART 공시 및 배당 히스토리 로드 실행부
+            document.getElementById('infoSection').classList.remove('hidden');
+            loadNews(corpName);
+            loadDart(ticker, corpName);
+            
+            document.getElementById('dividendSection').classList.remove('hidden');
+            loadDividendHistory(ticker);
 
             const tech = data.tech || { ma5: '-', ma20: '-', ma33: '-', ma60: '-', ma120: '-', rsi: '-', macd: '-' };
             document.getElementById('uiRsiValue').textContent = tech.rsi !== '-' ? tech.rsi : "데이터 부족";
@@ -1488,7 +1715,7 @@ PRED_D5: [예상종가]원
 
 위 내용 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가 등을 명시하여 반영)
-​2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
+2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
 3. 맞춤형 실전 매수 전략 및 근거: 물타기(하락 시)와 불타기(상승 시 돌파매수) 중 현재 상황에서 어떤 전략이 더 유리한지 명확한 '선택 근거'를 제시하고, 1~3차 매수 타점과 비중을 설정하세요. 매수 타점의 기술적 근거는 반드시 프롬프트 상단에 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 작성해야 단, 제공되지 않은 차트 흐름을 지어내지 마세요.
 4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차 설정 근거를 구체적으로 제시하세요. 매도 타점 역시 제공된 기술적 지표 데이터 저항선 이탈 여부를 기반으로 작성하세요.
 5. 향후 5일 예상 주가: 제공된 기술적 지표와 투자자별 매매동향, 기업의 모멘텀, 전 세계 매크로적인 경제상황과 미국의 정치와 경제, 환율, 미국채 금리, 달러 인덱스, 미국 빅테크 실적, 섹터별 보유 비중, 공매도 현황의 추세를 바탕으로 향후 5거래일(D+1~D+5)의 주가 흐름을 시뮬레이션하고 예측 근거를 객관적으로 평가하세요.
@@ -1692,15 +1919,22 @@ PRED_D5: [예상종가]원
                     </div>
                 `;
             } else {
-                // AI 마크다운 간단 파싱 (볼드체, 줄바꿈)
                 const formattedText = text
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\n/g, '<br>');
                     
+                // 답변 내용 중 투자의견 여부에 따른 배경색 처리 로직
+                let bubbleClass = "bg-white border border-slate-200 text-slate-700"; // 기본값
+                if (formattedText.includes('[적극 매수]') || formattedText.includes('[분할 매수]')) {
+                    bubbleClass = "bg-red-50 border border-red-200 text-slate-800";
+                } else if (formattedText.includes('[관망]')) {
+                    bubbleClass = "bg-slate-100 border border-slate-300 text-slate-600";
+                }
+                    
                 msgDiv.className = 'flex flex-col items-start';
                 msgDiv.innerHTML = `
                     <span class="text-[11px] font-bold text-slate-400 ml-1 mb-1">AI 어시스턴트</span>
-                    <div class="bg-white border border-slate-200 text-slate-700 text-sm p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] break-words leading-relaxed">
+                    <div class="${bubbleClass} text-sm p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] break-words leading-relaxed">
                         ${formattedText}
                     </div>
                 `;
@@ -1735,27 +1969,33 @@ PRED_D5: [예상종가]원
             const inputEl = document.getElementById('chatInput');
             const text = inputEl.value.trim();
             if (!text) return;
-    
+            
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
                 alert('챗봇을 사용하려면 우측 상단에 Gemini API Key를 먼저 입력해주세요.');
                 return;
             }
 
-            // UI 업데이트
             addMessageToUI('user', text);
             inputEl.value = '';
             addLoadingToUI();
 
-            // 🌟 1. 챗봇 컨텍스트에 '뉴스 및 DART 공시 검색' 역할 부여
             let contextStr = "사용자는 현재 퀀트 대시보드를 보고 있습니다.";
             if (lastFetchedData && lastFetchedData.corpName) {
                 contextStr = `사용자는 현재 [${lastFetchedData.corpName}(${lastFetchedData.ticker})] 종목을 분석 중입니다. 
-                현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.
-                당신은 구글 실시간 검색 기능이 활성화되어 있습니다. 사용자가 질문하면 반드시 해당 기업의 최신 뉴스, DART 전자공시 주요 내용, 실적 발표 등을 검색하여 최신 팩트 기반으로 답변하세요.`;
+                현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.`;
+                
+                // 🌟 배당성장주 특별 코멘트
+                if (isDividendGrowth) {
+                    contextStr += `\n🚨 [특별 지시]: 이 종목은 현재 '🔥 3년 연속 배당성장' 배지가 활성화된 우량 배당 성장주입니다. 답변 시 배당 투자 및 장기 보유 관점의 매력도를 반드시 덧붙이세요.`;
+                }
+
+                // 🎯 [투자의견 명확화 지시]
+                contextStr += `\n🎯 [투자의견 명확화 지시]: 질문에 답변할 때 절대로 두리뭉실하게 말하지 마세요. 현재가, 등락률, 최신 뉴스, 실적(검색 결과) 등을 종합적으로 분석하여 반드시 답변의 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]** 중 하나를 골라 대괄호와 함께 제목으로 달아주세요. 그 직후에 명확한 논리와 근거를 서술하세요.`;
+
+                contextStr += `\n당신은 구글 실시간 검색 기능이 활성화되어 있습니다. 질문을 받으면 반드시 해당 기업의 최신 뉴스, DART 전자공시 주요 내용, 실적 등을 검색하여 최신 팩트 기반으로 답변하세요.`;
             }
 
-            // 초기 시스템 프롬프트 주입
             if (chatHistory.length === 0) {
                 chatHistory.push({
                     role: "user",
@@ -1763,31 +2003,30 @@ PRED_D5: [예상종가]원
                 });
                 chatHistory.push({
                     role: "model",
-                    parts: [{ text: "네, AI 퀀트 어시스턴트입니다. 실시간 뉴스 및 DART 공시 정보를 검색하여 정확하게 분석해 드리겠습니다." }]
+                    parts: [{ text: "네, 실시간 뉴스 및 공시 정보를 바탕으로 분석해 드리겠습니다." }]
                 });
             }
 
-            // 사용자 메시지 추가
             chatHistory.push({
                 role: "user",
                 parts: [{ text: text }]
             });
 
-            // 🌟 2. API 요청 객체에 googleSearch 도구 활성화 (핵심)
+            // 🌟 실시간 구글 검색(Grounding) 적용
             const requestBody = { 
                 contents: chatHistory, 
-                generationConfig: { temperature: 0.4 }, // 팩트 위주 답변을 위해 온도를 약간 낮춤
-                tools: [{ googleSearch: {} }] // 구글 검색 그라운딩 활성화
+                generationConfig: { temperature: 0.4 },
+                tools: [{ googleSearch: {} }] 
             };
 
             try {
+                // ⚠️ 사용자의 요청에 따라 3.5-flash-lite / 3.1-flash-lite 그대로 유지 
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify(requestBody) 
                 });
-        
-                // Fallback (3.5 실패시 3.1로 재시도, 동일하게 검색 활성화)
+                
                 if (!response.ok) {
                     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { 
                         method: 'POST', 
@@ -1795,16 +2034,13 @@ PRED_D5: [예상종가]원
                         body: JSON.stringify(requestBody) 
                     });
                 }
-
+                
                 const data = await response.json();
-        
-                // 응답 텍스트 추출 (검색 결과 기반 생성 텍스트)
                 const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 답변을 생성하지 못했습니다.";
-        
+                
                 removeLoadingFromUI();
                 addMessageToUI('model', aiResponseText);
-        
-                // 모델 응답 히스토리에 추가
+                
                 chatHistory.push({
                     role: "model",
                     parts: [{ text: aiResponseText }]
@@ -1812,7 +2048,7 @@ PRED_D5: [예상종가]원
 
             } catch (error) {
                 removeLoadingFromUI();
-                addMessageToUI('model', "통신 중 오류가 발생했습니다. API 키나 네트워크 상태를 확인해주세요.");
+                addMessageToUI('model', `통신 중 오류가 발생했습니다. API 키나 네트워크 상태를 확인해주세요. (오류: ${error.message})`);
                 chatHistory.pop();
             }
         }
