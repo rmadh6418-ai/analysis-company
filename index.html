@@ -309,31 +309,6 @@
                 </div>
             </div>
 
-            <!-- 💸 3년 배당 히스토리 패널 -->
-            <div id="dividendSection" class="hidden mt-6 mb-2">
-                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-pink-500 pl-3 mb-3 flex items-center justify-between">
-                    <div class="flex items-center gap-2" id="dividendHeader">
-                        <span>💸 최근 3년 배당 히스토리</span>
-                    </div>
-                    <span class="text-[11px] bg-pink-50 text-pink-600 px-2 py-1 rounded-full font-bold shrink-0">네이버 금융 실시간 연동</span>
-                </h2>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-                    <table class="w-full text-sm border-collapse text-center">
-                        <thead class="bg-slate-50 text-slate-700">
-                            <tr>
-                                <th class="p-3 border-b border-slate-200">결산 연도</th>
-                                <th class="p-3 border-b border-slate-200">주당 배당금</th>
-                                <th class="p-3 border-b border-slate-200">배당수익률</th>
-                                <th class="p-3 border-b border-slate-200">배당성향</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dividendTableBody">
-                            <!-- JS로 렌더링 -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <!-- 🌟 AI 향후 5일 주가 예측 및 자동 지지선 -->
             <div id="aiPredictionSection" class="hidden space-y-4">
                 <div class="flex justify-between items-center mb-1 mt-2">
@@ -1233,22 +1208,22 @@
             `;
         }
 
-        // 📰 실시간 뉴스 수집 (RSS 전용 API로 우회하여 차단 완벽 해결)
+        // 📰 실시간 뉴스 수집 (구글 뉴스 RSS로 완벽 교체)
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
-            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 실시간 뉴스를 수집하고 있습니다...</li>';
+            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 수집하고 있습니다...</li>';
             
             try {
                 const query = encodeURIComponent(corpName + ' 주식');
-                const rssUrl = `https://newssearch.naver.com/search.naver?where=rss&query=${query}`;
-                // 전용 API를 사용하여 CORS 및 인코딩 문제 원천 차단
+                // 구글 뉴스 전용 RSS 주소 사용
+                const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
                 const jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
                 
                 const res = await fetch(jsonUrl);
                 const data = await res.json();
                 
-                if (data.status !== 'ok') throw new Error("데이터 변환 실패");
+                if (data.status !== 'ok') throw new Error("구글 뉴스 변환 실패");
                 
                 let html = '';
                 let count = 0;
@@ -1258,7 +1233,8 @@
                     const item = data.items[i];
                     const dateObj = new Date(item.pubDate.replace(/-/g, '/'));
                     const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
-                    const cleanTitle = item.title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "");
+                    // 구글 뉴스는 뒤에 ' - 언론사명'이 붙으므로 깔끔하게 잘라냅니다.
+                    const cleanTitle = item.title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "").split(' - ')[0];
 
                     html += `
                         <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
@@ -1272,126 +1248,43 @@
                 }
                 
                 newsListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
+                
+                // 우측 상단 뱃지 텍스트를 'Google News'로 변경
+                try {
+                    const badge = newsListEl.parentElement.parentElement.querySelector('h2 span:last-child');
+                    if(badge) badge.textContent = "Google News";
+                } catch(e) {}
+
             } catch (e) {
                 newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.</li>';
             }
         }
 
-        // 📄 실시간 DART 전자공시 수집 (RSS 전용 API로 우회)
+        // 📄 내 DART 대시보드 직접 연동
         async function loadDart(ticker, corpName) {
             const dartListEl = document.getElementById('dartList');
             if (!dartListEl) return;
-            dartListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📄 DART 공시를 수집하고 있습니다...</li>';
             
+            // 회원님의 개인 DART 대시보드 주소
+            const myDartUrl = `https://rmadh6418-ai.github.io/dart-dashboard/`;
+            
+            dartListEl.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full space-y-4 pt-2">
+                    <p class="text-sm font-bold text-slate-600 text-center leading-relaxed">
+                        <span class="text-amber-500 text-xl block mb-1">💡</span>
+                        회원님의 <strong>개인 DART 대시보드</strong>에서<br><span class="text-slate-800">[${corpName}]</span>의 상세 공시를 확인하세요.
+                    </p>
+                    <a href="${myDartUrl}" target="_blank" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-extrabold py-3 px-6 rounded-xl shadow-md transition transform hover:scale-105 flex items-center gap-2">
+                        <span>🔍 내 DART 대시보드 바로가기</span>
+                    </a>
+                </div>
+            `;
+            
+            // 우측 상단 뱃지 텍스트를 'My DART'로 변경
             try {
-                const rssUrl = `https://dart.fss.or.kr/api/companyRSS.xml?crpCd=${ticker}`;
-                const jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
-                
-                const res = await fetch(jsonUrl);
-                const data = await res.json();
-                
-                if (data.status !== 'ok') throw new Error("데이터 변환 실패");
-                
-                let html = '';
-                let count = 0;
-                
-                for (let i = 0; i < data.items.length; i++) {
-                    if (count >= 6) break;
-                    const item = data.items[i];
-                    const dateObj = new Date(item.pubDate.replace(/-/g, '/'));
-                    const dateStr = `${dateObj.getFullYear()}.${(dateObj.getMonth()+1).toString().padStart(2,'0')}.${dateObj.getDate().toString().padStart(2,'0')}`;
-                    
-                    let cleanTitle = item.title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<\/?[^>]+(>|$)/g, "");
-                    cleanTitle = cleanTitle.replace(corpName + ' - ', '');
-
-                    html += `
-                        <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
-                            <span class="bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
-                            <a href="${item.link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-amber-600 hover:underline line-clamp-2 leading-snug flex-1">
-                                ${cleanTitle}
-                            </a>
-                        </li>
-                    `;
-                    count++;
-                }
-                
-                dartListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 공시가 없습니다.</li>';
-            } catch (e) {
-                dartListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">공시를 불러오는 데 실패했습니다.</li>';
-            }
-        }
-
-        // 💸 실시간 배당 내역 수집 (한글 깨짐 강제 방어 코드 적용)
-        async function loadDividendHistory(ticker) {
-            const tbody = document.getElementById('dividendTableBody');
-            const headerElement = document.getElementById('dividendHeader');
-            if (!tbody) return;
-            
-            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-sm font-semibold text-slate-500 animate-pulse">배당 데이터를 수집하고 있습니다...</td></tr>';
-            if (headerElement) headerElement.innerHTML = `<span>💸 최근 3년 배당 히스토리</span>`;
-            
-            try {
-                const url = `https://finance.naver.com/item/main.naver?code=${ticker}`;
-                const htmlText = await fetchWithProxy(url);
-                
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, "text/html");
-                
-                const table = doc.querySelector('table.tb_type1_ifrs');
-                if (!table) throw new Error("재무 테이블을 찾을 수 없음");
-
-                const headers = Array.from(table.querySelectorAll('thead tr:nth-child(2) th')).map(th => th.textContent.trim());
-                const years = headers.slice(0, 3); 
-                
-                let dpsRow = [], yieldRow = [], payoutRow = [];
-                
-                const rows = table.querySelectorAll('tbody tr');
-                rows.forEach((row, idx) => {
-                    const thText = row.querySelector('th')?.textContent.trim() || '';
-                    const tds = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim().replace(/ /g, ''));
-                    
-                    // 🔥 핵심 방어: 한글 '주당배당금'이 외계어로 깨져도 줄 번호(idx)로 데이터 추출
-                    if (thText.includes('주당배당금') || idx === 13) dpsRow = tds.slice(0, 3);
-                    if (thText.includes('시가배당률') || thText.includes('수익률') || idx === 14) yieldRow = tds.slice(0, 3);
-                    if (thText.includes('배당성향') || idx === 15) payoutRow = tds.slice(0, 3);
-                });
-
-                isDividendGrowth = false;
-                if (dpsRow.length >= 3 && headerElement) {
-                    const d1 = parseInt(dpsRow[0].replace(/,/g, '')) || 0;
-                    const d2 = parseInt(dpsRow[1].replace(/,/g, '')) || 0;
-                    const d3 = parseInt(dpsRow[2].replace(/,/g, '')) || 0;
-                    
-                    if (d1 > 0 && d1 < d2 && d2 < d3) {
-                        isDividendGrowth = true;
-                        headerElement.innerHTML = `
-                            <span>💸 최근 3년 배당 히스토리</span>
-                            <span class="text-[11px] bg-red-50 text-red-600 px-2 py-0.5 rounded font-extrabold border border-red-200 shadow-sm animate-pulse">🔥 3년 연속 배당성장</span>
-                        `;
-                    }
-                }
-
-                let html = '';
-                years.forEach((year, i) => {
-                    if (!year) return;
-                    const dps = (dpsRow[i] && dpsRow[i] !== '-' && dpsRow[i] !== '') ? dpsRow[i] + '원' : '배당 없음';
-                    const divYield = (yieldRow[i] && yieldRow[i] !== '-' && yieldRow[i] !== '') ? yieldRow[i] + '%' : '-';
-                    const payout = (payoutRow[i] && payoutRow[i] !== '-' && payoutRow[i] !== '') ? payoutRow[i] + '%' : '-';
-                    
-                    html += `
-                        <tr class="border-b border-slate-100 hover:bg-pink-50/30 transition">
-                            <td class="p-3 font-bold text-slate-700">${year}</td>
-                            <td class="p-3 font-extrabold ${dps === '배당 없음' ? 'text-slate-400 font-medium' : 'text-slate-900'}">${dps}</td>
-                            <td class="p-3 font-bold text-pink-600">${divYield}</td>
-                            <td class="p-3 font-medium text-slate-500">${payout}</td>
-                        </tr>
-                    `;
-                });
-                
-                tbody.innerHTML = html;
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-sm font-bold text-red-500">배당 데이터를 불러오지 못했습니다.</td></tr>';
-            }
+                const badge = dartListEl.parentElement.parentElement.querySelector('h2 span:last-child');
+                if(badge) badge.textContent = "My DART 연동";
+            } catch(e) {}
         }
 
         async function fetchDashboardData() {
