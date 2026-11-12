@@ -284,26 +284,26 @@
                 </div>
             </div>
 
-            <!-- 📰 실시간 뉴스 & 📄 DART 전자공시 통합 패널 -->
-            <div id="infoSection" class="hidden mt-6 mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- 📰 실시간 뉴스 & 📄 DART 전자공시 통합 패널 (수정된 부분) -->
+            <div id="infoSection" class="hidden mt-6 mb-8 flex flex-col gap-8">
                 <!-- 뉴스 패널 -->
-                <div class="flex flex-col">
+                <div class="flex flex-col w-full">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 mb-3 flex items-center justify-between">
                         <span>📰 실시간 주요 뉴스</span>
                         <span class="text-[11px] bg-rose-50 text-rose-600 px-2 py-1 rounded-full font-bold">구글 뉴스 (안정화)</span>
                     </h2>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-1 h-[400px] overflow-y-auto">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 w-full h-[400px] overflow-y-auto">
                         <ul id="newsList" class="space-y-1"></ul>
                     </div>
                 </div>
 
                 <!-- DART 공시 패널 (대표님 대시보드 연동) -->
-                <div class="flex flex-col">
+                <div class="flex flex-col w-full">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-amber-500 pl-3 mb-3 flex items-center justify-between">
                         <span>📄 DART 전자공시</span>
                         <span class="text-[11px] bg-amber-50 text-amber-600 px-2 py-1 rounded-full font-bold">내 대시보드 연동</span>
                     </h2>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 h-[400px] overflow-hidden">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 w-full h-[600px] overflow-hidden">
                         <iframe id="dartIframe" src="about:blank" class="w-full h-full" frameborder="0"></iframe>
                     </div>
                 </div>
