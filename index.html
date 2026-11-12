@@ -1735,7 +1735,7 @@ PRED_D5: [예상종가]원
             const inputEl = document.getElementById('chatInput');
             const text = inputEl.value.trim();
             if (!text) return;
-            
+    
             const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
             if (!apiKey) {
                 alert('챗봇을 사용하려면 우측 상단에 Gemini API Key를 먼저 입력해주세요.');
@@ -1747,22 +1747,23 @@ PRED_D5: [예상종가]원
             inputEl.value = '';
             addLoadingToUI();
 
-            // 현재 보고있는 종목 컨텍스트 생성
+            // 🌟 1. 챗봇 컨텍스트에 '뉴스 및 DART 공시 검색' 역할 부여
             let contextStr = "사용자는 현재 퀀트 대시보드를 보고 있습니다.";
             if (lastFetchedData && lastFetchedData.corpName) {
                 contextStr = `사용자는 현재 [${lastFetchedData.corpName}(${lastFetchedData.ticker})] 종목을 분석 중입니다. 
-                현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.`;
+                현재가: ${lastFetchedData.price}원, 등락률: ${lastFetchedData.changeRate}.
+                당신은 구글 실시간 검색 기능이 활성화되어 있습니다. 사용자가 질문하면 반드시 해당 기업의 최신 뉴스, DART 전자공시 주요 내용, 실적 발표 등을 검색하여 최신 팩트 기반으로 답변하세요.`;
             }
 
-            // 시스템 프롬프트(최초 1회 추가)
+            // 초기 시스템 프롬프트 주입
             if (chatHistory.length === 0) {
                 chatHistory.push({
                     role: "user",
-                    parts: [{ text: `당신은 주식 퀀트 분석 대시보드의 AI 어시스턴트입니다. 친절하고 전문적으로 답변해주세요. 상황 정보: ${contextStr}` }]
+                    parts: [{ text: `당신은 주식 퀀트 분석 대시보드의 AI 어시스턴트입니다. 상황 정보: ${contextStr}` }]
                 });
                 chatHistory.push({
                     role: "model",
-                    parts: [{ text: "네, 저는 AI 퀀트 어시스턴트입니다. 분석 중인 종목이나 주식 관련 질문에 대해 전문적이고 친절하게 답변해 드리겠습니다." }]
+                    parts: [{ text: "네, AI 퀀트 어시스턴트입니다. 실시간 뉴스 및 DART 공시 정보를 검색하여 정확하게 분석해 드리겠습니다." }]
                 });
             }
 
@@ -1772,34 +1773,37 @@ PRED_D5: [예상종가]원
                 parts: [{ text: text }]
             });
 
+            // 🌟 2. API 요청 객체에 googleSearch 도구 활성화 (핵심)
+            const requestBody = { 
+                contents: chatHistory, 
+                generationConfig: { temperature: 0.4 }, // 팩트 위주 답변을 위해 온도를 약간 낮춤
+                tools: [{ googleSearch: {} }] // 구글 검색 그라운딩 활성화
+            };
+
             try {
                 let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ 
-                        contents: chatHistory, 
-                        generationConfig: { temperature: 0.7 } 
-                    }) 
+                    body: JSON.stringify(requestBody) 
                 });
-                
-                // Fallback (3.5 실패시 3.1)
+        
+                // Fallback (3.5 실패시 3.1로 재시도, 동일하게 검색 활성화)
                 if (!response.ok) {
                     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, { 
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify({ 
-                            contents: chatHistory, 
-                            generationConfig: { temperature: 0.7 } 
-                        }) 
+                        body: JSON.stringify(requestBody) 
                     });
                 }
-                
+
                 const data = await response.json();
+        
+                // 응답 텍스트 추출 (검색 결과 기반 생성 텍스트)
                 const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "죄송합니다, 답변을 생성하지 못했습니다.";
-                
+        
                 removeLoadingFromUI();
                 addMessageToUI('model', aiResponseText);
-                
+        
                 // 모델 응답 히스토리에 추가
                 chatHistory.push({
                     role: "model",
@@ -1809,7 +1813,6 @@ PRED_D5: [예상종가]원
             } catch (error) {
                 removeLoadingFromUI();
                 addMessageToUI('model', "통신 중 오류가 발생했습니다. API 키나 네트워크 상태를 확인해주세요.");
-                // 에러 발생 시 히스토리 마지막 메시지(유저 메시지) 롤백
                 chatHistory.pop();
             }
         }
