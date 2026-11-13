@@ -1838,8 +1838,40 @@ PRED_D5: [예상종가]원
 
             // 🔥 화면에 있는 데이터를 실시간으로 긁어서 프롬프트에 몰래 주입하는 기술 적용
             let dynamicContext = "";
+            
+            // 🌟 [추가된 부분] 1. 내 포트폴리오 데이터 주입
+            if (userPortfolio && userPortfolio.length > 0) {
+                dynamicContext += `[사용자 보유 포트폴리오 (내 주식) 현황]\n`;
+                let totalInvest = 0, totalEval = 0;
+                userPortfolio.forEach((p, idx) => {
+                    let currentPriceStr = '데이터 없음', currentPrice = 0;
+                    if (livePortfolioPrices[p.ticker]) {
+                        currentPriceStr = livePortfolioPrices[p.ticker];
+                        currentPrice = parseInt(currentPriceStr.replace(/,/g, '')) || 0;
+                    } else if (globalQuantData && globalQuantData[p.ticker]) {
+                        currentPriceStr = String(globalQuantData[p.ticker].price);
+                        currentPrice = parseInt(currentPriceStr.replace(/,/g, '')) || 0;
+                    }
+                    
+                    let diffRate = '계산불가', evalValue = p.investAmount;
+                    if (currentPrice > 0 && p.avgPrice > 0) {
+                        diffRate = (((currentPrice - p.avgPrice) / p.avgPrice) * 100).toFixed(2) + '%';
+                        evalValue = (p.investAmount / p.avgPrice) * currentPrice;
+                    }
+                    totalInvest += p.investAmount;
+                    totalEval += evalValue;
+
+                    dynamicContext += `- ${p.corpName}(${p.ticker}): 평단가 ${p.avgPrice.toLocaleString()}원, 매수금액 ${p.investAmount.toLocaleString()}원, 현재가 ${currentPriceStr}원 (현재 수익률: ${diffRate})\n`;
+                });
+                const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0;
+                dynamicContext += `=> 총 매수원금: ${totalInvest.toLocaleString()}원, 총 평가금액: ${Math.floor(totalEval).toLocaleString()}원, 예수금(대기자금): ${standbyCash.toLocaleString()}원\n\n`;
+            } else {
+                dynamicContext += `[사용자 보유 포트폴리오]\n등록된 종목이 없습니다.\n\n`;
+            }
+
+            // 2. 현재 선택된 종목 데이터 주입 (기존 유지)
             if (lastFetchedData && lastFetchedData.corpName) {
-                dynamicContext += `[분석 대상 기업]: ${lastFetchedData.corpName} (${lastFetchedData.ticker})\n`;
+                dynamicContext += `[현재 화면에서 분석 중인 종목]: ${lastFetchedData.corpName} (${lastFetchedData.ticker})\n`;
                 dynamicContext += `- 현재가: ${lastFetchedData.price}원 (등락률: ${lastFetchedData.changeRate})\n`;
                 dynamicContext += `- 시가총액: ${lastFetchedData.marketCap}, 외국인 소진율: ${lastFetchedData.foreignRate}\n`;
                 dynamicContext += `- 밸류에이션: PER ${lastFetchedData.per}배, PBR ${lastFetchedData.pbr}배\n`;
@@ -1857,7 +1889,7 @@ PRED_D5: [예상종가]원
                     });
                 }
             } else {
-                dynamicContext = "현재 선택된 종목이 없습니다. 일반적인 주식 및 경제 이야기를 나눌 수 있습니다.";
+                dynamicContext += `[현재 화면에서 분석 중인 종목]: 없음 (일반적인 경제 및 주식 대화 가능)\n\n`;
             }
 
             if (chatHistory.length === 0) {
@@ -1872,11 +1904,12 @@ PRED_D5: [예상종가]원
             }
 
             // 실제 사용자 질문에 백그라운드 데이터를 몰래 끼워넣음
-            const finalPrompt = `당신은 전세계 최고 수준의 주식 애널리스트 챗봇입니다. 아래 제공된 [현재 화면의 실시간 데이터]와 당신의 방대한 내부 지식을 적극적으로 융합하여 사용자의 질문에 매우 상세하고 길게 답변하세요. 
+            const finalPrompt = `당신은 전세계 최고 수준의 주식 애널리스트 챗봇입니다. 아래 제공된 [현재 화면 및 포트폴리오 실시간 데이터]와 당신의 방대한 내부 지식을 적극적으로 융합하여 사용자의 질문에 매우 상세하고 길게 답변하세요. 
 모른다고 회피하지 말고, 주어진 데이터와 당신이 아는 기업 개요, 산업 전망 등을 엮어서 통찰력 있는 분석 리포트 수준으로 대화하세요.
-질문이 종목 분석을 요구하는 내용이라면, 답변 첫 줄에 반드시 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나를 결론으로 제시하고 그 이유를 자세히 설명하세요.
+사용자가 자신의 '포트폴리오'나 '보유 종목', '내 주식' 등에 대해 질문하면 [사용자 보유 포트폴리오 현황] 데이터를 바탕으로 집중적으로 분석해주세요.
+특정 종목에 대한 매수/매도/보유 질문이라면, 답변 첫 줄에 반드시 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나를 결론으로 제시하고 그 이유를 자세히 설명하세요.
 
-[현재 화면의 실시간 데이터]
+[현재 화면 및 포트폴리오 실시간 데이터]
 ${dynamicContext}
 
 [사용자 질문]
