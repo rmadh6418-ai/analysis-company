@@ -1186,6 +1186,7 @@
             `;
         }
 
+        // 🌟 [수정됨] 뉴스 수집 시 본문 핵심 내용(Description)을 함께 수집하도록 변경
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
@@ -1213,10 +1214,15 @@
                     const pubDate = new Date(item.pubDate);
                     const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
 
+                    // 본문 요약 내용 추출 (HTML 태그 제거 및 챗봇 전송용 따옴표 처리)
+                    const rawDesc = item.description || item.content || "";
+                    const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500);
+
+                    // a 태그 속성에 data-desc 로 본문 내용을 숨겨서 저장
                     html += `
                         <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
                             <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
-                            <a href="${link}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
+                            <a href="${link}" data-desc="${cleanDesc}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
                                 ${title}
                             </a>
                         </li>
@@ -1831,6 +1837,7 @@ PRED_D5: [예상종가]원
             if(loadingDiv) loadingDiv.remove();
         }
 
+        // 🌟 [수정됨] 챗봇 전송 시 뉴스 본문 내용 주입 및 상세 요약 지시 추가
         async function sendChatMessage() {
             const inputEl = document.getElementById('chatInput');
             const text = inputEl.value.trim();
@@ -1876,7 +1883,7 @@ PRED_D5: [예상종가]원
                 dynamicContext += `=> 총 매수원금: ${totalInvest.toLocaleString()}원, 총 평가금액: ${Math.floor(totalEval).toLocaleString()}원, 예수금(대기자금): ${standbyCash.toLocaleString()}원\n\n`;
             }
 
-            // 2. 현재 선택된 종목 기본 데이터 및 화면 뉴스 주입
+            // 2. 현재 선택된 종목 기본 데이터 및 화면 뉴스(본문 포함) 주입
             if (lastFetchedData && lastFetchedData.corpName) {
                 dynamicContext += `[현재 화면에서 분석 중인 종목]: ${lastFetchedData.corpName} (${lastFetchedData.ticker})\n`;
                 dynamicContext += `- 현재가: ${lastFetchedData.price}원 (등락률: ${lastFetchedData.changeRate})\n`;
@@ -1884,15 +1891,20 @@ PRED_D5: [예상종가]원
                 
                 if (globalQuantData && globalQuantData[lastFetchedData.ticker]) {
                     const tech = globalQuantData[lastFetchedData.ticker].tech || {};
-                    dynamicContext += `- 차트 지표: RSI(14) ${tech.rsi}, MACD ${tech.macd}, 20일선 ${tech.ma20}원, 60일선 ${tech.ma60}원\n`;
+                    dynamicContext += `- 차트 지표: RSI(14) ${tech.rsi}, MACD ${tech.macd}, 20일선 ${tech.ma20}원, 60일선 ${tech.ma60}원\n\n`;
                 }
 
                 const newsEls = document.querySelectorAll('#newsList li a');
                 if (newsEls.length > 0) {
-                    dynamicContext += `[최신 뉴스 헤드라인]\n`;
+                    dynamicContext += `[최신 뉴스 헤드라인 및 본문 핵심 내용]\n`;
                     newsEls.forEach((el, idx) => {
-                        if (idx < 5) dynamicContext += `${idx+1}. ${el.textContent.trim()}\n`;
+                        if (idx < 5) {
+                            const title = el.textContent.trim();
+                            const desc = el.getAttribute('data-desc') || "본문 요약 없음";
+                            dynamicContext += `${idx+1}. 제목: ${title}\n   본문: ${desc}\n`;
+                        }
                     });
+                    dynamicContext += `\n`;
                 }
             } else {
                 dynamicContext += `[현재 화면에서 분석 중인 종목]: 없음 (일반적인 경제 대화 진행)\n\n`;
@@ -1909,13 +1921,13 @@ PRED_D5: [예상종가]원
                 });
             }
 
-            // 🌟 3. 프롬프트 지시사항 강화 (AI 자체 지식을 활용해 3년 컨센서스 별도 확인 지시)
+            // 🌟 3. 프롬프트 지시사항: 뉴스 상세 요약 및 해설 명령 추가
             const finalPrompt = `당신은 최상위 주식 퀀트 애널리스트입니다. 아래 제공된 [현재 화면 데이터]를 바탕으로 질문에 대답하되, 다음의 특별 지시를 반드시 따르세요.
 
 🚨 필수 규칙:
 1. [컨센서스 자체 확인]: 제공된 데이터에는 '향후 3년치 실적 컨센서스'가 없습니다. 따라서 사용자가 '향후 3년', '미래 전망', '컨센서스', '실적'을 물어보면, 화면에 데이터가 없다고 변명하지 말고 당신(AI)이 알고 있는 최신 금융 데이터와 자체 지식을 총동원하여 해당 기업의 향후 3년 예상 매출액, 영업이익, EPS 등의 구체적인 추정치를 직접 제시하고 이를 바탕으로 적정 주가를 도출하세요.
-2. 매수/매도/보유 질문 시 답변 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나를 반드시 작성하세요.
-3. 정확하지 않는 데이터를 지어내서 얘기하지 마시오.
+2. [뉴스 상세 요약 및 해설]: 사용자가 뉴스의 요약이나 전체 내용을 물어보면, 제공된 [최신 뉴스 헤드라인 및 본문 핵심 내용]을 바탕으로 당신의 방대한 기업 배경지식을 결합하세요. 헤드라인만 말하지 말고 해당 뉴스가 발생한 맥락, 숨겨진 의미, 그리고 주가에 미칠 호재/악재 영향까지 전문가의 시각으로 상세히 풀어서 요약해 주세요.
+3. 매수/매도/보유 질문 시 답변 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나를 반드시 작성하세요.
 
 [현재 화면 데이터]
 ${dynamicContext}
@@ -1930,7 +1942,7 @@ ${text}`;
 
             const requestBody = { 
                 contents: chatHistory, 
-                generationConfig: { temperature: 0.1, topK: 1, topP: 0.8 } 
+                generationConfig: { temperature: 0.2, topK: 1, topP: 0.8 } 
             };
 
             try {
