@@ -1831,23 +1831,6 @@ PRED_D5: [예상종가]원
             if(loadingDiv) loadingDiv.remove();
         }
 
-        // 🌟 [추가] 3년 컨센서스 별도 데이터베이스 추출 함수
-        function get3YearConsensus(ticker) {
-            // 실제 환경에서는 DB나 별도 API, 혹은 quant_data.json의 
-            // 별도 필드(예: consensus3Y)에서 3년치 추정 데이터를 명확히 가져와야 합니다.
-            if (globalQuantData && globalQuantData[ticker] && globalQuantData[ticker].consensus3Y) {
-                return globalQuantData[ticker].consensus3Y;
-            }
-            
-            // 데이터가 없을 경우를 위한 기본 구조 (실제 연동 시 이 부분을 대체하세요)
-            return {
-                years: ["2024(E)", "2025(E)", "2026(E)"],
-                revenue: ["미제공", "미제공", "미제공"],
-                op: ["미제공", "미제공", "미제공"],
-                eps: ["미제공", "미제공", "미제공"]
-            };
-        }
-
         async function sendChatMessage() {
             const inputEl = document.getElementById('chatInput');
             const text = inputEl.value.trim();
@@ -1887,7 +1870,7 @@ PRED_D5: [예상종가]원
                     totalInvest += p.investAmount;
                     totalEval += evalValue;
 
-                    dynamicContext += `- ${p.corpName}(${p.ticker}): 평단가 ${p.avgPrice.toLocaleString()}원, 매수금액 ${p.investAmount.toLocaleString()}원, 현재가 ${currentPriceStr}원 (현재 수익률: ${diffRate})\n`;
+                    dynamicContext += `- ${p.corpName}(${p.ticker}): 평단가 ${p.avgPrice.toLocaleString()}원, 매수금액 ${p.investAmount.toLocaleString()}원, 현재가 ${currentPriceStr}원 (수익률: ${diffRate})\n`;
                 });
                 const standbyCash = parseInt(document.getElementById('portfolioStandbyCash').value) || 0;
                 dynamicContext += `=> 총 매수원금: ${totalInvest.toLocaleString()}원, 총 평가금액: ${Math.floor(totalEval).toLocaleString()}원, 예수금(대기자금): ${standbyCash.toLocaleString()}원\n\n`;
@@ -1897,31 +1880,22 @@ PRED_D5: [예상종가]원
             if (lastFetchedData && lastFetchedData.corpName) {
                 dynamicContext += `[현재 화면에서 분석 중인 종목]: ${lastFetchedData.corpName} (${lastFetchedData.ticker})\n`;
                 dynamicContext += `- 현재가: ${lastFetchedData.price}원 (등락률: ${lastFetchedData.changeRate})\n`;
-                dynamicContext += `- 시가총액: ${lastFetchedData.marketCap}, 외국인 소진율: ${lastFetchedData.foreignRate}\n`;
                 dynamicContext += `- 밸류에이션: PER ${lastFetchedData.per}배, PBR ${lastFetchedData.pbr}배\n`;
                 
                 if (globalQuantData && globalQuantData[lastFetchedData.ticker]) {
                     const tech = globalQuantData[lastFetchedData.ticker].tech || {};
-                    dynamicContext += `- 차트 지표: RSI(14) ${tech.rsi}, MACD ${tech.macd}, 20일 이평선 ${tech.ma20}원, 60일 이평선 ${tech.ma60}원\n`;
+                    dynamicContext += `- 차트 지표: RSI(14) ${tech.rsi}, MACD ${tech.macd}, 20일선 ${tech.ma20}원, 60일선 ${tech.ma60}원\n`;
                 }
 
                 const newsEls = document.querySelectorAll('#newsList li a');
                 if (newsEls.length > 0) {
-                    dynamicContext += `\n[화면에 표시된 최신 실시간 뉴스 헤드라인]\n`;
+                    dynamicContext += `[최신 뉴스 헤드라인]\n`;
                     newsEls.forEach((el, idx) => {
-                        dynamicContext += `${idx+1}. ${el.textContent.trim()}\n`;
+                        if (idx < 5) dynamicContext += `${idx+1}. ${el.textContent.trim()}\n`;
                     });
                 }
-
-                // 🌟 3. 향후 3년 컨센서스 별도 데이터 강제 주입
-                const consensus3Y = get3YearConsensus(lastFetchedData.ticker);
-                dynamicContext += `\n[해당 기업의 향후 3년 실적 컨센서스 (별도 확인된 정확한 데이터)]\n`;
-                dynamicContext += `- 기준 연도: ${consensus3Y.years.join(' / ')}\n`;
-                dynamicContext += `- 예상 매출(억): ${consensus3Y.revenue.join(' / ')}\n`;
-                dynamicContext += `- 예상 영업이익(억): ${consensus3Y.op.join(' / ')}\n`;
-                dynamicContext += `- 예상 EPS(원): ${consensus3Y.eps.join(' / ')}\n\n`;
             } else {
-                dynamicContext += `[현재 화면에서 분석 중인 종목]: 없음 (일반적인 경제 및 주식 대화 가능)\n\n`;
+                dynamicContext += `[현재 화면에서 분석 중인 종목]: 없음 (일반적인 경제 대화 진행)\n\n`;
             }
 
             if (chatHistory.length === 0) {
@@ -1931,15 +1905,19 @@ PRED_D5: [예상종가]원
                 });
                 chatHistory.push({
                     role: "model",
-                    parts: [{ text: "네, 저는 전세계 상위 0.1% 수준의 퀀트 애널리스트 챗봇입니다. 기업의 비즈니스 모델, 재무, 기술적 차트 지표, 최신 뉴스를 융합하여 매우 상세하고 전문적인 분석을 제공합니다. 특히 향후 3년 실적 컨센서스 데이터가 주어지면 이를 바탕으로 적정 주가와 미래 전망을 정확히 짚어드립니다. 준비되었습니다!" }]
+                    parts: [{ text: "네, 저는 전세계 상위 0.1% 수준의 퀀트 애널리스트 챗봇입니다. 준비되었습니다!" }]
                 });
             }
 
-            const finalPrompt = `당신은 전세계 최고 수준의 주식 애널리스트 챗봇입니다. 아래 제공된 [현재 화면, 포트폴리오, 3년 실적 컨센서스 데이터]와 당신의 방대한 내부 지식을 적극적으로 융합하여 사용자의 질문에 매우 상세하고 길게 답변하세요. 
-모른다고 회피하지 말고, 주어진 데이터(특히 3년 실적 데이터)를 근거로 통찰력 있는 분석 리포트 수준으로 대화하세요.
-특정 종목에 대한 매수/매도/보유 질문이라면, 답변 첫 줄에 반드시 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나를 결론으로 제시하고 그 이유를 자세히 설명하세요.
+            // 🌟 3. 프롬프트 지시사항 강화 (AI 자체 지식을 활용해 3년 컨센서스 별도 확인 지시)
+            const finalPrompt = `당신은 최상위 주식 퀀트 애널리스트입니다. 아래 제공된 [현재 화면 데이터]를 바탕으로 질문에 대답하되, 다음의 특별 지시를 반드시 따르세요.
 
-[현재 주입된 실시간 및 3년 실적 컨센서스 데이터]
+🚨 필수 규칙:
+1. [컨센서스 자체 확인]: 제공된 데이터에는 '향후 3년치 실적 컨센서스'가 없습니다. 따라서 사용자가 '향후 3년', '미래 전망', '컨센서스', '실적'을 물어보면, 화면에 데이터가 없다고 변명하지 말고 당신(AI)이 알고 있는 최신 금융 데이터와 자체 지식을 총동원하여 해당 기업의 향후 3년 예상 매출액, 영업이익, EPS 등의 구체적인 추정치를 직접 제시하고 이를 바탕으로 적정 주가를 도출하세요.
+2. 매수/매도/보유 질문 시 답변 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나를 반드시 작성하세요.
+3. 정확하지 않는 데이터를 지어내서 얘기하지 마시오.
+
+[현재 화면 데이터]
 ${dynamicContext}
 
 [사용자 질문]
@@ -1952,7 +1930,7 @@ ${text}`;
 
             const requestBody = { 
                 contents: chatHistory, 
-                generationConfig: { temperature: 0.2, topK: 1, topP: 0.8 } 
+                generationConfig: { temperature: 0.1, topK: 1, topP: 0.8 } 
             };
 
             try {
@@ -1982,7 +1960,7 @@ ${text}`;
 
             } catch (error) {
                 removeLoadingFromUI();
-                addMessageToUI('model', `통신 중 오류가 발생했습니다. API 키나 네트워크 상태를 확인해주세요. (오류: ${error.message})`);
+                addMessageToUI('model', `통신 중 오류가 발생했습니다. (오류: ${error.message})`);
                 chatHistory.pop();
             }
         }
