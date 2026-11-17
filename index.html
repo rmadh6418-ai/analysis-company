@@ -1186,47 +1186,65 @@
             `;
         }
 
-        // 🌟 [수정됨] 기업명 정확히 매칭 + 경제/비즈니스/증시/투자 키워드 조건 추가
+        // 🌟 [수정됨] 기업명 정확히 추출 + rss2json 제한 돌파를 위한 AllOrigins 프록시 기반 직접 XML 파싱 적용
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
             newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 수집하고 있습니다...</li>';
             
             try {
-                // 구글 뉴스 고급 검색 연산자 활용: "기업명" (경제 OR 비즈니스 OR 증시 OR 투자)
-                const query = encodeURIComponent(`"${corpName}" (경제 OR 비즈니스 OR 증시 OR 투자)`);
+                // 1. 기업명에 종목코드나 괄호가 포함되어 쿼리가 깨지는 현상 100% 차단
+                const safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
+                
+                const query = encodeURIComponent(`"${safeCorpName}" (경제 OR 비즈니스 OR 증시 OR 투자)`);
                 const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
-                const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
                 
-                const response = await fetch(apiUrl);
-                const data = await response.json();
+                // 2. rss2json의 강제 캐싱 및 Rate Limit으로 인해 새 종목 뉴스가 막히는 문제 해결
+                // AllOrigins CORS 프록시를 통해 클라이언트에서 XML 데이터를 직접 가져와 즉시 렌더링
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
                 
-                if (data.status !== 'ok') {
-                    throw new Error("RSS 변환 실패");
+                const response = await fetch(proxyUrl);
+                const proxyData = await response.json();
+                
+                if (!proxyData.contents) {
+                    throw new Error("RSS 변환 데이터가 비어 있습니다.");
                 }
                 
-                // 1. 가져온 뉴스 데이터를 최신 날짜순으로 정렬 (내림차순)
-                const items = data.items;
-                items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+                // 3. 네이티브 XML 파서를 이용해 직관적으로 파싱
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(proxyData.contents, "text/xml");
+                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                
+                if (items.length === 0) {
+                    newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
+                    return;
+                }
+                
+                // 최신순 정렬
+                items.sort((a, b) => {
+                    const dateA = new Date(a.querySelector("pubDate")?.textContent || 0);
+                    const dateB = new Date(b.querySelector("pubDate")?.textContent || 0);
+                    return dateB - dateA;
+                });
                 
                 let html = '';
                 
-                // 2. 출력할 뉴스 개수를 15개로 유지
+                // 최대 15개 출력 설정
                 for (let i = 0; i < Math.min(items.length, 15); i++) {
                     const item = items[i];
-                    const title = item.title.replace(/<\/?[^>]+(>|$)/g, "");
-                    const link = item.link;
-                    const pubDate = new Date(item.pubDate);
-                    const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
+                    const title = item.querySelector("title")?.textContent.replace(/<\/?[^>]+(>|$)/g, "") || "제목 없음";
+                    const link = item.querySelector("link")?.textContent || "#";
+                    
+                    const pubDateText = item.querySelector("pubDate")?.textContent;
+                    const pubDate = new Date(pubDateText);
+                    const dateStr = !isNaN(pubDate) ? `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}` : '';
 
-                    // 본문 요약 내용 추출 (HTML 태그 제거 및 챗봇 전송용 따옴표 처리)
-                    const rawDesc = item.description || item.content || "";
+                    const rawDesc = item.querySelector("description")?.textContent || "";
                     const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500);
 
-                    // a 태그 속성에 data-desc 로 본문 내용을 숨겨서 저장
                     html += `
                         <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
-                            <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
+                            ${dateStr ? `<span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>` : ''}
                             <a href="${link}" data-desc="${cleanDesc}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
                                 ${title}
                             </a>
@@ -1234,10 +1252,10 @@
                     `;
                 }
                 
-                newsListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
+                newsListEl.innerHTML = html;
             } catch (e) {
                 console.error("뉴스 수집 오류:", e);
-                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">API 응답 지연입니다. 잠시 후 다시 시도해주세요.</span></li>';
+                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">네트워크 지연 또는 구글 뉴스 정책에 의한 차단입니다. 잠시 후 다시 시도해주세요.</span></li>';
             }
         }
         
@@ -1279,8 +1297,10 @@
             setTimeout(() => { loadTradingView(ticker); }, 100);
 
             document.getElementById('infoSection').classList.remove('hidden');
-            loadNews(corpName);
-            loadDart(ticker, corpName);
+            
+            // 🌟 [핵심 변경 포인트]: 검색 조합 문자열(corpName) 대신 DB에 저장된 완벽히 정제된 기업명(data.name)을 전달하여 에러 원천 차단
+            loadNews(data.name);
+            loadDart(ticker, data.name);
 
             const tech = data.tech || { ma5: '-', ma20: '-', ma33: '-', ma60: '-', ma120: '-', rsi: '-', macd: '-' };
             document.getElementById('uiRsiValue').textContent = tech.rsi !== '-' ? tech.rsi : "데이터 부족";
@@ -1728,7 +1748,7 @@ PRED_D5: [예상종가]원
                 });
 
                 const newTotalShares = currentShares + addedShares; const newTotalInvest = currentInvest + actualStandbyUsed; const newAvgPrice = newTotalShares > 0 ? (newTotalInvest / newTotalShares) : 0;
-                document.getElementById('simModeBadge').textContent = "기존보유/물타기 시나리오"; simCurrentView.classList.add('hidden'); simAverageView.classList.remove('hidden');
+                document.getElementById('simModeBadge').textContent = "기존보유/물타기 시나리오"; simCurrentView.classList.add('hidden'); simAverageView.classList.add('hidden'); simAverageView.classList.remove('hidden');
                 document.getElementById('simOldAvgPrice').textContent = avgPrice.toLocaleString() + '원'; document.getElementById('simInvestedStandby').textContent = standbyCash > 0 ? `+${actualStandbyUsed.toLocaleString()}원` : '0원 (대기금 없음)';
                 document.getElementById('simNewAvgPrice').textContent = Math.floor(newAvgPrice).toLocaleString() + '원'; document.getElementById('simTotalSharesAvg').textContent = Math.floor(newTotalShares).toLocaleString() + '주';
                 runSellSimulation(newTotalShares, newTotalInvest); returnBox.classList.remove('hidden');
@@ -1842,7 +1862,6 @@ PRED_D5: [예상종가]원
             if(loadingDiv) loadingDiv.remove();
         }
 
-        // 🌟 [수정됨] 챗봇 전송 뉴스 개수를 최대 10개로 늘려 더 상세한 요약이 가능하도록 반영
         async function sendChatMessage() {
             const inputEl = document.getElementById('chatInput');
             const text = inputEl.value.trim();
@@ -1903,7 +1922,7 @@ PRED_D5: [예상종가]원
                 if (newsEls.length > 0) {
                     dynamicContext += `[최신 뉴스 헤드라인 및 본문 핵심 내용]\n`;
                     newsEls.forEach((el, idx) => {
-                        // AI에게 전달하는 뉴스 개수를 기존 5개에서 10개로 증가
+                        // AI에게 전달하는 뉴스 개수를 최대 10개로 증가
                         if (idx < 10) {
                             const title = el.textContent.trim();
                             const desc = el.getAttribute('data-desc') || "본문 요약 없음";
@@ -1932,7 +1951,7 @@ PRED_D5: [예상종가]원
 
 🚨 필수 규칙:
 1. [컨센서스 자체 확인]: 제공된 데이터에는 '향후 3년치 실적 컨센서스'가 없습니다. 따라서 사용자가 '향후 3년', '미래 전망', '컨센서스', '실적'을 물어보면, 화면에 데이터가 없다고 변명하지 말고 당신(AI)이 알고 있는 최신 금융 데이터와 자체 지식을 총동원하여 해당 기업의 향후 3년 예상 매출액, 영업이익, EPS 등의 구체적인 추정치를 직접 제시하고 이를 바탕으로 적정 주가를 도출하세요.
-2. [뉴스 상세 요약 및 해설]: 사용자가 뉴스의 요약이나 전체 내용을 물어보면, 제공된 [최신 뉴스 헤드라인 및 본문 핵심 내용]을 바탕으로 당신의 방대한 기업 배경지식을 결합하세요. 헤드라인만 말하지 말고 해당 뉴스가 발생한 맥락, 숨겨진 의미, 그리고 주가에 미칠 호재/악재 영향까지 전문가의 시각으로 상세히 풀어서 요약해 주세요.
+​2. [뉴스 상세 요약 및 해설]: 사용자가 뉴스의 요약이나 전체 내용을 물어보면, 제공된 [최신 뉴스 헤드라인 및 본문 핵심 내용]을 바탕으로 당신의 방대한 기업 배경지식을 결합하세요. 헤드라인만 말하지 말고 해당 뉴스가 발생한 맥락, 숨겨진 의미, 그리고 주가에 미칠 호재/악재 영향까지 전문가의 시각으로 상세히 풀어서 요약해 주세요.
 3. 매수/매도/보유 질문 시 답변 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나를 반드시 작성하세요.
 
 [현재 화면 데이터]
