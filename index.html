@@ -1192,7 +1192,7 @@
             newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 수집하고 있습니다...</li>';
             
             try {
-                // 1. 기업명 정제
+                // 1. 기업명 완벽 정제 (종목 코드만 들어와도 무조건 기업명으로 변환)
                 let safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
                 if (/^\d{6}$/.test(safeCorpName) && typeof CODE_TO_NAME !== 'undefined' && CODE_TO_NAME[safeCorpName]) {
                     safeCorpName = CODE_TO_NAME[safeCorpName];
@@ -1240,10 +1240,10 @@
                 let items = xmlItems.map(item => {
                     const pubDateText = item.querySelector("pubDate")?.textContent;
                     return {
-                        title: item.querySelector("title")?.textContent.replace(/<\/?[^>]+(>|$)/g, "") || "제목 없음",
+                        title: (item.querySelector("title")?.textContent || "").replace(/<[^>]*>/g, "") || "제목 없음",
                         link: item.querySelector("link")?.textContent || "#",
                         pubDate: new Date(pubDateText),
-                        desc: (item.querySelector("description")?.textContent || "").replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, """).substring(0, 500)
+                        desc: (item.querySelector("description")?.textContent || "").replace(/<[^>]*>/g, "").replace(/"/g, "&quot;").substring(0, 500)
                     };
                 });
                 
