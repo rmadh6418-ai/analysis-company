@@ -375,7 +375,7 @@
                     </div>
                     <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-5">
                         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1">📥 투입 및 매 매수 시뮬레이션</h4>
+                            <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1">📥 투입 및 매수 시뮬레이션</h4>
                             <div id="simCurrentView" class="space-y-2">
                                 <div class="flex justify-between text-sm"><span class="text-slate-500">총 투입 자금:</span> <span id="simTotalInvestNew" class="font-bold text-slate-800">-</span></div>
                                 <div class="border-t border-slate-200 my-2"></div>
@@ -1193,7 +1193,10 @@
             
             try {
                 // 문제의 핵심 원인 해결: 종목명에 포함된 괄호와 코드(예: 삼성전자 (005930))를 완전히 제거
-                const safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
+                let safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
+                if (/^\d{6}$/.test(safeCorpName) && typeof CODE_TO_NAME !== 'undefined' && CODE_TO_NAME[safeCorpName]) {
+                    safeCorpName = CODE_TO_NAME[safeCorpName];
+                }
                 
                 // 원래 제일 잘 작동했던 검색 쿼리와 rss2json 방식 원복
                 const query = encodeURIComponent(`"${safeCorpName}" (경제 OR 비즈니스 OR 증시 OR 투자)`);
@@ -1220,7 +1223,7 @@
                     const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
 
                     const rawDesc = item.description || item.content || "";
-                    const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, """).substring(0, 500);
+                    const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500);
 
                     html += `
                         <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
