@@ -633,7 +633,7 @@
             }
         }
 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzHpHvrKplEwmKO_3wPJs5d38P13ue4r0-tcagKlpbE89vxbw707HV4Wnzf45WShHF6/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwX3Y2BUKP27tM7DNj8cHDJmDt2rf0yFt_sw9hn7vcaJhZvANL0ypJ-Qg4fMZfX0NwI/exec";
 
         function fetchNaverDirectJsonp(queryStr) {
             return new Promise((resolve) => {
@@ -1200,7 +1200,7 @@
                 const query = `${safeCorpName} 주식`;
                 
                 // 💡 1번 단계에서 새로 배포하여 발급받은 Google Apps Script URL을 아래에 입력하세요.
-                const gasSecurityServerUrl = "https://script.google.com/macros/s/AKfycbzHpHvrKplEwmKO_3wPJs5d38P13ue4r0-tcagKlpbE89vxbw707HV4Wnzf45WShHF6/exec"; 
+                const gasSecurityServerUrl = "https://script.google.com/macros/s/AKfycbwX3Y2BUKP27tM7DNj8cHDJmDt2rf0yFt_sw9hn7vcaJhZvANL0ypJ-Qg4fMZfX0NwI/exec"; 
                 const requestUrl = `${gasSecurityServerUrl}?query=${encodeURIComponent(query)}`;
 
                 const response = await fetch(requestUrl);
