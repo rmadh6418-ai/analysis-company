@@ -1189,63 +1189,137 @@
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
-            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 실시간으로 수집 중입니다...</li>';
+            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 다중 우회 서버를 통해 실시간 뉴스를 수집 중입니다...</li>';
             
             try {
-                // 1. 종목명 정제 (괄호 및 코드 제거)
+                // 1. 종목명 정제 및 종목코드 추출
                 let safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
-                if (/^\d{6}$/.test(safeCorpName) && typeof CODE_TO_NAME !== 'undefined' && CODE_TO_NAME[safeCorpName]) {
-                    safeCorpName = CODE_TO_NAME[safeCorpName];
+                let ticker = "";
+                
+                for (const [name, code] of Object.entries(ALL_COMPANIES)) {
+                    if (name === safeCorpName || code === safeCorpName) { 
+                        ticker = code; 
+                        safeCorpName = name;
+                        break; 
+                    }
                 }
-                
-                // 2. 검색 쿼리 설정
-                const query = encodeURIComponent(`"${safeCorpName}" (경제 OR 비즈니스 OR 증시 OR 투자)`);
-                
-                // 🚀 [핵심 해결책] URL 끝에 '&cb=현재시간'을 붙여서 rss2json의 캐싱을 강제로 박살내고 새 데이터를 강제 호출합니다.
-                const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko&cb=${new Date().getTime()}`;
-                const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
-                
-                const response = await fetch(apiUrl, { cache: 'no-store' });
-                const data = await response.json();
-                
-                if (data.status !== 'ok') {
-                    throw new Error("RSS 서버 응답 지연");
-                }
-                
-                const items = data.items;
-                if (!items || items.length === 0) {
-                    newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
-                    return;
+                if (!ticker) {
+                    const match = corpName.match(/\d{6}/);
+                    if (match) ticker = match[0];
                 }
 
-                // 최신 시간순 정렬
-                items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-                
-                let html = '';
-                for (let i = 0; i < Math.min(items.length, 15); i++) {
-                    const item = items[i];
-                    const title = item.title.replace(/<\/?[^>]+(>|$)/g, "");
-                    const link = item.link;
-                    const pubDate = new Date(item.pubDate);
-                    const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
+                // 렌더링 헬퍼 함수
+                const renderHTML = (items, source) => {
+                    let resultHtml = '';
+                    items.forEach(item => {
+                        resultHtml += `
+                            <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
+                                <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${item.date}</span>
+                                <a href="${item.link}" data-desc="${item.desc}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
+                                    <span class="text-[10px] font-bold text-slate-400 mr-1">[${source}]</span>${item.title}
+                                </a>
+                            </li>
+                        `;
+                    });
+                    return resultHtml;
+                };
 
-                    const rawDesc = item.description || item.content || "";
-                    const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500);
-
-                    html += `
-                        <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
-                            <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
-                            <a href="${link}" data-desc="${cleanDesc}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
-                                ${title}
-                            </a>
-                        </li>
-                    `;
+                // 🚀 [전략 1] 네이버 금융 모바일 API + CodeTabs 프록시 (가장 빠르고 정확한 JSON 직수입)
+                if (ticker) {
+                    try {
+                        const naverUrl = `https://m.stock.naver.com/api/news/item/${ticker}?pageSize=15`;
+                        const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${naverUrl}`;
+                        
+                        const res = await fetch(proxyUrl, { cache: 'no-store' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            // CodeTabs는 allorigins와 달리 순수 JSON 배열을 바로 반환합니다.
+                            if (Array.isArray(data) && data.length > 0) {
+                                const parsedItems = data.slice(0, 15).map(item => {
+                                    let dateStr = "최신";
+                                    if (item.datetime && item.datetime.length >= 12) {
+                                        dateStr = `${Number(item.datetime.substring(4,6))}/${Number(item.datetime.substring(6,8))} ${item.datetime.substring(8,10)}:${item.datetime.substring(10,12)}`;
+                                    }
+                                    return {
+                                        title: (item.title || "").replace(/&quot;/g, '"'),
+                                        link: `https://finance.naver.com/item/news_read.naver?article_id=${item.articleId}&office_id=${item.officeId}&code=${ticker}`,
+                                        date: dateStr,
+                                        desc: (item.body || "").replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500)
+                                    };
+                                });
+                                newsListEl.innerHTML = renderHTML(parsedItems, "네이버");
+                                return; // 성공 시 즉시 종료
+                            }
+                        }
+                    } catch (e) { console.warn("네이버 API 1차 우회 실패, 다음 전략으로 넘어갑니다.", e); }
                 }
+
+                // 🚀 [전략 2] 구글 뉴스 RSS + 프록시 서버 원시 XML 파싱
+                const googleQuery = encodeURIComponent(`"${safeCorpName}" 주식`);
+                const googleRssUrl = `https://news.google.com/rss/search?q=${googleQuery}&hl=ko&gl=KR&ceid=KR:ko`;
                 
-                newsListEl.innerHTML = html;
+                const xmlProxies = [
+                    `https://api.codetabs.com/v1/proxy?quest=${googleRssUrl}`,
+                    `https://corsproxy.io/?${encodeURIComponent(googleRssUrl)}`
+                ];
+
+                for (const pUrl of xmlProxies) {
+                    try {
+                        const res = await fetch(pUrl, { cache: 'no-store' });
+                        if (res.ok) {
+                            const xmlText = await res.text();
+                            // 구글 캡차 방어막 통과 여부 확인
+                            if (xmlText.includes('<rss')) {
+                                const parser = new DOMParser();
+                                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                                
+                                if (items.length > 0) {
+                                    const parsedItems = items.slice(0, 15).map(item => {
+                                        const pubDate = new Date(item.querySelector("pubDate")?.textContent || Date.now());
+                                        const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
+                                        return {
+                                            title: (item.querySelector("title")?.textContent || "").replace(/<\/?[^>]+(>|$)/g, ""),
+                                            link: item.querySelector("link")?.textContent || "",
+                                            date: dateStr,
+                                            desc: (item.querySelector("description")?.textContent || "").replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500)
+                                        };
+                                    });
+                                    newsListEl.innerHTML = renderHTML(parsedItems, "구글");
+                                    return; // 성공 시 즉시 종료
+                                }
+                            }
+                        }
+                    } catch (e) { console.warn("구글 XML 프록시 우회 실패", e); }
+                }
+
+                // 🚀 [전략 3] 최후의 보루: 기존 rss2json (URL 조작 없이 정석 호출)
+                try {
+                    const fallbackUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(googleRssUrl)}`;
+                    const fallbackRes = await fetch(fallbackUrl, { cache: 'no-store' });
+                    const fallbackData = await fallbackRes.json();
+                    
+                    if (fallbackData.status === 'ok' && fallbackData.items && fallbackData.items.length > 0) {
+                        const parsedItems = fallbackData.items.slice(0, 15).map(item => {
+                            const pubDate = new Date(item.pubDate);
+                            const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
+                            return {
+                                title: item.title.replace(/<\/?[^>]+(>|$)/g, ""),
+                                link: item.link,
+                                date: dateStr,
+                                desc: (item.description || item.content || "").replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500)
+                            };
+                        });
+                        newsListEl.innerHTML = renderHTML(parsedItems, "구글-R2J");
+                        return;
+                    }
+                } catch (e) { console.warn("rss2json 최종 백업망 실패", e); }
+
+                newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스를 찾을 수 없습니다.</li>';
+                
             } catch (e) {
-                console.error("뉴스 수집 오류:", e);
-                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">API 응답 지연입니다. [분석] 버튼을 다시 눌러주세요.</span></li>';
+                console.error("뉴스 수집 런타임 오류:", e);
+                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스 서버 접속이 지연되고 있습니다.<br><span class="text-xs font-normal text-slate-500">잠시 후 [분석] 버튼을 다시 눌러주세요.</span></li>';
             }
         }
         
