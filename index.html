@@ -1192,35 +1192,52 @@
             newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 수집하고 있습니다...</li>';
             
             try {
-                // 문제의 핵심 원인 해결: 종목명에 포함된 괄호와 코드(예: 삼성전자 (005930))를 완전히 제거
-                const safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
-                
-                // 원래 제일 잘 작동했던 검색 쿼리와 rss2json 방식 원복
-                const query = encodeURIComponent(`"${safeCorpName}" (경제 OR 비즈니스 OR 증시 OR 투자)`);
-                const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
-                const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
-                
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                
-                if (data.status !== 'ok') {
-                    throw new Error("RSS 변환 실패");
+                let safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
+                if (/^\d{6}$/.test(safeCorpName) && typeof CODE_TO_NAME !== 'undefined' && CODE_TO_NAME[safeCorpName]) {
+                    safeCorpName = CODE_TO_NAME[safeCorpName];
                 }
                 
-                const items = data.items;
-                items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+                const query = encodeURIComponent(`"${safeCorpName}" (경제 OR 비즈니스 OR 증시 OR 투자)`);
+                const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
+                
+                // 💡 [핵심 해결책] rss2json API 대신, allorigins 프록시를 통해 XML 원문 텍스트를 직접 가져옵니다.
+                const apiUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("네트워크 응답 오류");
+                const data = await response.json();
+                
+                if (!data.contents) throw new Error("RSS 데이터를 가져오지 못했습니다.");
+                
+                // 자바스크립트 내장 DOMParser를 이용해 XML 데이터를 직접 분해합니다.
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+                const items = Array.from(xmlDoc.querySelectorAll("item"));
+                
+                if (items.length === 0) {
+                    newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
+                    return;
+                }
+                
+                // 최신순 정렬
+                items.sort((a, b) => {
+                    const dateA = new Date(a.querySelector("pubDate")?.textContent || 0);
+                    const dateB = new Date(b.querySelector("pubDate")?.textContent || 0);
+                    return dateB - dateA;
+                });
                 
                 let html = '';
-                
                 for (let i = 0; i < Math.min(items.length, 15); i++) {
                     const item = items[i];
-                    const title = item.title.replace(/<\/?[^>]+(>|$)/g, "");
-                    const link = item.link;
-                    const pubDate = new Date(item.pubDate);
+                    const title = (item.querySelector("title")?.textContent || "").replace(/<\/?[^>]+(>|$)/g, "");
+                    const link = item.querySelector("link")?.textContent || "";
+                    
+                    const pubDateText = item.querySelector("pubDate")?.textContent;
+                    const pubDate = pubDateText ? new Date(pubDateText) : new Date();
                     const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
 
-                    const rawDesc = item.description || item.content || "";
-                    const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, """).substring(0, 500);
+                    const rawDesc = item.querySelector("description")?.textContent || "";
+                    const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500);
 
                     html += `
                         <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
@@ -1235,7 +1252,7 @@
                 newsListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
             } catch (e) {
                 console.error("뉴스 수집 오류:", e);
-                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">API 응답 지연입니다. 잠시 후 다시 시도해주세요.</span></li>';
+                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">뉴스 서버 일시 지연입니다. 잠시 후 다시 시도해주세요.</span></li>';
             }
         }
         
