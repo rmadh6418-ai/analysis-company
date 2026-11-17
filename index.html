@@ -1189,101 +1189,47 @@
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
-            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 수집하고 있습니다... (보안 우회 중)</li>';
+            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 구글 뉴스를 실시간으로 수집 중입니다...</li>';
             
             try {
-                // 1. 종목명 정제 (괄호 제거)
+                // 1. 종목명 정제 (괄호 및 코드 제거)
                 let safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
                 if (/^\d{6}$/.test(safeCorpName) && typeof CODE_TO_NAME !== 'undefined' && CODE_TO_NAME[safeCorpName]) {
                     safeCorpName = CODE_TO_NAME[safeCorpName];
                 }
                 
-                // 2. 검색어 단순화 (복잡한 특수문자가 프록시 서버에서 깨지는 현상 방지)
-                const query = encodeURIComponent(`${safeCorpName} 주식 OR 경제 OR 실적`);
-                const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko`;
+                // 2. 검색 쿼리 설정
+                const query = encodeURIComponent(`"${safeCorpName}" (경제 OR 비즈니스 OR 증시 OR 투자)`);
                 
-                let xmlText = null;
-                let items = [];
-
-                // 🚀 [완벽 해결책] 3중 방어막(Cascading Fallback) 구축
-                const proxyList = [
-                    `https://corsproxy.io/?${encodeURIComponent(rssUrl)}`,
-                    `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`
-                ];
-
-                for (const proxyUrl of proxyList) {
-                    try {
-                        const response = await fetch(proxyUrl, { cache: 'no-store' });
-                        if (response.ok) {
-                            const text = await response.text();
-                            // 구글이 봇을 차단하고 캡차 HTML을 보냈는지 확인 (<rss> 태그가 있어야 정상)
-                            if (text.includes('<rss') || text.includes('<feed')) {
-                                xmlText = text;
-                                break; // 성공하면 즉시 반복문 탈출
-                            }
-                        }
-                    } catch (err) {
-                        console.warn("프록시 우회 실패, 다음 서버 시도:", proxyUrl);
-                    }
+                // 🚀 [핵심 해결책] URL 끝에 '&cb=현재시간'을 붙여서 rss2json의 캐싱을 강제로 박살내고 새 데이터를 강제 호출합니다.
+                const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=ko&gl=KR&ceid=KR:ko&cb=${new Date().getTime()}`;
+                const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+                
+                const response = await fetch(apiUrl, { cache: 'no-store' });
+                const data = await response.json();
+                
+                if (data.status !== 'ok') {
+                    throw new Error("RSS 서버 응답 지연");
+                }
+                
+                const items = data.items;
+                if (!items || items.length === 0) {
+                    newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
+                    return;
                 }
 
-                // 3. XML 파싱 성공 시
-                if (xmlText) {
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                    items = Array.from(xmlDoc.querySelectorAll("item"));
-                }
-
-                // 4. 모든 프록시가 구글에 막혔다면, 난수를 포함한 rss2json으로 최후의 렌더링 시도
-                if (items.length === 0) {
-                    const fallbackUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&_=${Date.now()}`;
-                    const fallbackRes = await fetch(fallbackUrl, { cache: 'no-store' });
-                    const fallbackData = await fallbackRes.json();
-                    
-                    if (fallbackData.status === 'ok' && fallbackData.items && fallbackData.items.length > 0) {
-                        let html = '';
-                        fallbackData.items.slice(0, 15).forEach(item => {
-                            const title = item.title.replace(/<\/?[^>]+(>|$)/g, "");
-                            const link = item.link;
-                            const pubDate = new Date(item.pubDate);
-                            const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
-                            const rawDesc = item.description || item.content || "";
-                            const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500);
-                            
-                            html += `
-                                <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
-                                    <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
-                                    <a href="${link}" data-desc="${cleanDesc}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
-                                        ${title}
-                                    </a>
-                                </li>
-                            `;
-                        });
-                        newsListEl.innerHTML = html;
-                        return; // 렌더링 완료 후 함수 종료
-                    } else {
-                        throw new Error("모든 우회 경로 차단됨");
-                    }
-                }
-
-                // 5. XML 원본을 성공적으로 가져왔을 경우 화면 렌더링
-                items.sort((a, b) => {
-                    const dateA = new Date(a.querySelector("pubDate")?.textContent || 0);
-                    const dateB = new Date(b.querySelector("pubDate")?.textContent || 0);
-                    return dateB - dateA;
-                });
+                // 최신 시간순 정렬
+                items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
                 
                 let html = '';
                 for (let i = 0; i < Math.min(items.length, 15); i++) {
                     const item = items[i];
-                    const title = (item.querySelector("title")?.textContent || "").replace(/<\/?[^>]+(>|$)/g, "");
-                    const link = item.querySelector("link")?.textContent || "";
-                    
-                    const pubDateText = item.querySelector("pubDate")?.textContent;
-                    const pubDate = pubDateText ? new Date(pubDateText) : new Date();
+                    const title = item.title.replace(/<\/?[^>]+(>|$)/g, "");
+                    const link = item.link;
+                    const pubDate = new Date(item.pubDate);
                     const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
 
-                    const rawDesc = item.querySelector("description")?.textContent || "";
+                    const rawDesc = item.description || item.content || "";
                     const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500);
 
                     html += `
@@ -1296,10 +1242,10 @@
                     `;
                 }
                 
-                newsListEl.innerHTML = html || '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스가 없습니다.</li>';
+                newsListEl.innerHTML = html;
             } catch (e) {
-                console.error("뉴스 수집 최종 오류:", e);
-                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">구글의 보안 강화로 일시적 접근이 차단되었습니다. 잠시 후 다시 시도해주세요.</span></li>';
+                console.error("뉴스 수집 오류:", e);
+                newsListEl.innerHTML = '<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">API 응답 지연입니다. [분석] 버튼을 다시 눌러주세요.</span></li>';
             }
         }
         
