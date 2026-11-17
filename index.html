@@ -633,7 +633,7 @@
             }
         }
 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwX3Y2BUKP27tM7DNj8cHDJmDt2rf0yFt_sw9hn7vcaJhZvANL0ypJ-Qg4fMZfX0NwI/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzGQ1a0aoE3QUaYKbkDrFL-g8Y3SJRAm-dnCuO0X1ek9UkZbeaIDnLbleE_i_oy3mcS/exec";
 
         function fetchNaverDirectJsonp(queryStr) {
             return new Promise((resolve) => {
@@ -1189,7 +1189,7 @@
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
-            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 보안 서버를 통해 안전하게 뉴스를 수집 중입니다...</li>';
+            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 보안 서버를 통해 NCP 실시간 뉴스를 수집 중입니다...</li>';
             
             try {
                 let safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
@@ -1199,17 +1199,23 @@
 
                 const query = `${safeCorpName} 주식`;
                 
-                // 💡 1번 단계에서 새로 배포하여 발급받은 Google Apps Script URL을 아래에 입력하세요.
-                const gasSecurityServerUrl = "https://script.google.com/macros/s/AKfycbwX3Y2BUKP27tM7DNj8cHDJmDt2rf0yFt_sw9hn7vcaJhZvANL0ypJ-Qg4fMZfX0NwI/exec"; 
+                // 💡 [필수 입력] 방금 '새 배포'로 업데이트한 구글 Apps Script(GAS) 웹 앱 URL을 넣으세요.
+                const gasSecurityServerUrl = "https://script.google.com/macros/s/AKfycbzGQ1a0aoE3QUaYKbkDrFL-g8Y3SJRAm-dnCuO0X1ek9UkZbeaIDnLbleE_i_oy3mcS/exec"; 
+                
                 const requestUrl = `${gasSecurityServerUrl}?query=${encodeURIComponent(query)}`;
 
                 const response = await fetch(requestUrl);
                 
                 if (!response.ok) {
-                    throw new Error("보안 서버 통신 에러");
+                    throw new Error("구글 보안 서버 통신 에러");
                 }
 
                 const data = await response.json();
+
+                // NCP 서버 에러 응답 처리
+                if (data.error) {
+                    throw new Error(`NCP API 에러: ${data.error.message || data.error}`);
+                }
 
                 if (data.items && data.items.length > 0) {
                     let html = '';
@@ -1237,7 +1243,7 @@
 
             } catch (e) {
                 console.error("뉴스 수집 오류:", e);
-                newsListEl.innerHTML = `<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">통신 지연입니다. (에러: ${e.message})</span></li>`;
+                newsListEl.innerHTML = `<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">${e.message}</span></li>`;
             }
         }
         
