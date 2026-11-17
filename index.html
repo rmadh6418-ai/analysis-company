@@ -1224,8 +1224,19 @@
                         const link = item.originallink || item.link;
                         const desc = item.description.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&').substring(0, 500);
 
-                        const pubDate = new Date(item.pubdate);
-                        const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
+                        const rawDate = item.pubDate || item.pubdate; // 대소문자 모두 안전하게 호환되도록 처리
+                        const pubDate = new Date(rawDate);
+
+                        let dateStr = "";
+                        if (!isNaN(pubDate)) {
+                            const m = pubDate.getMonth() + 1;
+                            const d = pubDate.getDate();
+                            const h = pubDate.getHours().toString().padStart(2, '0');
+                            const min = pubDate.getMinutes().toString().padStart(2, '0');
+                            dateStr = `${m}/${d} ${h}:${min}`;
+                        } else {
+                            dateStr = "날짜 표기 오류"; // 만약 파싱에 실패할 경우 텍스트 처리
+                        }
 
                         html += `
                             <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
