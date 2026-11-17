@@ -1213,7 +1213,7 @@
                             title: item.title.replace(/<\/?[^>]+(>|$)/g, ""),
                             link: item.link,
                             pubDate: new Date(item.pubDate),
-                            desc: (item.description || item.content || "").replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, """).substring(0, 500)
+                            desc: (item.description || item.content || "").replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500)
                         }));
                     }
                 } catch(e) {
@@ -1236,7 +1236,7 @@
                             title: item.querySelector("title")?.textContent.replace(/<\/?[^>]+(>|$)/g, "") || "제목 없음",
                             link: item.querySelector("link")?.textContent || "#",
                             pubDate: new Date(pubDateText),
-                            desc: (item.querySelector("description")?.textContent || "").replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, """).substring(0, 500)
+                            desc: (item.querySelector("description")?.textContent || "").replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500)
                         };
                     });
                 }
