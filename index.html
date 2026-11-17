@@ -290,7 +290,7 @@
                 <div class="flex flex-col w-full">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3 mb-3 flex items-center justify-between">
                         <span>📰 실시간 주요 뉴스</span>
-                        <span class="text-[11px] bg-rose-50 text-rose-600 px-2 py-1 rounded-full font-bold">구글 뉴스 (안정화)</span>
+                        <span class="text-[11px] bg-rose-50 text-rose-600 px-2 py-1 rounded-full font-bold">구글 뉴스 다중우회 (안정화)</span>
                     </h2>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 w-full h-[400px] overflow-y-auto">
                         <ul id="newsList" class="space-y-1"></ul>
@@ -1193,10 +1193,7 @@
             
             try {
                 // 문제의 핵심 원인 해결: 종목명에 포함된 괄호와 코드(예: 삼성전자 (005930))를 완전히 제거
-                let safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
-                if (/^\d{6}$/.test(safeCorpName) && typeof CODE_TO_NAME !== 'undefined' && CODE_TO_NAME[safeCorpName]) {
-                    safeCorpName = CODE_TO_NAME[safeCorpName];
-                }
+                const safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
                 
                 // 원래 제일 잘 작동했던 검색 쿼리와 rss2json 방식 원복
                 const query = encodeURIComponent(`"${safeCorpName}" (경제 OR 비즈니스 OR 증시 OR 투자)`);
@@ -1223,7 +1220,7 @@
                     const dateStr = `${pubDate.getMonth()+1}/${pubDate.getDate()} ${pubDate.getHours().toString().padStart(2,'0')}:${pubDate.getMinutes().toString().padStart(2,'0')}`;
 
                     const rawDesc = item.description || item.content || "";
-                    const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, "&quot;").substring(0, 500);
+                    const cleanDesc = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, """).substring(0, 500);
 
                     html += `
                         <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
@@ -1526,7 +1523,7 @@ ${portfolioSummaryString}
             if (mode === 'average') {
                 const a = document.getElementById('myAvgPriceInput').value || 0; const c = document.getElementById('currentInvestInput').value || 0; const s = document.getElementById('standbyCashInput').value || 0;
                 avgPriceContext = `[분석 모드: 기존 보유자] 평단가: ${a}원, 현재 투입금액: ${c}원, 물타기 대기금액: ${s}원. 이 평단가와 대기금을 기준으로 물타기/불타기/매도 타점을 계산하세요.`;
-                actionPlanContext = `사용자는 이 종목에 이미 ${c}원을 투입했고, ${s}원의 대기자금을 가지고 있습니다. 현재 주가와 평단가를 비교하여, 이 대기자금을 지금 전액 투입하는 큰 흐름이 맞는지, 분할 투입해야 하는지, 혹은 현금으로 관망하는 것이 리스크 관리 차원에서 유리한지 '최적의 자금 배분 시나리오'를 반드시 분석해 주어야 합니다.`;
+                actionPlanContext = `사용자는 이 종목에 이미 ${c}원을 투입했고, ${s}원의 대기자금을 가지고 있습니다. 현재 주가와 평단가를 비교하여, 이 대기자금을 지금 전액 투입하는 큰 흐름이 맞는지, 분할 투입해야 하는지, 혹은 현금으로 관망하는 것이 리스크 관리 차원에서 유리한지 '최적 자금 배분 시나리오'를 반드시 분석해 주어야 합니다.`;
             } else {
                 const inv = document.getElementById('investAmountInput').value || 0;
                 avgPriceContext = `[분석 모드: 신규 진입] 현재가(${ld.price})를 기준으로 신규 진입 타점을 계산하세요. 총 투자 준비금: ${inv}원.`;
