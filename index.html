@@ -1223,33 +1223,43 @@
                     safeCorpName = CODE_TO_NAME[safeCorpName];
                 }
 
-                const query = `${safeCorpName} 주식`;
+                // 💡 [핵심 수정 1] 검색어에 큰따옴표를 씌워 '정확도'를 극대화 (예: "에스엠" 특징주)
+                const query = `"${safeCorpName}" 주식`;
                 
                 if (!GAS_URL) throw new Error("서버 설정(URL)이 로드되지 않았습니다.");
                 const requestUrl = `${GAS_URL}?query=${encodeURIComponent(query)}`;
 
                 const response = await fetch(requestUrl);
                 
-                if (!response.ok) {
-                    throw new Error("구글 보안 서버 통신 에러");
-                }
-
+                if (!response.ok) throw new Error("구글 보안 서버 통신 에러");
                 const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(`NCP API 에러: ${data.error.message || data.error}`);
-                }
+                if (data.error) throw new Error(`NCP API 에러: ${data.error.message || data.error}`);
 
                 if (data.items && data.items.length > 0) {
-                    // 💡 [수정된 부분] 날짜를 기준으로 최신순(내림차순)으로 정렬합니다.
-                    data.items.sort((a, b) => {
+                    
+                    // 💡 [핵심 수정 2] 프론트엔드 필터링: 비슷한 이름의 엉뚱한 기업 뉴스 원천 차단
+                    let filteredItems = data.items.filter(item => {
+                        const title = item.title.replace(/<\/?[^>]+(>|$)/g, "");
+                        const desc = item.description.replace(/<\/?[^>]+(>|$)/g, "");
+                        const fullText = title + " " + desc;
+                        
+                        // '에스엠' 검색 시 '갤럭시아에스엠' 뉴스가 들어오면 무조건 버림
+                        if (safeCorpName === '에스엠' && fullText.includes('갤럭시아에스엠')) {
+                            return false;
+                        }
+                        
+                        return true; // 조건에 걸리지 않은 정상 뉴스만 통과
+                    });
+
+                    // 날짜 최신순 정렬
+                    filteredItems.sort((a, b) => {
                         const dateA = new Date(a.pubDate || a.pubdate || 0);
                         const dateB = new Date(b.pubDate || b.pubdate || 0);
-                        return dateB - dateA; // 최신 날짜가 위로 오도록 정렬
+                        return dateB - dateA;
                     });
 
                     let html = '';
-                    data.items.forEach(item => {
+                    filteredItems.forEach(item => {
                         const title = item.title.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&');
                         const link = item.originallink || item.link;
                         const desc = item.description.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&').substring(0, 500);
@@ -1257,15 +1267,13 @@
                         const rawDate = item.pubDate || item.pubdate; 
                         const pubDate = new Date(rawDate);
 
-                        let dateStr = "";
+                        let dateStr = "날짜 표기 오류";
                         if (!isNaN(pubDate)) {
                             const m = pubDate.getMonth() + 1;
                             const d = pubDate.getDate();
                             const h = pubDate.getHours().toString().padStart(2, '0');
                             const min = pubDate.getMinutes().toString().padStart(2, '0');
                             dateStr = `${m}/${d} ${h}:${min}`;
-                        } else {
-                            dateStr = "날짜 표기 오류";
                         }
 
                         html += `
@@ -1277,7 +1285,12 @@
                             </li>
                         `;
                     });
-                    newsListEl.innerHTML = html;
+                    
+                    if (html === '') {
+                        newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">관련된 최신 뉴스를 찾을 수 없습니다.</li>';
+                    } else {
+                        newsListEl.innerHTML = html;
+                    }
                 } else {
                     newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">최근 뉴스를 찾을 수 없습니다.</li>';
                 }
@@ -2011,7 +2024,8 @@ PRED_D5: [예상종가]원
             }
 
             if (lastFetchedData && lastFetchedData.corpName) {
-                dynamicContext += `[현재 화면에서 분석 중인 종목]: ${lastFetchedData.corpName} (${lastFetchedData.ticker})\n`;
+                // 💡 [핵심 수정 3] 챗봇이 엉뚱한 기업으로 착각하지 않도록 프롬프트 강화
+                dynamicContext += `[현재 화면에서 분석 중인 타겟 종목 (오직 이 기업에 대해서만 대답할 것!)]: ${lastFetchedData.corpName} (종목코드: ${lastFetchedData.ticker})\n`;
                 dynamicContext += `- 현재가: ${lastFetchedData.price}원 (등락률: ${lastFetchedData.changeRate})\n`;
                 dynamicContext += `- 밸류에이션: PER ${lastFetchedData.per}배, PBR ${lastFetchedData.pbr}배\n`;
                 
