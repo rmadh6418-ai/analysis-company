@@ -1223,11 +1223,32 @@
                     safeCorpName = CODE_TO_NAME[safeCorpName];
                 }
 
-                // 💡 [핵심 수정 1] 검색어에 큰따옴표를 씌워 '정확도'를 극대화 (예: "에스엠" 특징주)
-                const query = `"${safeCorpName}" 주식`;
+                // 📚 [추가] 1. 주요 기업 동의어 사전 (언론사들이 다르게 부르는 이름 통합 검색)
+                const newsAliases = {
+                    "에스엠": `"에스엠" | "SM엔터" | "SM엔터테인먼트"`,
+                    "NAVER": `"네이버" | "NAVER"`,
+                    "LG에너지솔루션": `"LG에너지솔루션" | "LG엔솔"`,
+                    "JYP Ent.": `"JYP" | "제이와이피" | "JYP엔터"`,
+                    "엔씨소프트": `"엔씨소프트" | "NC소프트"`,
+                    "KT&G": `"KT&G" | "케이티앤지"`,
+                    "POSCO홀딩스": `"POSCO홀딩스" | "포스코홀딩스"`
+                };
+
+                // 🛡️ [추가] 2. 엉뚱한 기업 차단 사전 (이름이 포함되어 억울하게 끌려오는 자회사/비슷한 기업 필터링)
+                const newsExclusions = {
+                    "에스엠": ["갤럭시아에스엠", "SM C&C", "에스엠씨앤씨", "SM Life Design", "에스엠라이프디자인"],
+                    "카카오": ["카카오뱅크", "카카오페이", "카카오게임즈"],
+                    "SK": ["SK하이닉스", "SK이노베이션", "SK텔레콤", "SK스퀘어", "SK바이오", "SK케미칼", "SK네트웍스", "SKC"],
+                    "HD현대": ["HD현대중공업", "HD현대일렉트릭", "HD현대건설기계", "HD현대인프라코어", "HD현대마린"],
+                    "현대차": ["현대차증권"],
+                    "삼성전자": ["삼성전자우"]
+                };
+
+                // 사전에 정의된 동의어가 있으면 그걸 쓰고, 없으면 정확하게 기업명에 큰따옴표("")만 씌워 검색합니다 (주식 단어 제거)
+                let query = newsAliases[safeCorpName] || `"${safeCorpName}"`;
                 
                 if (!GAS_URL) throw new Error("서버 설정(URL)이 로드되지 않았습니다.");
-                const requestUrl = `${GAS_URL}?query=${encodeURIComponent(query)}`;
+                const requestUrl = `${GAS_URL}?query=${encodeURIComponent(query)}&display=40`;
 
                 const response = await fetch(requestUrl);
                 
@@ -1237,18 +1258,19 @@
 
                 if (data.items && data.items.length > 0) {
                     
-                    // 💡 [핵심 수정 2] 프론트엔드 필터링: 비슷한 이름의 엉뚱한 기업 뉴스 원천 차단
                     let filteredItems = data.items.filter(item => {
                         const title = item.title.replace(/<\/?[^>]+(>|$)/g, "");
                         const desc = item.description.replace(/<\/?[^>]+(>|$)/g, "");
                         const fullText = title + " " + desc;
                         
-                        // '에스엠' 검색 시 '갤럭시아에스엠' 뉴스가 들어오면 무조건 버림
-                        if (safeCorpName === '에스엠' && fullText.includes('갤럭시아에스엠')) {
-                            return false;
-                        }
+                        // 현재 검색된 기업의 차단 리스트(Exclusions)를 가져옴
+                        const exclusionsForThisCorp = newsExclusions[safeCorpName] || [];
                         
-                        return true; // 조건에 걸리지 않은 정상 뉴스만 통과
+                        // 기사 전문에 차단 키워드가 단 하나라도 있으면 과감히 버림 (false 리턴)
+                        const hasNoise = exclusionsForThisCorp.some(noise => fullText.includes(noise));
+                        if (hasNoise) return false;
+                        
+                        return true; 
                     });
 
                     // 날짜 최신순 정렬
@@ -1260,7 +1282,8 @@
 
                     let html = '';
                     filteredItems.forEach(item => {
-                        const title = item.title.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&');
+                        // 제목 텍스트 정제
+                        let title = item.title.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&');
                         const link = item.originallink || item.link;
                         const desc = item.description.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&').substring(0, 500);
 
@@ -1276,11 +1299,17 @@
                             dateStr = `${m}/${d} ${h}:${min}`;
                         }
 
+                        // 제목에 '속보'나 '특징주'가 있으면 시각적으로 강조
+                        const isBreaking = title.includes('속보') || title.includes('특징주');
+                        const badgeHtml = isBreaking 
+                            ? `<span class="bg-red-500 border border-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5 animate-pulse">속보</span>`
+                            : `<span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>`;
+
                         html += `
                             <li class="flex items-start gap-3 border-b border-slate-100 pb-3 pt-1 last:border-0 last:pb-0">
-                                <span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>
-                                <a href="${link}" data-desc="${desc}" target="_blank" class="text-sm font-bold text-slate-700 hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
-                                    <span class="text-[10px] font-bold text-blue-500 mr-1">[뉴스]</span>${title}
+                                ${badgeHtml}
+                                <a href="${link}" data-desc="${desc}" target="_blank" class="text-sm font-bold ${isBreaking ? 'text-red-700' : 'text-slate-700'} hover:text-rose-600 hover:underline line-clamp-2 leading-snug flex-1">
+                                    <span class="text-[10px] font-bold ${isBreaking ? 'text-red-500' : 'text-blue-500'} mr-1">[뉴스]</span>${title}
                                 </a>
                             </li>
                         `;
