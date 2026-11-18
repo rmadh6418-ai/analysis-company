@@ -557,6 +557,7 @@
     </button>
 
     <div id="chatbotWindow" class="fixed bottom-24 right-6 z-[9990] bg-white w-[350px] md:w-[400px] h-[550px] max-h-[75vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col hidden transform transition-all duration-300 origin-bottom-right">
+        <!-- 💡 수정된 헤더 영역 시작 -->
         <div class="bg-indigo-600 text-white p-4 rounded-t-2xl flex justify-between items-center shadow-sm shrink-0">
             <div class="flex items-center gap-2">
                 <span class="text-xl">🤖</span>
@@ -565,12 +566,23 @@
                     <p class="text-[10px] text-indigo-200">종목에 대해 궁금한 점을 물어보세요</p>
                 </div>
             </div>
-            <button onclick="toggleChatbot()" class="text-indigo-200 hover:text-white transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <div class="flex items-center gap-3">
+                <!-- 💡 [추가] 크기 조절 (확대/축소) 버튼 -->
+                <button onclick="resizeChatbot()" id="resizeChatBtn" class="text-indigo-200 hover:text-white transition" title="크기 조절">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                </button>
+                <!-- 기존 닫기 버튼 -->
+                <button onclick="toggleChatbot()" class="text-indigo-200 hover:text-white transition" title="닫기">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
         </div>
+        <!-- 💡 수정된 헤더 영역 끝 -->
         
         <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+           <!-- 이하 기존 코드와 동일 -->
             <div class="flex flex-col items-start">
                 <span class="text-[11px] font-bold text-slate-400 ml-1 mb-1">AI 어시스턴트</span>
                 <div class="bg-white border border-slate-200 text-slate-700 text-sm p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[85%]">
@@ -1808,6 +1820,30 @@ PRED_D5: [예상종가]원
         /* 🤖 챗봇 관련 로직 시작 */
         /* ============================================================== */
         let chatHistory = [];
+        let isChatExpanded = false; // 💡 [추가] 챗봇 확대 상태 변수
+
+        // 💡 [추가] 챗봇 크기 조절 함수
+        function resizeChatbot() {
+            const chatWindow = document.getElementById('chatbotWindow');
+            const resizeBtn = document.getElementById('resizeChatBtn');
+            isChatExpanded = !isChatExpanded;
+
+            if (isChatExpanded) {
+                // 확대 모드 (넓이 700px, 높이 80vh)
+                chatWindow.classList.remove('w-[350px]', 'md:w-[400px]', 'h-[550px]', 'max-h-[75vh]');
+                chatWindow.classList.add('w-[90vw]', 'md:w-[700px]', 'h-[80vh]', 'max-h-[90vh]');
+                
+                // 버튼 아이콘 축소 모양으로 변경
+                resizeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 14a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-2 0v-2H4a1 1 0 01-1-1zM21 10a1 1 0 01-1 1h-4a1 1 0 01-1-1V6a1 1 0 112 0v2h2a1 1 0 011 1z" /></svg>`;
+            } else {
+                // 기본 모드 복구
+                chatWindow.classList.add('w-[350px]', 'md:w-[400px]', 'h-[550px]', 'max-h-[75vh]');
+                chatWindow.classList.remove('w-[90vw]', 'md:w-[700px]', 'h-[80vh]', 'max-h-[90vh]');
+                
+                // 버튼 아이콘 확대 모양으로 변경
+                resizeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>`;
+            }
+        }
 
         function toggleChatbot() {
             const chatWindow = document.getElementById('chatbotWindow');
