@@ -1277,7 +1277,18 @@
         function loadDart(ticker, corpName) {
             const iframe = document.getElementById('dartIframe');
             if (iframe) {
-                iframe.src = `https://rmadh6418-ai.github.io/dart-dashboard/`;
+                // iframe이 처음 열릴 때(about:blank)만 URL을 불러옴
+                if (!iframe.src || iframe.src.includes('about:blank')) {
+                    iframe.src = `https://rmadh6418-ai.github.io/dart-dashboard/`;
+                
+                    // iframe 로딩이 끝나면 종목명을 자식 창으로 전달
+                    iframe.onload = () => {
+                        iframe.contentWindow.postMessage({ type: 'SEARCH_CORP', corpName: corpName }, '*');
+                    };
+                } else {
+                    // 이미 열려있다면 새로고침 없이 종목명만 즉각 전달
+                    iframe.contentWindow.postMessage({ type: 'SEARCH_CORP', corpName: corpName }, '*');
+                }
             }
         }
 
