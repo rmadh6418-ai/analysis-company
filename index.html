@@ -1211,7 +1211,6 @@
 
                 const query = `${safeCorpName} 주식`;
                 
-                // 수정된 부분: 하드코딩된 URL 삭제하고 전역 변수 GAS_URL 사용
                 if (!GAS_URL) throw new Error("서버 설정(URL)이 로드되지 않았습니다.");
                 const requestUrl = `${GAS_URL}?query=${encodeURIComponent(query)}`;
 
@@ -1228,6 +1227,13 @@
                 }
 
                 if (data.items && data.items.length > 0) {
+                    // 💡 [수정된 부분] 날짜를 기준으로 최신순(내림차순)으로 정렬합니다.
+                    data.items.sort((a, b) => {
+                        const dateA = new Date(a.pubDate || a.pubdate || 0);
+                        const dateB = new Date(b.pubDate || b.pubdate || 0);
+                        return dateB - dateA; // 최신 날짜가 위로 오도록 정렬
+                    });
+
                     let html = '';
                     data.items.forEach(item => {
                         const title = item.title.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&');
