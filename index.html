@@ -604,6 +604,9 @@
         let livePortfolioPrices = {};
         let portfolioPieChart = null; 
 
+        // config.json 파일에서 불러올 구글 Apps Script URL 변수 (초기값은 빈 문자열)
+        let GAS_URL = "";
+
         function checkPassword() {
             const pin = document.getElementById('lockPin').value.trim();
             const errorMsg = document.getElementById('lockError');
@@ -632,8 +635,6 @@
                 document.getElementById('lockPin').focus();
             }
         }
-
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyiBAIzD0ruvViKFKIF34WrXrXwa-UkOHLrwGN-InhSYMA4LVS0JZYPoamUR8NX_bBO/exec";
 
         function fetchNaverDirectJsonp(queryStr) {
             return new Promise((resolve) => {
@@ -710,7 +711,7 @@
         }
 
         async function loadFromGoogleCloud() {
-            if (GAS_URL === "여기에_구글_앱스스크립트_Web_App_URL을_넣으세요") {
+            if (!GAS_URL) {
                 userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
                 const savedStandby = localStorage.getItem('portfolioStandbyCash');
                 if(savedStandby) document.getElementById('portfolioStandbyCash').value = savedStandby;
@@ -736,7 +737,7 @@
         }
 
         function saveToGoogleCloud() {
-            if (GAS_URL === "여기에_구글_앱스스크립트_Web_App_URL을_넣으세요") return;
+            if (!GAS_URL) return;
             const data = { portfolio: userPortfolio, standbyCash: document.getElementById('portfolioStandbyCash').value || 0 };
             try { fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); } 
             catch(e) {}
@@ -752,6 +753,17 @@
 
             const savedKey = localStorage.getItem('geminiApiKey');
             if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
+
+            // 추가된 부분: config.json에서 GAS_URL을 안전하게 불러오기
+            try {
+                const configRes = await fetch('./config.json?v=' + new Date().getTime(), { cache: 'no-store' });
+                if(configRes.ok) {
+                    const config = await configRes.json();
+                    GAS_URL = config.GAS_URL;
+                }
+            } catch(e) {
+                console.warn('config.json을 불러오지 못했습니다.');
+            }
 
             await loadFromGoogleCloud();
 
@@ -1199,10 +1211,9 @@
 
                 const query = `${safeCorpName} 주식`;
                 
-                // 💡 [필수 입력] 방금 '새 배포'로 업데이트한 구글 Apps Script(GAS) 웹 앱 URL을 넣으세요.
-                const gasSecurityServerUrl = "https://script.google.com/macros/s/AKfycbyiBAIzD0ruvViKFKIF34WrXrXwa-UkOHLrwGN-InhSYMA4LVS0JZYPoamUR8NX_bBO/exec"; 
-                
-                const requestUrl = `${gasSecurityServerUrl}?query=${encodeURIComponent(query)}`;
+                // 수정된 부분: 하드코딩된 URL 삭제하고 전역 변수 GAS_URL 사용
+                if (!GAS_URL) throw new Error("서버 설정(URL)이 로드되지 않았습니다.");
+                const requestUrl = `${GAS_URL}?query=${encodeURIComponent(query)}`;
 
                 const response = await fetch(requestUrl);
                 
@@ -1212,7 +1223,6 @@
 
                 const data = await response.json();
 
-                // NCP 서버 에러 응답 처리
                 if (data.error) {
                     throw new Error(`NCP API 에러: ${data.error.message || data.error}`);
                 }
@@ -1224,7 +1234,7 @@
                         const link = item.originallink || item.link;
                         const desc = item.description.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&').substring(0, 500);
 
-                        const rawDate = item.pubDate || item.pubdate; // 대소문자 모두 안전하게 호환되도록 처리
+                        const rawDate = item.pubDate || item.pubdate; 
                         const pubDate = new Date(rawDate);
 
                         let dateStr = "";
@@ -1235,7 +1245,7 @@
                             const min = pubDate.getMinutes().toString().padStart(2, '0');
                             dateStr = `${m}/${d} ${h}:${min}`;
                         } else {
-                            dateStr = "날짜 표기 오류"; // 만약 파싱에 실패할 경우 텍스트 처리
+                            dateStr = "날짜 표기 오류";
                         }
 
                         html += `
@@ -1297,7 +1307,6 @@
 
             document.getElementById('infoSection').classList.remove('hidden');
             
-            // 🌟 [핵심 변경 포인트]: 검색 조합 문자열(corpName) 대신 DB에 저장된 완벽히 정제된 기업명(data.name)을 전달하여 에러 원천 차단
             loadNews(data.name);
             loadDart(ticker, data.name);
 
@@ -1317,7 +1326,7 @@
             document.getElementById('corpNameTitle').textContent = data.name; document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
             document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
-            lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.fwdPer, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc };
+            lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.pbr, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc };
 
             try {
                 const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
