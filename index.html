@@ -1215,7 +1215,7 @@
         async function loadNews(corpName) {
             const newsListEl = document.getElementById('newsList');
             if (!newsListEl) return;
-            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 보안 서버를 통해 NCP 실시간 뉴스를 수집 중입니다...</li>';
+            newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 animate-pulse py-2">📰 보안 서버를 통해 최신 속보를 수집 중입니다...</li>';
             
             try {
                 let safeCorpName = corpName.replace(/\s*\([^)]*\)/g, '').trim();
@@ -1223,7 +1223,6 @@
                     safeCorpName = CODE_TO_NAME[safeCorpName];
                 }
 
-                // 📚 [추가] 1. 주요 기업 동의어 사전 (언론사들이 다르게 부르는 이름 통합 검색)
                 const newsAliases = {
                     "에스엠": `"에스엠" | "SM엔터" | "SM엔터테인먼트"`,
                     "NAVER": `"네이버" | "NAVER"`,
@@ -1234,7 +1233,6 @@
                     "POSCO홀딩스": `"POSCO홀딩스" | "포스코홀딩스"`
                 };
 
-                // 🛡️ [추가] 2. 엉뚱한 기업 차단 사전 (이름이 포함되어 억울하게 끌려오는 자회사/비슷한 기업 필터링)
                 const newsExclusions = {
                     "에스엠": ["갤럭시아에스엠", "SM C&C", "에스엠씨앤씨", "SM Life Design", "에스엠라이프디자인"],
                     "카카오": ["카카오뱅크", "카카오페이", "카카오게임즈"],
@@ -1244,11 +1242,13 @@
                     "삼성전자": ["삼성전자우"]
                 };
 
-                // 사전에 정의된 동의어가 있으면 그걸 쓰고, 없으면 정확하게 기업명에 큰따옴표("")만 씌워 검색합니다 (주식 단어 제거)
-                let query = newsAliases[safeCorpName] || `"${safeCorpName}"`;
+                // 💡 [핵심 1] 일반 기업은 너무 엄격한 ""(따옴표)를 빼서 유연하게 검색되도록 변경
+                let query = newsAliases[safeCorpName] || safeCorpName;
                 
                 if (!GAS_URL) throw new Error("서버 설정(URL)이 로드되지 않았습니다.");
-                const requestUrl = `${GAS_URL}?query=${encodeURIComponent(query)}&display=40`;
+                
+                // 💡 [핵심 2] display=100 (최대치)으로 늘리고, sort=date (최신순)을 요청에 포함하여 속보 누락 원천 차단
+                const requestUrl = `${GAS_URL}?query=${encodeURIComponent(query)}&display=100&sort=date`;
 
                 const response = await fetch(requestUrl);
                 
@@ -1263,17 +1263,14 @@
                         const desc = item.description.replace(/<\/?[^>]+(>|$)/g, "");
                         const fullText = title + " " + desc;
                         
-                        // 현재 검색된 기업의 차단 리스트(Exclusions)를 가져옴
                         const exclusionsForThisCorp = newsExclusions[safeCorpName] || [];
-                        
-                        // 기사 전문에 차단 키워드가 단 하나라도 있으면 과감히 버림 (false 리턴)
                         const hasNoise = exclusionsForThisCorp.some(noise => fullText.includes(noise));
                         if (hasNoise) return false;
                         
                         return true; 
                     });
 
-                    // 날짜 최신순 정렬
+                    // 날짜 최신순 정렬 (이중 안전장치)
                     filteredItems.sort((a, b) => {
                         const dateA = new Date(a.pubDate || a.pubdate || 0);
                         const dateB = new Date(b.pubDate || b.pubdate || 0);
@@ -1281,9 +1278,15 @@
                     });
 
                     let html = '';
-                    filteredItems.forEach(item => {
-                        // 제목 텍스트 정제
+                    // 💡 상위 40개만 잘라서 화면에 예쁘게 표시
+                    filteredItems.slice(0, 40).forEach(item => {
                         let title = item.title.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&');
+                        
+                        // 💡 [핵심 3] 정규식을 이용해 제목 앞뒤의 [언론사], (종합) 등 불필요한 괄호 문구 깔끔하게 제거
+                        title = title.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
+                        // 만약 괄호를 다 지웠더니 제목이 없어졌다면 원래 제목 복구
+                        if (!title) title = item.title.replace(/<\/?[^>]+(>|$)/g, "").trim();
+
                         const link = item.originallink || item.link;
                         const desc = item.description.replace(/<\/?[^>]+(>|$)/g, "").replace(/"/g, '"').replace(/&/g, '&').substring(0, 500);
 
@@ -1299,8 +1302,10 @@
                             dateStr = `${m}/${d} ${h}:${min}`;
                         }
 
-                        // 제목에 '속보'나 '특징주'가 있으면 시각적으로 강조
-                        const isBreaking = title.includes('속보') || title.includes('특징주');
+                        // 원래 원본 제목에 속보나 특징주가 있었는지 체크하여 뱃지 부여
+                        const originalTitle = item.title.replace(/<\/?[^>]+(>|$)/g, "");
+                        const isBreaking = originalTitle.includes('속보') || originalTitle.includes('특징주');
+                        
                         const badgeHtml = isBreaking 
                             ? `<span class="bg-red-500 border border-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5 animate-pulse">속보</span>`
                             : `<span class="bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap mt-0.5">${dateStr}</span>`;
@@ -1327,24 +1332,6 @@
             } catch (e) {
                 console.error("뉴스 수집 오류:", e);
                 newsListEl.innerHTML = `<li class="text-sm text-red-500 font-bold py-2">뉴스를 불러오는 데 실패했습니다.<br><span class="text-xs font-normal text-slate-500">${e.message}</span></li>`;
-            }
-        }
-        
-        function loadDart(ticker, corpName) {
-            const iframe = document.getElementById('dartIframe');
-            if (iframe) {
-                // iframe이 처음 열릴 때(about:blank)만 URL을 불러옴
-                if (!iframe.src || iframe.src.includes('about:blank')) {
-                    iframe.src = `https://rmadh6418-ai.github.io/dart-dashboard/`;
-                
-                    // iframe 로딩이 끝나면 종목명을 자식 창으로 전달
-                    iframe.onload = () => {
-                        iframe.contentWindow.postMessage({ type: 'SEARCH_CORP', corpName: corpName }, '*');
-                    };
-                } else {
-                    // 이미 열려있다면 새로고침 없이 종목명만 즉각 전달
-                    iframe.contentWindow.postMessage({ type: 'SEARCH_CORP', corpName: corpName }, '*');
-                }
             }
         }
 
