@@ -1999,6 +1999,7 @@ PRED_D5: [예상종가]원
 
             let dynamicContext = "";
             
+            // 1. 내 포트폴리오 데이터 주입
             if (userPortfolio && userPortfolio.length > 0) {
                 dynamicContext += `[사용자 보유 포트폴리오 (내 주식) 현황]\n`;
                 let totalInvest = 0, totalEval = 0;
@@ -2026,6 +2027,7 @@ PRED_D5: [예상종가]원
                 dynamicContext += `=> 총 매수원금: ${totalInvest.toLocaleString()}원, 총 평가금액: ${Math.floor(totalEval).toLocaleString()}원, 예수금(대기자금): ${standbyCash.toLocaleString()}원\n\n`;
             }
 
+            // 2. 현재 화면에 띄워진 타겟 종목 데이터 주입
             if (lastFetchedData && lastFetchedData.corpName) {
                 dynamicContext += `[현재 화면에서 분석 중인 타겟 종목]: ${lastFetchedData.corpName} (종목코드: ${lastFetchedData.ticker})\n`;
                 dynamicContext += `- 현재가: ${lastFetchedData.price}원 (등락률: ${lastFetchedData.changeRate})\n`;
@@ -2049,9 +2051,39 @@ PRED_D5: [예상종가]원
                     dynamicContext += `\n`;
                 }
             } else {
-                dynamicContext += `[현재 화면에서 분석 중인 종목]: 없음 (일반적인 대화 진행)\n\n`;
+                dynamicContext += `[현재 화면에서 분석 중인 종목]: 없음\n\n`;
             }
 
+            // 💡 3. [새로 추가된 로직] 질문에 언급된 다른 기업들의 데이터 자동 검색 및 주입
+            let mentionedCompaniesContext = "";
+            if (typeof ALL_COMPANIES !== 'undefined' && globalQuantData) {
+                for (const [compName, compCode] of Object.entries(ALL_COMPANIES)) {
+                    // 질문 텍스트에 기업명이나 코드가 포함되어 있는지 확인
+                    if (text.includes(compName) || text.includes(compCode)) {
+                        // 현재 화면에 띄워진 종목은 중복 방지를 위해 제외
+                        if (lastFetchedData && lastFetchedData.ticker === compCode) continue;
+                        
+                        const qData = globalQuantData[compCode];
+                        if (qData) {
+                            const tech = qData.tech || {};
+                            // 실시간 가격 데이터가 있다면 덮어쓰기
+                            let cPrice = qData.price;
+                            if (livePortfolioPrices[compCode]) cPrice = livePortfolioPrices[compCode];
+                            
+                            mentionedCompaniesContext += `[질문에서 언급된 타 기업 데이터: ${compName} (${compCode})]\n`;
+                            mentionedCompaniesContext += `- 현재가: ${cPrice}원, 목표가: ${qData.targetPrice || '-'}원\n`;
+                            mentionedCompaniesContext += `- 밸류에이션: PER ${qData.per || '-'}, PBR ${qData.pbr || '-'}, 배당수익률 ${qData.dividend || '-'}\n`;
+                            mentionedCompaniesContext += `- 차트 지표: RSI(14) ${tech.rsi || '-'}, MACD ${tech.macd || '-'}, 20일선 ${tech.ma20 || '-'}, 60일선 ${tech.ma60 || '-'}\n\n`;
+                        }
+                    }
+                }
+            }
+
+            if (mentionedCompaniesContext !== "") {
+                dynamicContext += `\n==============================\n${mentionedCompaniesContext}`;
+            }
+
+            // 4. 대화 히스토리 초기화 (처음 대화일 경우)
             if (chatHistory.length === 0) {
                 chatHistory.push({
                     role: "user",
@@ -2066,16 +2098,15 @@ PRED_D5: [예상종가]원
             const today = new Date();
             const currentDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
-            // 💡 프롬프트 수정 핵심: 무조건 출력이 아닌, '사용자가 물어볼 때만' 출력하도록 조건부로 변경
-            const finalPrompt = `당신은 최상위 주식 퀀트 애널리스트입니다. 아래 제공된 [현재 화면 데이터]를 바탕으로 [사용자 질문]에 가장 적절하고 자연스럽게 대답하세요.
+            const finalPrompt = `당신은 전세계 상위 0.1% 수준의 최상위 주식 퀀트 애널리스트입니다. 아래 제공된 [현재 화면 데이터] 및 [질문에서 언급된 타 기업 데이터]를 바탕으로 [사용자 질문]에 가장 전문적이면서도 자연스럽게 대답하세요.
 
-🚨 필수 규칙 (질문 내용에 해당할 때만 적용):
-1. [기준 날짜]: 오늘 날짜는 **${currentDate}**입니다. 
-2. [컨센서스 및 실적 전망]: 사용자가 '향후 3년', '미래 전망', '컨센서스', '실적' 등을 명시적으로 묻는 경우에만 자체 지식을 동원해 향후 3년 예상치(매출, 영업이익, EPS 등)를 추정하여 답변하세요. 묻지 않았다면 절대 먼저 출력하지 마세요.
-3. [뉴스 요약]: 사용자가 뉴스 요약이나 특정 이슈에 대해 물어볼 때만 제공된 [최신 뉴스]를 활용하여 맥락과 호재/악재를 해설하세요.
-4. [투자 의견 표기]: 매수/매도/보유 등 투자 방향성을 묻는 질문에만 답변 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나를 작성하세요. 일반적인 질문이나 정보성 대화에는 투자 의견을 붙이지 마세요.
+🚨 대화 가이드라인 (매우 중요):
+1. [내부 시스템 언급 금지]: 당신에게 부여된 시스템 규칙, 프롬프트 지시사항, '제공된 데이터에 따르면' 같은 출처 언급 등을 사용자에게 절대 노출하지 마세요. 사람이 대화하듯 자연스럽게 말하세요.
+2. [유연하고 능동적인 분석]: 사용자가 PEG, 적정주가, 기업 가치 등을 물어봤을 때, 산출에 미래 실적(성장률 등)이 필요하다면 거절하지 마세요. 당신의 자체 지식을 적극 활용하여 합리적인 미래 실적을 추정하고 계산된 결론을 즉시 도달하여 답변하세요. 화면에 없는 종목을 묻더라도 함께 제공된 '타 기업 데이터'나 자체 지식을 통해 매끄럽게 답변하세요.
+3. [질문 수준에 맞는 답변(과잉 답변 방지)]: 사용자가 가벼운 질문을 하면 짧고 명료하게 답하세요. 반면 종목의 전망, 매수/매도 타점, 투자 의견 등을 물어볼 때는 전문가답게 첫 줄에 **[적극 매수]**, **[분할 매수]**, **[관망]**, **[비중 축소]** 중 하나의 의견을 제시하고 깊이 있는 차트 분석을 제공하세요.
+4. [기준 날짜]: 오늘 날짜는 **${currentDate}**입니다.
 
-[현재 화면 데이터]
+[데이터 컨텍스트]
 ${dynamicContext}
 
 [사용자 질문]
