@@ -517,11 +517,18 @@
                 <!-- 🌟 주가별 밸류에이션(PER/PBR) 계산기 추가 부분 -->
                 <div class="bg-indigo-50/50 p-4 rounded-xl shadow-sm border border-indigo-100 mt-4">
                     <h3 class="text-sm font-bold text-indigo-800 mb-3 flex items-center gap-1">🧮 시나리오별 목표 주가 밸류에이션(PER/PBR) 계산기</h3>
-                    <div class="flex flex-col md:flex-row gap-4 items-center">
-                        <div class="flex items-center gap-2 w-full md:w-auto">
-                            <span class="text-xs font-bold text-slate-600">가상 주가 입력:</span>
-                            <input type="number" id="simPriceInput" placeholder="예: 80000" oninput="calculateValuation()" class="border-2 border-indigo-200 px-3 py-1.5 rounded-md text-sm font-bold text-indigo-900 focus:outline-none focus:border-indigo-400 w-full md:w-40" autocomplete="off">
-                            <span class="text-xs font-bold text-slate-600">원</span>
+                    <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-600">가상 주가:</span>
+                                <input type="number" id="simPriceInput" placeholder="예: 80000" oninput="calculateValuation()" class="border-2 border-indigo-200 px-3 py-1.5 rounded-md text-sm font-bold text-indigo-900 focus:outline-none focus:border-indigo-400 w-full md:w-32 text-right" autocomplete="off">
+                                <span class="text-xs font-bold text-slate-600">원</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-600">가상 EPS:</span>
+                                <input type="number" id="simEpsInput" placeholder="예: 5000" oninput="calculateValuation()" class="border-2 border-indigo-200 px-3 py-1.5 rounded-md text-sm font-bold text-indigo-900 focus:outline-none focus:border-indigo-400 w-full md:w-32 text-right" autocomplete="off">
+                                <span class="text-xs font-bold text-slate-600">원</span>
+                            </div>
                         </div>
                         <div class="flex gap-3 w-full md:w-auto">
                             <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[120px]">
@@ -534,7 +541,7 @@
                             </div>
                         </div>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-2">* 현재가 및 현재 기준의 PER/PBR을 바탕으로 역산(EPS, BPS)하여 산출된 단순 추정치입니다. 실제 실적발표 및 자본변동 시 달라질 수 있습니다.</p>
+                    <p class="text-[11px] text-slate-400 mt-2">* 초기 EPS는 현재가와 PER을 바탕으로 자동 계산되어 입력됩니다. 미래 실적 전망에 따라 가상 EPS를 자유롭게 수정해 보세요.</p>
                 </div>
             </div>
 
@@ -1359,11 +1366,11 @@
 
             // 새로운 종목 로드 시 계산기 입력/결과 초기화
             const simPriceInput = document.getElementById('simPriceInput');
-            if (simPriceInput) {
-                simPriceInput.value = '';
-                document.getElementById('simPerResult').textContent = '-';
-                document.getElementById('simPbrResult').textContent = '-';
-            }
+            const simEpsInput = document.getElementById('simEpsInput');
+            if (simPriceInput) simPriceInput.value = '';
+            if (simEpsInput) simEpsInput.value = '';
+            document.getElementById('simPerResult').textContent = '-';
+            document.getElementById('simPbrResult').textContent = '-';
 
             if (inputEl.dataset.selectedCode && /^\d{6}$/.test(inputEl.dataset.selectedCode)) {
                 ticker = inputEl.dataset.selectedCode; corpName = CODE_TO_NAME[ticker] || inputRaw;
@@ -1412,7 +1419,16 @@
             document.getElementById('corpNameTitle').textContent = data.name; document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
             document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
-            lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.pbr, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc };
+            lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.fwdPer || data.pbr, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc };
+
+            // 초기 EPS 세팅
+            if (simEpsInput && lastFetchedData) {
+                let currentPriceNum = parseFloat(String(lastFetchedData.price).replace(/,/g, '').replace(/원/g, ''));
+                let currentPerNum = parseFloat(lastFetchedData.per);
+                if (!isNaN(currentPriceNum) && currentPriceNum > 0 && !isNaN(currentPerNum) && currentPerNum > 0) {
+                    simEpsInput.value = Math.round(currentPriceNum / currentPerNum);
+                }
+            }
 
             try {
                 const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${ticker}`);
@@ -1463,12 +1479,14 @@
         // ==============================================================
         function calculateValuation() {
             const simPriceInput = document.getElementById('simPriceInput');
+            const simEpsInput = document.getElementById('simEpsInput');
             const simPerResult = document.getElementById('simPerResult');
             const simPbrResult = document.getElementById('simPbrResult');
 
             if (!simPriceInput || !simPerResult || !simPbrResult) return;
             
             const simPrice = parseFloat(simPriceInput.value);
+            const simEps = parseFloat(simEpsInput ? simEpsInput.value : NaN);
 
             if (!simPrice || isNaN(simPrice) || !lastFetchedData) {
                 simPerResult.textContent = '-';
@@ -1482,16 +1500,19 @@
             const currentPbr = parseFloat(lastFetchedData.pbr);
 
             if (!isNaN(currentPrice) && currentPrice > 0) {
-                // EPS 역산 후 새로운 PER 계산
-                if (!isNaN(currentPer) && currentPer > 0) {
-                    const eps = currentPrice / currentPer;
-                    const newPer = simPrice / eps;
+                // EPS 결정 (입력된 가상 EPS 우선, 없으면 현재 PER 기반 역산)
+                let baseEps = (!isNaN(currentPer) && currentPer > 0) ? (currentPrice / currentPer) : NaN;
+                let finalEps = (!isNaN(simEps) && simEps > 0) ? simEps : baseEps;
+
+                // 새로운 PER 계산
+                if (!isNaN(finalEps) && finalEps > 0) {
+                    const newPer = simPrice / finalEps;
                     simPerResult.textContent = newPer.toFixed(2) + '배';
                 } else {
                     simPerResult.textContent = 'N/A';
                 }
 
-                // BPS 역산 후 새로운 PBR 계산
+                // BPS 역산 후 새로운 PBR 계산 (BPS는 조정 기능이 없으므로 항상 원본 기준)
                 if (!isNaN(currentPbr) && currentPbr > 0) {
                     const bps = currentPrice / currentPbr;
                     const newPbr = simPrice / bps;
@@ -1698,7 +1719,7 @@ ${portfolioSummaryString}
 
 🚨 [할루시네이션(정보 왜곡) 방지 절대 규칙]
 1. 아래 제공된 [종목 기본 데이터] 및 [기술적 지표 데이터]의 수치와 당신(AI)이 가지고 있는 최신 정보를 정확하게 인용하세요.
-​2. 프롬프트에 제공되지 않은 과거 주가 흐름, 존재하지 않는 뉴스, 실적 등을 임의로 절대 창작하거나 지어내지 마세요.
+​2. 프롬프트에 제공되지 매 과거 주가 흐름, 존재하지 않는 뉴스, 실적 등을 임의로 절대 창작하거나 지어내지 마세요.
 3. 데이터가 부족하여 분석이 불가능한 항목은 "데이터 부족으로 판단 불가"라고 명확히 기재하세요.
 
 [오늘 날짜: ${currentDate}]
@@ -2137,12 +2158,15 @@ PRED_D5: [예상종가]원
             let mentionedCompaniesContext = "";
             if (typeof ALL_COMPANIES !== 'undefined' && globalQuantData) {
                 for (const [compName, compCode] of Object.entries(ALL_COMPANIES)) {
+                    // 질문 텍스트에 기업명이나 코드가 포함되어 있는지 확인
                     if (text.includes(compName) || text.includes(compCode)) {
+                        // 현재 화면에 띄워진 종목은 중복 방지를 위해 제외
                         if (lastFetchedData && lastFetchedData.ticker === compCode) continue;
                         
                         const qData = globalQuantData[compCode];
                         if (qData) {
                             const tech = qData.tech || {};
+                            // 실시간 가격 데이터가 있다면 덮어쓰기
                             let cPrice = qData.price;
                             if (livePortfolioPrices[compCode]) cPrice = livePortfolioPrices[compCode];
                             
@@ -2159,6 +2183,7 @@ PRED_D5: [예상종가]원
                 dynamicContext += `\n==============================\n${mentionedCompaniesContext}`;
             }
 
+            // 4. 대화 히스토리 초기화 (처음 대화일 경우)
             if (chatHistory.length === 0) {
                 chatHistory.push({
                     role: "user",
