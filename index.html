@@ -517,7 +517,7 @@
                     </div>
                 </div>
 
-                <!-- 🌟 주가별 밸류에이션(PER/PBR) 계산기 추가 부분 -->
+                <!-- 🌟 주가별 밸류에이션(PER/PBR) 계산기 부분 -->
                 <div class="bg-indigo-50/50 p-4 rounded-xl shadow-sm border border-indigo-100 mt-4">
                     <h3 class="text-sm font-bold text-indigo-800 mb-3 flex items-center gap-1">🧮 시나리오별 목표 주가 밸류에이션(PER/PBR) 계산기</h3>
                     <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -534,19 +534,22 @@
                             </div>
                         </div>
                         <div class="flex gap-3 w-full md:w-auto">
-                            <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[120px]">
+                            <!-- 💡 너비를 넓히고 뱃지 영역(simPerEval) 추가 -->
+                            <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[180px]">
                                 <span class="text-[11px] font-bold text-indigo-600">해당 주가 도달 시 예상 PER</span>
-                                <span id="simPerResult" class="font-extrabold text-lg text-slate-800">-</span>
+                                <span id="simPerResult" class="font-extrabold text-lg text-slate-800 mb-1">-</span>
+                                <div id="simPerEval" class="text-[10px] font-bold mt-0.5"></div>
                             </div>
-                            <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[120px]">
+                            <!-- 💡 너비를 넓히고 뱃지 영역(simPbrEval) 추가 -->
+                            <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[180px]">
                                 <span class="text-[11px] font-bold text-indigo-600">해당 주가 도달 시 예상 PBR</span>
-                                <span id="simPbrResult" class="font-extrabold text-lg text-slate-800">-</span>
+                                <span id="simPbrResult" class="font-extrabold text-lg text-slate-800 mb-1">-</span>
+                                <div id="simPbrEval" class="text-[10px] font-bold mt-0.5"></div>
                             </div>
                         </div>
                     </div>
                     <p class="text-[11px] text-slate-400 mt-2">* 초기 EPS는 현재가와 PER을 바탕으로 자동 계산되어 입력됩니다. 미래 실적 전망에 따라 가상 EPS를 자유롭게 수정해 보세요.</p>
                 </div>
-            </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                 <div class="lg:col-span-2">
@@ -1509,6 +1512,8 @@
             const simEpsInput = document.getElementById('simEpsInput');
             const simPerResult = document.getElementById('simPerResult');
             const simPbrResult = document.getElementById('simPbrResult');
+            const simPerEval = document.getElementById('simPerEval');
+            const simPbrEval = document.getElementById('simPbrEval');
 
             if (!simPriceInput || !simPerResult || !simPbrResult) return;
             
@@ -1518,6 +1523,8 @@
             if (!simPrice || isNaN(simPrice) || !lastFetchedData) {
                 simPerResult.textContent = '-';
                 simPbrResult.textContent = '-';
+                if (simPerEval) simPerEval.innerHTML = '';
+                if (simPbrEval) simPbrEval.innerHTML = '';
                 return;
             }
 
@@ -1531,25 +1538,41 @@
                 let baseEps = (!isNaN(currentPer) && currentPer > 0) ? (currentPrice / currentPer) : NaN;
                 let finalEps = (!isNaN(simEps) && simEps > 0) ? simEps : baseEps;
 
-                // 새로운 PER 계산
+                // 새로운 PER 계산 및 평가
                 if (!isNaN(finalEps) && finalEps > 0) {
                     const newPer = simPrice / finalEps;
                     simPerResult.textContent = newPer.toFixed(2) + '배';
+                    
+                    let perEvalText = "", perEvalColor = "";
+                    if (newPer < 10) { perEvalText = "섹터 대비 낮음 (저평가)"; perEvalColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; }
+                    else if (newPer <= 20) { perEvalText = "섹터 대비 적정"; perEvalColor = "text-blue-600 bg-blue-50 border-blue-200"; }
+                    else { perEvalText = "섹터 대비 높음 (고평가)"; perEvalColor = "text-rose-600 bg-rose-50 border-rose-200"; }
+                    if (simPerEval) simPerEval.innerHTML = `<span class="px-2 py-0.5 rounded border ${perEvalColor}">${perEvalText}</span>`;
                 } else {
                     simPerResult.textContent = 'N/A';
+                    if (simPerEval) simPerEval.innerHTML = `<span class="px-2 py-0.5 rounded border text-slate-500 bg-slate-100 border-slate-200">데이터 부족</span>`;
                 }
 
-                // BPS 역산 후 새로운 PBR 계산 (BPS는 조정 기능이 없으므로 항상 원본 기준)
+                // BPS 역산 후 새로운 PBR 계산 및 평가
                 if (!isNaN(currentPbr) && currentPbr > 0) {
                     const bps = currentPrice / currentPbr;
                     const newPbr = simPrice / bps;
                     simPbrResult.textContent = newPbr.toFixed(2) + '배';
+                    
+                    let pbrEvalText = "", pbrEvalColor = "";
+                    if (newPbr < 1.0) { pbrEvalText = "섹터 대비 낮음 (저평가)"; pbrEvalColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; }
+                    else if (newPbr <= 2.0) { pbrEvalText = "섹터 대비 적정"; pbrEvalColor = "text-blue-600 bg-blue-50 border-blue-200"; }
+                    else { pbrEvalText = "섹터 대비 높음 (고평가)"; pbrEvalColor = "text-rose-600 bg-rose-50 border-rose-200"; }
+                    if (simPbrEval) simPbrEval.innerHTML = `<span class="px-2 py-0.5 rounded border ${pbrEvalColor}">${pbrEvalText}</span>`;
                 } else {
                     simPbrResult.textContent = 'N/A';
+                    if (simPbrEval) simPbrEval.innerHTML = `<span class="px-2 py-0.5 rounded border text-slate-500 bg-slate-100 border-slate-200">데이터 부족</span>`;
                 }
             } else {
                 simPerResult.textContent = '-';
                 simPbrResult.textContent = '-';
+                if (simPerEval) simPerEval.innerHTML = '';
+                if (simPbrEval) simPbrEval.innerHTML = '';
             }
         }
 
