@@ -513,9 +513,32 @@
                         <a id="moatLink" href="#" target="_blank" class="text-xs bg-amber-500 text-white py-1 px-2 mt-1 rounded hover:bg-amber-600 transition font-semibold inline-block">모닝스타 원문 확인 ↗</a>
                     </div>
                 </div>
+
+                <!-- 🌟 주가별 밸류에이션(PER/PBR) 계산기 추가 부분 -->
+                <div class="bg-indigo-50/50 p-4 rounded-xl shadow-sm border border-indigo-100 mt-4">
+                    <h3 class="text-sm font-bold text-indigo-800 mb-3 flex items-center gap-1">🧮 시나리오별 목표 주가 밸류에이션(PER/PBR) 계산기</h3>
+                    <div class="flex flex-col md:flex-row gap-4 items-center">
+                        <div class="flex items-center gap-2 w-full md:w-auto">
+                            <span class="text-xs font-bold text-slate-600">가상 주가 입력:</span>
+                            <input type="number" id="simPriceInput" placeholder="예: 80000" oninput="calculateValuation()" class="border-2 border-indigo-200 px-3 py-1.5 rounded-md text-sm font-bold text-indigo-900 focus:outline-none focus:border-indigo-400 w-full md:w-40" autocomplete="off">
+                            <span class="text-xs font-bold text-slate-600">원</span>
+                        </div>
+                        <div class="flex gap-3 w-full md:w-auto">
+                            <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[120px]">
+                                <span class="text-[11px] font-bold text-indigo-600">해당 주가 도달 시 예상 PER</span>
+                                <span id="simPerResult" class="font-extrabold text-lg text-slate-800">-</span>
+                            </div>
+                            <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[120px]">
+                                <span class="text-[11px] font-bold text-indigo-600">해당 주가 도달 시 예상 PBR</span>
+                                <span id="simPbrResult" class="font-extrabold text-lg text-slate-800">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2">* 현재가 및 현재 기준의 PER/PBR을 바탕으로 역산(EPS, BPS)하여 산출된 단순 추정치입니다. 실제 실적발표 및 자본변동 시 달라질 수 있습니다.</p>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                 <div class="lg:col-span-2">
                     <div class="flex justify-between items-end mb-3">
                         <h2 class="text-lg font-bold text-slate-800 border-l-4 border-indigo-600 pl-3">최근 결산 및 컨센서스 (자동수집)</h2>
@@ -538,7 +561,7 @@
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3">
+                <div class="flex justify-between items-center mb-3 mt-4">
                     <h2 class="text-lg font-bold text-slate-800 border-l-4 border-purple-600 pl-3">🤖 맞춤형 AI 트레이딩 심층 분석 리포트</h2>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -809,6 +832,7 @@
                     updateTopDashboardUI(lastFetchedData);
                     renderPortfolioTable();
                     calculateInvestment();
+                    calculateValuation(); // 주가 갱신 시 계산기 값 재산출
 
                     statusBox.innerHTML = `<p class="text-emerald-600 font-semibold text-sm">✅ 실시간 데이터 갱신 완료!</p>`;
                     setTimeout(() => statusBox.classList.add('hidden'), 2000);
@@ -1333,6 +1357,14 @@
             const inputEl = document.getElementById('tickerInput'); const mode = document.getElementById('analysisModeSelect').value;
             let inputRaw = inputEl.value.trim(); let ticker = "", corpName = "";
 
+            // 새로운 종목 로드 시 계산기 입력/결과 초기화
+            const simPriceInput = document.getElementById('simPriceInput');
+            if (simPriceInput) {
+                simPriceInput.value = '';
+                document.getElementById('simPerResult').textContent = '-';
+                document.getElementById('simPbrResult').textContent = '-';
+            }
+
             if (inputEl.dataset.selectedCode && /^\d{6}$/.test(inputEl.dataset.selectedCode)) {
                 ticker = inputEl.dataset.selectedCode; corpName = CODE_TO_NAME[ticker] || inputRaw;
             } else if (ALL_COMPANIES[inputRaw]) { ticker = ALL_COMPANIES[inputRaw]; corpName = inputRaw;
@@ -1424,6 +1456,53 @@
             document.getElementById('statusBox').classList.add('hidden');
             
             await runGeminiAnalysisOnly(mode);
+        }
+
+        // ==============================================================
+        // 🌟 신규 추가된 목표주가 밸류에이션(PER/PBR) 계산 로직
+        // ==============================================================
+        function calculateValuation() {
+            const simPriceInput = document.getElementById('simPriceInput');
+            const simPerResult = document.getElementById('simPerResult');
+            const simPbrResult = document.getElementById('simPbrResult');
+
+            if (!simPriceInput || !simPerResult || !simPbrResult) return;
+            
+            const simPrice = parseFloat(simPriceInput.value);
+
+            if (!simPrice || isNaN(simPrice) || !lastFetchedData) {
+                simPerResult.textContent = '-';
+                simPbrResult.textContent = '-';
+                return;
+            }
+
+            const currentPriceStr = String(lastFetchedData.price).replace(/,/g, '').replace(/원/g, '');
+            const currentPrice = parseFloat(currentPriceStr);
+            const currentPer = parseFloat(lastFetchedData.per);
+            const currentPbr = parseFloat(lastFetchedData.pbr);
+
+            if (!isNaN(currentPrice) && currentPrice > 0) {
+                // EPS 역산 후 새로운 PER 계산
+                if (!isNaN(currentPer) && currentPer > 0) {
+                    const eps = currentPrice / currentPer;
+                    const newPer = simPrice / eps;
+                    simPerResult.textContent = newPer.toFixed(2) + '배';
+                } else {
+                    simPerResult.textContent = 'N/A';
+                }
+
+                // BPS 역산 후 새로운 PBR 계산
+                if (!isNaN(currentPbr) && currentPbr > 0) {
+                    const bps = currentPrice / currentPbr;
+                    const newPbr = simPrice / bps;
+                    simPbrResult.textContent = newPbr.toFixed(2) + '배';
+                } else {
+                    simPbrResult.textContent = 'N/A';
+                }
+            } else {
+                simPerResult.textContent = '-';
+                simPbrResult.textContent = '-';
+            }
         }
 
         function renderChart(labels, dataArr) {
@@ -2058,15 +2137,12 @@ PRED_D5: [예상종가]원
             let mentionedCompaniesContext = "";
             if (typeof ALL_COMPANIES !== 'undefined' && globalQuantData) {
                 for (const [compName, compCode] of Object.entries(ALL_COMPANIES)) {
-                    // 질문 텍스트에 기업명이나 코드가 포함되어 있는지 확인
                     if (text.includes(compName) || text.includes(compCode)) {
-                        // 현재 화면에 띄워진 종목은 중복 방지를 위해 제외
                         if (lastFetchedData && lastFetchedData.ticker === compCode) continue;
                         
                         const qData = globalQuantData[compCode];
                         if (qData) {
                             const tech = qData.tech || {};
-                            // 실시간 가격 데이터가 있다면 덮어쓰기
                             let cPrice = qData.price;
                             if (livePortfolioPrices[compCode]) cPrice = livePortfolioPrices[compCode];
                             
@@ -2083,7 +2159,6 @@ PRED_D5: [예상종가]원
                 dynamicContext += `\n==============================\n${mentionedCompaniesContext}`;
             }
 
-            // 4. 대화 히스토리 초기화 (처음 대화일 경우)
             if (chatHistory.length === 0) {
                 chatHistory.push({
                     role: "user",
