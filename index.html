@@ -180,6 +180,47 @@
         </div>
 
         <!-- ============================================================== -->
+        <!-- ⭐ 1.5. 관심종목 (Watchlist) 모니터링 영역 -->
+        <!-- ============================================================== -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-3">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span>⭐</span> 나의 관심종목 (Watchlist)
+                        <button id="watchRefreshBtn" onclick="refreshWatchlistPrices()" class="ml-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-bold hover:bg-emerald-100 transition shadow-sm" title="관심종목 실시간 주가 업데이트">실시간가 🔄</button>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">눈여겨보는 종목을 등록하고 실시간 주가와 증권사 목표가를 모니터링하세요.</p>
+                </div>
+            </div>
+
+            <div class="bg-amber-50/50 p-3 rounded-lg border border-amber-100 flex gap-2">
+                <div class="relative flex-1">
+                    <input type="text" id="watchSearchInput" oninput="showWatchSuggestions()" placeholder="관심종목 검색 (예: 삼성전자)" class="w-full border border-amber-200 p-2 rounded text-sm font-medium focus:outline-none focus:border-amber-400" autocomplete="off">
+                    <div id="watchSuggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-48 overflow-y-auto text-left"></div>
+                </div>
+                <button onclick="addWatchlistItem()" class="bg-amber-500 text-white font-bold py-2 px-4 rounded text-sm hover:bg-amber-600 transition shadow-sm shrink-0">+ 관심종목 등록</button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 text-xs">
+                            <th class="p-2 border text-left">종목명 (코드)</th>
+                            <th class="p-2 border text-right">현재가</th>
+                            <th class="p-2 border text-right">증권사 목표가</th>
+                            <th class="p-2 border text-center">관리 / 분석</th>
+                        </tr>
+                    </thead>
+                    <tbody id="watchlistTableBody">
+                        <tr>
+                            <td colspan="4" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================== -->
         <!-- 🔍 2. 개별 종목 정밀 퀀트 분석기 -->
         <!-- ============================================================== -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
@@ -534,13 +575,11 @@
                             </div>
                         </div>
                         <div class="flex gap-3 w-full md:w-auto">
-                            <!-- 💡 너비를 넓히고 뱃지 영역(simPerEval) 추가 -->
                             <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[180px]">
                                 <span class="text-[11px] font-bold text-indigo-600">해당 주가 도달 시 예상 PER</span>
                                 <span id="simPerResult" class="font-extrabold text-lg text-slate-800 mb-1">-</span>
                                 <div id="simPerEval" class="text-[10px] font-bold mt-0.5"></div>
                             </div>
-                            <!-- 💡 너비를 넓히고 뱃지 영역(simPbrEval) 추가 -->
                             <div class="bg-white px-4 py-2 rounded-lg border border-indigo-200 flex flex-col justify-center items-center flex-1 md:min-w-[180px]">
                                 <span class="text-[11px] font-bold text-indigo-600">해당 주가 도달 시 예상 PBR</span>
                                 <span id="simPbrResult" class="font-extrabold text-lg text-slate-800 mb-1">-</span>
@@ -642,6 +681,10 @@
         let selectedPortCode = '';
         let livePortfolioPrices = {};
         let portfolioPieChart = null; 
+
+        // 관심종목 변수 추가
+        let userWatchlist = [];
+        let selectedWatchCode = '';
 
         // config.json 파일에서 불러올 구글 Apps Script URL 변수
         let GAS_URL = "";
@@ -752,10 +795,12 @@
         async function loadFromGoogleCloud() {
             if (!GAS_URL) {
                 userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
+                userWatchlist = JSON.parse(localStorage.getItem('userWatchlistList') || '[]');
                 const savedStandby = localStorage.getItem('portfolioStandbyCash');
                 if(savedStandby) document.getElementById('portfolioStandbyCash').value = savedStandby;
                 document.getElementById('cloudSyncStatus').innerHTML = "<span class='text-red-600 font-bold'>연동 안됨(로컬모드)</span>";
                 renderPortfolioTable();
+                renderWatchlistTable();
                 return;
             }
             try {
@@ -766,18 +811,28 @@
                     userPortfolio = data.portfolio;
                     renderPortfolioTable();
                 }
+                if (data && data.watchlist) {
+                    userWatchlist = data.watchlist;
+                    renderWatchlistTable();
+                }
                 if (data && data.standbyCash !== undefined) {
                     document.getElementById('portfolioStandbyCash').value = data.standbyCash;
                     updatePortfolioSummary();
                 }
             } catch (e) {
                 console.error("구글 시트 로드 실패", e);
+                userWatchlist = JSON.parse(localStorage.getItem('userWatchlistList') || '[]');
+                renderWatchlistTable();
             }
         }
 
         function saveToGoogleCloud() {
             if (!GAS_URL) return;
-            const data = { portfolio: userPortfolio, standbyCash: document.getElementById('portfolioStandbyCash').value || 0 };
+            const data = { 
+                portfolio: userPortfolio, 
+                standbyCash: document.getElementById('portfolioStandbyCash').value || 0,
+                watchlist: userWatchlist 
+            };
             try { fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }); } 
             catch(e) {}
         }
@@ -811,6 +866,7 @@
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#tickerInput') && !e.target.closest('#suggestionBox')) document.getElementById('suggestionBox').classList.add('hidden');
                 if (!e.target.closest('#portSearchInput') && !e.target.closest('#portSuggestionBox')) document.getElementById('portSuggestionBox').classList.add('hidden');
+                if (!e.target.closest('#watchSearchInput') && !e.target.closest('#watchSuggestionBox')) document.getElementById('watchSuggestionBox').classList.add('hidden');
             });
 
             try {
@@ -844,8 +900,9 @@
 
                     updateTopDashboardUI(lastFetchedData);
                     renderPortfolioTable();
+                    renderWatchlistTable();
                     calculateInvestment();
-                    calculateValuation(); // 주가 갱신 시 계산기 값 재산출
+                    calculateValuation(); 
 
                     statusBox.innerHTML = `<p class="text-emerald-600 font-semibold text-sm">✅ 실시간 데이터 갱신 완료!</p>`;
                     setTimeout(() => statusBox.classList.add('hidden'), 2000);
@@ -1112,6 +1169,136 @@
             }
         }
 
+        /* ============================================================== */
+        /* ⭐ 관심종목 (Watchlist) 관련 함수 */
+        /* ============================================================== */
+        function showWatchSuggestions() {
+            const inputEl = document.getElementById('watchSearchInput');
+            selectedWatchCode = '';
+            const input = inputEl.value.trim().toLowerCase();
+            const box = document.getElementById('watchSuggestionBox');
+            if (!input) { box.classList.add('hidden'); return; }
+
+            const matches = [];
+            for (const [name, code] of Object.entries(ALL_COMPANIES)) {
+                if (name.toLowerCase().includes(input) || code.includes(input)) matches.push({ name, code });
+            }
+
+            if (matches.length > 0) {
+                box.innerHTML = matches.map(m => `<div onclick="selectWatchCompany('${m.name}', '${m.code}')" class="p-2 hover:bg-amber-50 cursor-pointer flex justify-between items-center border-b text-xs"><span class="font-bold text-slate-800">${m.name}</span><span class="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">${m.code}</span></div>`).join('');
+                box.classList.remove('hidden');
+            } else { box.classList.add('hidden'); }
+        }
+
+        function selectWatchCompany(name, code) {
+            document.getElementById('watchSearchInput').value = `${name} (${code})`;
+            selectedWatchCode = code;
+            document.getElementById('watchSuggestionBox').classList.add('hidden');
+        }
+
+        function addWatchlistItem() {
+            const inputVal = document.getElementById('watchSearchInput').value.trim();
+            let ticker = selectedWatchCode; let corpName = "";
+
+            if (!ticker) {
+                const match = inputVal.match(/\d{6}/);
+                if (match) ticker = match[0];
+                else if (ALL_COMPANIES[inputVal]) ticker = ALL_COMPANIES[inputVal];
+            }
+            corpName = CODE_TO_NAME[ticker] || inputVal;
+
+            if (!ticker || !/^\d{6}$/.test(ticker)) { alert('목록에서 유효한 종목명을 선택해주세요.'); return; }
+
+            const existingIndex = userWatchlist.findIndex(p => p.ticker === ticker);
+            if (existingIndex >= 0) {
+                alert(`[${corpName}] 종목은 이미 관심종목에 등록되어 있습니다.`);
+                return;
+            } 
+            
+            userWatchlist.push({ ticker, corpName });
+            saveWatchlistToLocal(); 
+            renderWatchlistTable();
+            document.getElementById('watchSearchInput').value = '';
+            selectedWatchCode = '';
+        }
+
+        function removeWatchlistItem(ticker) {
+            userWatchlist = userWatchlist.filter(p => p.ticker !== ticker);
+            saveWatchlistToLocal(); 
+            renderWatchlistTable();
+        }
+
+        function saveWatchlistToLocal() {
+            localStorage.setItem('userWatchlistList', JSON.stringify(userWatchlist)); 
+            saveToGoogleCloud();
+        }
+
+        function renderWatchlistTable() {
+            const tbody = document.getElementById('watchlistTableBody');
+            if (userWatchlist.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            userWatchlist.forEach(item => {
+                let currentPrice = '데이터연동중';
+                if (livePortfolioPrices[item.ticker]) currentPrice = livePortfolioPrices[item.ticker] + '원';
+                else if (globalQuantData && globalQuantData[item.ticker]) currentPrice = String(globalQuantData[item.ticker].price) + '원';
+
+                let targetPrice = '-';
+                if (globalQuantData && globalQuantData[item.ticker]) {
+                    targetPrice = globalQuantData[item.ticker].targetPrice + '원';
+                }
+
+                html += `<tr class="hover:bg-amber-50/30 transition border-b">
+                    <td class="p-2 text-left font-bold text-slate-800">
+                        <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-amber-600 text-left underline underline-offset-2">${item.corpName}</button>
+                        <span class="text-[11px] font-mono text-slate-400 block">${item.ticker}</span>
+                    </td>
+                    <td class="p-2 text-right font-bold text-slate-800">${currentPrice}</td>
+                    <td class="p-2 text-right font-semibold text-purple-600">${targetPrice}</td>
+                    <td class="p-2 text-center whitespace-nowrap">
+                        <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white px-2 py-1 rounded transition mr-1 font-bold">AI분석</button>
+                        <button onclick="removeWatchlistItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function refreshWatchlistPrices() {
+            if (userWatchlist.length === 0) { alert("등록된 관심종목이 없습니다."); return; }
+            const btn = document.getElementById('watchRefreshBtn');
+            btn.textContent = "갱신 중..."; btn.disabled = true;
+
+            const allCodes = userWatchlist.map(p => p.ticker);
+            const chunks = [];
+            for (let i = 0; i < allCodes.length; i += 40) {
+                chunks.push(allCodes.slice(i, i + 40));
+            }
+
+            try {
+                await Promise.all(chunks.map(async (chunk) => {
+                    const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${chunk.join(',')}`);
+                    if (areas) {
+                        for (const area of areas) {
+                            for (const st of (area.datas || [])) {
+                                if (st.cd && st.nv) {
+                                    livePortfolioPrices[st.cd] = Number(st.nv).toLocaleString('ko-KR');
+                                }
+                            }
+                        }
+                    }
+                }));
+            } catch(e) { console.error("관심종목 갱신 중 오류 발생", e); }
+
+            renderWatchlistTable();
+            btn.textContent = "실시간가 🔄"; btn.disabled = false;
+        }
+
+        /* ============================================================== */
+
         function generateQuickButtons(targetId, companyData, btnClass) {
             const container = document.getElementById(targetId); let html = '';
             for (const sector in companyData) {
@@ -1200,7 +1387,6 @@
             document.getElementById('fnPeg').textContent = data.peg && data.peg !== "N/A" ? data.peg : "N/A";
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
 
-            // 💡 PER 평가 (섹터 평균 추정 로직)
             let perEvalText = "", perEvalColor = "";
             if (data.per && data.per !== "-" && data.per !== "N/A") {
                 const perVal = parseFloat(data.per);
@@ -1212,7 +1398,6 @@
             }
             document.getElementById('fnPerEval').innerHTML = `<span class="px-2 py-0.5 rounded border ${perEvalColor}">${perEvalText}</span>`;
 
-            // 💡 PBR 평가 (섹터 평균 추정 로직)
             let pbrEvalText = "", pbrEvalColor = "";
             if (data.pbr && data.pbr !== "-" && data.pbr !== "N/A") {
                 const pbrVal = parseFloat(data.pbr);
@@ -1394,7 +1579,6 @@
             const inputEl = document.getElementById('tickerInput'); const mode = document.getElementById('analysisModeSelect').value;
             let inputRaw = inputEl.value.trim(); let ticker = "", corpName = "";
 
-            // 새로운 종목 로드 시 계산기 입력/결과 초기화
             const simPriceInput = document.getElementById('simPriceInput');
             const simEpsInput = document.getElementById('simEpsInput');
             if (simPriceInput) simPriceInput.value = '';
@@ -1451,7 +1635,6 @@
 
             lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.fwdPer || data.pbr, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc };
 
-            // 초기 EPS 세팅
             if (simEpsInput && lastFetchedData) {
                 let currentPriceNum = parseFloat(String(lastFetchedData.price).replace(/,/g, '').replace(/원/g, ''));
                 let currentPerNum = parseFloat(lastFetchedData.per);
@@ -1504,9 +1687,6 @@
             await runGeminiAnalysisOnly(mode);
         }
 
-        // ==============================================================
-        // 🌟 신규 추가된 목표주가 밸류에이션(PER/PBR) 계산 로직
-        // ==============================================================
         function calculateValuation() {
             const simPriceInput = document.getElementById('simPriceInput');
             const simEpsInput = document.getElementById('simEpsInput');
@@ -1534,11 +1714,9 @@
             const currentPbr = parseFloat(lastFetchedData.pbr);
 
             if (!isNaN(currentPrice) && currentPrice > 0) {
-                // EPS 결정 (입력된 가상 EPS 우선, 없으면 현재 PER 기반 역산)
                 let baseEps = (!isNaN(currentPer) && currentPer > 0) ? (currentPrice / currentPer) : NaN;
                 let finalEps = (!isNaN(simEps) && simEps > 0) ? simEps : baseEps;
 
-                // 새로운 PER 계산 및 평가
                 if (!isNaN(finalEps) && finalEps > 0) {
                     const newPer = simPrice / finalEps;
                     simPerResult.textContent = newPer.toFixed(2) + '배';
@@ -1553,7 +1731,6 @@
                     if (simPerEval) simPerEval.innerHTML = `<span class="px-2 py-0.5 rounded border text-slate-500 bg-slate-100 border-slate-200">데이터 부족</span>`;
                 }
 
-                // BPS 역산 후 새로운 PBR 계산 및 평가
                 if (!isNaN(currentPbr) && currentPbr > 0) {
                     const bps = currentPrice / currentPbr;
                     const newPbr = simPrice / bps;
@@ -1991,9 +2168,6 @@ PRED_D5: [예상종가]원
             } else { document.getElementById('simLossRate').textContent = "-"; document.getElementById('simLossMoney').textContent = "타점 데이터 부족"; }
         }
 
-        /* ============================================================== */
-        /* 🤖 챗봇 관련 로직 시작 */
-        /* ============================================================== */
         let chatHistory = [];
         let isChatExpanded = false;
 
@@ -2149,7 +2323,6 @@ PRED_D5: [예상종가]원
 
             let dynamicContext = "";
             
-            // 1. 내 포트폴리오 데이터 주입
             if (userPortfolio && userPortfolio.length > 0) {
                 dynamicContext += `[사용자 보유 포트폴리오 (내 주식) 현황]\n`;
                 let totalInvest = 0, totalEval = 0;
@@ -2177,7 +2350,6 @@ PRED_D5: [예상종가]원
                 dynamicContext += `=> 총 매수원금: ${totalInvest.toLocaleString()}원, 총 평가금액: ${Math.floor(totalEval).toLocaleString()}원, 예수금(대기자금): ${standbyCash.toLocaleString()}원\n\n`;
             }
 
-            // 2. 현재 화면에 띄워진 타겟 종목 데이터 주입
             if (lastFetchedData && lastFetchedData.corpName) {
                 dynamicContext += `[현재 화면에서 분석 중인 타겟 종목]: ${lastFetchedData.corpName} (종목코드: ${lastFetchedData.ticker})\n`;
                 dynamicContext += `- 현재가: ${lastFetchedData.price}원 (등락률: ${lastFetchedData.changeRate})\n`;
@@ -2204,19 +2376,15 @@ PRED_D5: [예상종가]원
                 dynamicContext += `[현재 화면에서 분석 중인 종목]: 없음\n\n`;
             }
 
-            // 💡 3. [새로 추가된 로직] 질문에 언급된 다른 기업들의 데이터 자동 검색 및 주입
             let mentionedCompaniesContext = "";
             if (typeof ALL_COMPANIES !== 'undefined' && globalQuantData) {
                 for (const [compName, compCode] of Object.entries(ALL_COMPANIES)) {
-                    // 질문 텍스트에 기업명이나 코드가 포함되어 있는지 확인
                     if (text.includes(compName) || text.includes(compCode)) {
-                        // 현재 화면에 띄워진 종목은 중복 방지를 위해 제외
                         if (lastFetchedData && lastFetchedData.ticker === compCode) continue;
                         
                         const qData = globalQuantData[compCode];
                         if (qData) {
                             const tech = qData.tech || {};
-                            // 실시간 가격 데이터가 있다면 덮어쓰기
                             let cPrice = qData.price;
                             if (livePortfolioPrices[compCode]) cPrice = livePortfolioPrices[compCode];
                             
@@ -2233,7 +2401,6 @@ PRED_D5: [예상종가]원
                 dynamicContext += `\n==============================\n${mentionedCompaniesContext}`;
             }
 
-            // 4. 대화 히스토리 초기화 (처음 대화일 경우)
             if (chatHistory.length === 0) {
                 chatHistory.push({
                     role: "user",
