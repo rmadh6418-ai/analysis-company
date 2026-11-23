@@ -207,13 +207,15 @@
                         <tr class="bg-slate-100 text-slate-700 text-xs">
                             <th class="p-2 border text-left">종목명 (코드)</th>
                             <th class="p-2 border text-right">현재가</th>
-                            <th class="p-2 border text-right">증권사 목표가</th>
+                            <th class="p-2 border text-right">PER</th>
+                            <th class="p-2 border text-right">PBR</th>
+                            <th class="p-2 border text-right">AI목표주가</th>
                             <th class="p-2 border text-center">관리 / 분석</th>
                         </tr>
                     </thead>
                     <tbody id="watchlistTableBody">
                         <tr>
-                            <td colspan="4" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td>
+                            <td colspan="6" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1236,7 +1238,7 @@
         function renderWatchlistTable() {
             const tbody = document.getElementById('watchlistTableBody');
             if (userWatchlist.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
                 return;
             }
 
@@ -1246,10 +1248,14 @@
                 if (livePortfolioPrices[item.ticker]) currentPrice = livePortfolioPrices[item.ticker] + '원';
                 else if (globalQuantData && globalQuantData[item.ticker]) currentPrice = String(globalQuantData[item.ticker].price) + '원';
 
-                let targetPrice = '-';
+                let per = '-';
+                let pbr = '-';
                 if (globalQuantData && globalQuantData[item.ticker]) {
-                    targetPrice = globalQuantData[item.ticker].targetPrice + '원';
+                    per = globalQuantData[item.ticker].per ? globalQuantData[item.ticker].per + '배' : '-';
+                    pbr = globalQuantData[item.ticker].pbr ? globalQuantData[item.ticker].pbr + '배' : '-';
                 }
+                
+                let aiTargetPrice = item.aiTargetPrice ? item.aiTargetPrice : 'AI분석전';
 
                 html += `<tr class="hover:bg-amber-50/30 transition border-b">
                     <td class="p-2 text-left font-bold text-slate-800">
@@ -1257,7 +1263,9 @@
                         <span class="text-[11px] font-mono text-slate-400 block">${item.ticker}</span>
                     </td>
                     <td class="p-2 text-right font-bold text-slate-800">${currentPrice}</td>
-                    <td class="p-2 text-right font-semibold text-purple-600">${targetPrice}</td>
+                    <td class="p-2 text-right font-medium text-slate-600">${per}</td>
+                    <td class="p-2 text-right font-medium text-slate-600">${pbr}</td>
+                    <td class="p-2 text-right font-bold text-purple-600">${aiTargetPrice}</td>
                     <td class="p-2 text-center whitespace-nowrap">
                         <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white px-2 py-1 rounded transition mr-1 font-bold">AI분석</button>
                         <button onclick="removeWatchlistItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button>
@@ -2021,6 +2029,7 @@ PRED_D5: [예상종가]원
                 if (result.val) {
                     document.getElementById('aiTargetPrice').textContent = result.val; document.getElementById('aiTargetPrice').className = "text-2xl font-extrabold text-purple-700";
                     parsedAiTargetPrice = parseInt(result.val.replace(/,/g, '').replace(/원/g, '')) || 0;
+                    
                     const currentP = parseInt(String(ld.price).replace(/,/g, '').replace(/원/g, '')); const targetUpsideEl = document.getElementById('targetUpside');
                     if (!isNaN(currentP) && currentP > 0 && parsedAiTargetPrice > 0) {
                         const diffRate = ((parsedAiTargetPrice - currentP) / currentP) * 100;
@@ -2028,6 +2037,14 @@ PRED_D5: [예상종가]원
                         else { targetUpsideEl.textContent = `현재가 초과: ${diffRate.toFixed(1)}%`; targetUpsideEl.className = "text-xs font-bold mt-1 text-blue-600"; }
                     }
                     aiText = result.remainingText;
+
+                    // 관심종목에 해당 종목이 있을 경우 AI 목표주가를 연동 및 저장
+                    const watchIndex = userWatchlist.findIndex(w => w.ticker === ld.ticker);
+                    if (watchIndex !== -1) {
+                        userWatchlist[watchIndex].aiTargetPrice = result.val;
+                        saveWatchlistToLocal();
+                        renderWatchlistTable();
+                    }
                 }
 
                 const tradeFields = ['BUY_DOWN_1', 'BUY_DOWN_2', 'BUY_DOWN_3', 'BUY_UP_1', 'BUY_UP_2', 'BUY_UP_3', 'SELL_PROFIT_1', 'SELL_PROFIT_2', 'SELL_PROFIT_3', 'SELL_LOSS_1', 'SELL_LOSS_2', 'SELL_LOSS_3'];
