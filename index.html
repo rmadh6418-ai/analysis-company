@@ -192,10 +192,10 @@
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <span>⭐</span> 나의 관심종목 (Watchlist)
-                        <button id="watchRefreshBtn" onclick="refreshWatchlistPrices()" class="ml-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-bold hover:bg-emerald-100 transition shadow-sm" title="관심종목 실시간 주가 업데이트">실시간가 🔄</button>
+                        <button id="watchRefreshBtn" onclick="refreshWatchlistPrices()" class="ml-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-bold hover:bg-emerald-100 transition shadow-sm" title="관심종목 실시간 주가 및 AI목표주가 업데이트">실시간가 🔄</button>
                         <span id="autoRefreshStatusWatch" class="hidden text-[10px] text-emerald-600 font-bold ml-1"><span class="auto-refresh-indicator"></span>자동갱신ON</span>
                     </h2>
-                    <p class="text-xs text-slate-500 mt-1">눈여겨보는 종목을 등록하고 실시간 주가와 증권사 목표가를 모니터링하세요.</p>
+                    <p class="text-xs text-slate-500 mt-1">눈여겨보는 종목을 등록하면 AI 목표주가가 자동 갱신되며, <b>AI분석</b> 버튼을 누르면 상세 리포트를 확인할 수 있습니다.</p>
                 </div>
             </div>
 
@@ -693,6 +693,7 @@
         // 관심종목 변수
         let userWatchlist = [];
         let selectedWatchCode = '';
+        let isUpdatingWatchlistAi = false;
 
         // config.json 파일에서 불러올 구글 Apps Script URL 변수
         let GAS_URL = "";
@@ -941,6 +942,7 @@
             
             renderWatchlistTable();
             startAutoRefreshTimer(); // 자동 갱신 타이머 시작
+            autoUpdateWatchlistAiTargets(false); // 관심종목 AI목표주가 자동 산출
         };
 
         // =========================================================================
@@ -1343,6 +1345,9 @@
             renderWatchlistTable();
             document.getElementById('watchSearchInput').value = '';
             selectedWatchCode = '';
+
+            // 등록 즉시 백그라운드에서 해당 종목 AI 목표주가 산출
+            autoUpdateWatchlistAiTargets(false);
         }
 
         function removeWatchlistItem(ticker) {
@@ -1362,6 +1367,8 @@
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
                 return;
             }
+
+            const hasApiKey = Boolean(localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput')?.value.trim());
 
             let html = '';
             userWatchlist.forEach(item => {
@@ -1406,18 +1413,27 @@
                 }
                 
                 // 3. AI 목표주가 및 상승여력 계산
-                let aiTargetPrice = item.aiTargetPrice ? item.aiTargetPrice : 'AI분석전';
+                let aiTargetPriceHtml = '';
                 let upsideHtml = '';
-                if (item.aiTargetPrice && currentPriceNum > 0) {
-                    const targetNum = parseInt(item.aiTargetPrice.replace(/,/g, '').replace(/원/g, ''));
-                    if (!isNaN(targetNum) && targetNum > 0) {
-                        const diffRate = ((targetNum - currentPriceNum) / currentPriceNum) * 100;
-                        if (diffRate > 0) {
-                            upsideHtml = `<div class="text-[10px] text-red-500 font-bold mt-0.5">상승여력: +${diffRate.toFixed(1)}%</div>`;
-                        } else {
-                            upsideHtml = `<div class="text-[10px] text-blue-500 font-bold mt-0.5">초과상태: ${diffRate.toFixed(1)}%</div>`;
+                if (item.aiTargetPrice && item.aiTargetPrice !== 'AI분석전' && item.aiTargetPrice !== '산출실패') {
+                    aiTargetPriceHtml = `<div class="font-bold text-purple-600">${item.aiTargetPrice}</div>`;
+                    if (currentPriceNum > 0) {
+                        const targetNum = parseInt(item.aiTargetPrice.replace(/,/g, '').replace(/원/g, ''));
+                        if (!isNaN(targetNum) && targetNum > 0) {
+                            const diffRate = ((targetNum - currentPriceNum) / currentPriceNum) * 100;
+                            if (diffRate > 0) {
+                                upsideHtml = `<div class="text-[10px] text-red-500 font-bold mt-0.5">상승여력: +${diffRate.toFixed(1)}%</div>`;
+                            } else {
+                                upsideHtml = `<div class="text-[10px] text-blue-500 font-bold mt-0.5">초과상태: ${diffRate.toFixed(1)}%</div>`;
+                            }
                         }
                     }
+                } else if (item.aiTargetPrice === '산출실패') {
+                    aiTargetPriceHtml = `<div class="text-[11px] text-rose-500 font-semibold">산출실패</div>`;
+                } else if (hasApiKey) {
+                    aiTargetPriceHtml = `<div class="text-[11px] text-purple-500 font-semibold animate-pulse">자동 산출중...</div>`;
+                } else {
+                    aiTargetPriceHtml = `<div class="text-[11px] text-slate-400">API키 필요</div>`;
                 }
 
                 html += `<tr class="hover:bg-amber-50/30 transition border-b">
@@ -1430,7 +1446,7 @@
                         <div class="text-[11px] ${changeColor}">${changeText}</div>
                     </td>
                     <td class="p-2 text-right align-middle">
-                        <div class="font-bold text-purple-600">${aiTargetPrice}</div>
+                        ${aiTargetPriceHtml}
                         ${upsideHtml}
                     </td>
                     <td class="p-2 text-center align-middle">${perHtml}</td>
@@ -1491,6 +1507,98 @@
             if(!isSilent) {
                 btn.textContent = "실시간가 🔄"; 
                 btn.disabled = false;
+                // 수동으로 실시간가 갱신 시 AI 목표주가도 최신 주가 기준으로 함께 재갱신
+                autoUpdateWatchlistAiTargets(true);
+            }
+        }
+
+        // ⭐ 관심종목 AI 목표주가 백그라운드 자동 산출 함수
+        async function autoUpdateWatchlistAiTargets(forceUpdate = false) {
+            if (isUpdatingWatchlistAi) return;
+            const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey || userWatchlist.length === 0) {
+                renderWatchlistTable();
+                return;
+            }
+
+            isUpdatingWatchlistAi = true;
+            let hasAnyChange = false;
+
+            try {
+                for (let item of userWatchlist) {
+                    if (forceUpdate || !item.aiTargetPrice || item.aiTargetPrice === 'AI분석전' || item.aiTargetPrice === '산출실패') {
+                        const qData = globalQuantData && globalQuantData[item.ticker] ? globalQuantData[item.ticker] : null;
+                        let price = "정보없음", per = "-", pbr = "-", targetP = "-", peg = "-";
+                        
+                        if (qData) { 
+                            price = qData.price; 
+                            per = qData.per; 
+                            pbr = qData.pbr; 
+                            targetP = qData.targetPrice; 
+                            peg = qData.peg || "-";
+                        }
+                        if (livePortfolioPrices[item.ticker]) {
+                            price = livePortfolioPrices[item.ticker];
+                        }
+                        
+                        const prompt = `당신은 주식 퀀트 애널리스트입니다. 아래 데이터를 바탕으로 [${item.corpName}(${item.ticker})]의 적정 AI 목표주가를 산출하세요.
+부연 설명이나 기호 없이 오직 원화 금액 숫자만 출력하세요 (예: 85000원).
+- 현재가: ${price}원
+- 증권사 평균 목표가: ${targetP}원
+- PER: ${per}배
+- PBR: ${pbr}배
+- PEG: ${peg}`;
+
+                        try {
+                            let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } })
+                            });
+                            
+                            if (!response.ok) {
+                                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } })
+                                });
+                            }
+                            
+                            const data = await response.json();
+                            let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                            
+                            if (aiText) {
+                                let match = aiText.match(/[\d,]+/);
+                                if (match) {
+                                    const numVal = parseInt(match[0].replace(/,/g, ''), 10);
+                                    if (!isNaN(numVal) && numVal > 0) {
+                                        item.aiTargetPrice = numVal.toLocaleString('ko-KR') + '원';
+                                        hasAnyChange = true;
+                                        localStorage.setItem('userWatchlistList', JSON.stringify(userWatchlist));
+                                        renderWatchlistTable();
+                                    }
+                                }
+                            } else if (!item.aiTargetPrice) {
+                                item.aiTargetPrice = '산출실패';
+                                renderWatchlistTable();
+                            }
+                        } catch (e) { 
+                            console.error('Watchlist AI Target Fetch Error:', e); 
+                            if (!item.aiTargetPrice) {
+                                item.aiTargetPrice = '산출실패';
+                                renderWatchlistTable();
+                            }
+                        }
+                        
+                        // 연속 호출 속도 제한 방지
+                        await new Promise(r => setTimeout(r, 800));
+                    }
+                }
+            } finally {
+                isUpdatingWatchlistAi = false;
+                if (hasAnyChange) {
+                    saveToGoogleCloud();
+                }
             }
         }
 
@@ -1548,7 +1656,9 @@
         function saveApiKey() {
             const key = document.getElementById('apiKeyInput').value.trim();
             if(!key) { alert('API Key를 입력해주세요.'); return; }
-            localStorage.setItem('geminiApiKey', key); alert('Gemini API Key가 안전하게 저장되었습니다.');
+            localStorage.setItem('geminiApiKey', key); 
+            alert('Gemini API Key가 안전하게 저장되었습니다.');
+            autoUpdateWatchlistAiTargets(false);
         }
 
         function toggleInputs() {
@@ -1745,7 +1855,7 @@
                     });
                     
                     if (html === '') {
-                        newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">관련된 최신 뉴스를 찾을 수 찾을 수 없습니다.</li>';
+                        newsListEl.innerHTML = '<li class="text-sm font-semibold text-slate-500 py-2">관련된 최신 뉴스를 찾을 수 없습니다.</li>';
                     } else {
                         newsListEl.innerHTML = html;
                     }
@@ -2069,7 +2179,7 @@
 
 🚨 [할루시네이션(정보 왜곡) 방지 절대 규칙]
 1. 제공된 [사용자 전체 포트폴리오 데이터]의 수치만 정확히 인용하세요. 절대 임의의 금액이나 종목을 지어내지 마세요.
-​2. 분석 근거가 부족하면 임의로 창작하지 말고 "데이터 부족으로 판단 불가"라고 명확히 명시하세요.
+2. 분석 근거가 부족하면 임의로 창작하지 말고 "데이터 부족으로 판단 불가"라고 명확히 명시하세요.
 
 [분석 기준일: ${currentDate}]
 
@@ -2146,7 +2256,7 @@ ${portfolioSummaryString}
 
 🚨 [할루시네이션(정보 왜곡) 방지 절대 규칙]
 1. 아래 제공된 [종목 기본 데이터] 및 [기술적 지표 데이터]의 수치와 당신(AI)이 가지고 있는 최신 정보를 정확하게 인용하세요.
-​2. 프롬프트에 제공되지 매 과거 주가 흐름, 존재하지 않는 뉴스, 실적 등을 임의로 절대 창작하거나 지어내지 마세요.
+2. 프롬프트에 제공되지 않은 과거 주가 흐름, 존재하지 않는 뉴스, 실적 등을 임의로 절대 창작하거나 지어내지 마세요.
 3. 데이터가 부족하여 분석이 불가능한 항목은 "데이터 부족으로 판단 불가"라고 명확히 기재하세요.
 
 [오늘 날짜: ${currentDate}]
@@ -2190,7 +2300,7 @@ PRED_D5: [예상종가]원
 
 위 내용 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
 1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가 등을 명시하여 반영)
-​2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
+2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
 3. 맞춤형 실전 매수 전략 및 근거: 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 매수 타점을 작성하세요. 없는 차트 데이터를 절대 지어내지 마세요.
 4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차 설정 근거를 기술적 지표 기반으로 구체적으로 제시하세요.
 5. 향후 5일 예상 주가: 제공된 수치만 기반으로 향후 5거래일(D+1~D+5)의 주가 흐름을 시뮬레이션하고 근거를 제시 하세요.
