@@ -795,6 +795,64 @@
             for (const [name, code] of Object.entries(KOSDAQ150_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; }
         }
 
+        // =========================================================================
+        // 🌟 섹터별 PER/PBR 기준값 유동적 판단을 위한 로직 추가 영역
+        // =========================================================================
+        const SECTOR_BASELINES = {
+            "반도체·IT (H/W)": { per: 15, pbr: 1.5 },
+            "반도체·장비 (IT H/W)": { per: 15, pbr: 1.5 },
+            "이차전지·소재": { per: 30, pbr: 3.0 },
+            "플랫폼·게임·IT(S/W)": { per: 25, pbr: 2.5 },
+            "게임·IT(S/W)": { per: 25, pbr: 2.5 },
+            "통신·미디어": { per: 10, pbr: 1.0 },
+            "자동차·부품·타이어": { per: 8, pbr: 0.8 },
+            "조선·기계·운송": { per: 12, pbr: 1.2 },
+            "방위산업·우주항공": { per: 20, pbr: 2.0 },
+            "원전·전력설비": { per: 15, pbr: 1.5 },
+            "제약·바이오": { per: 40, pbr: 4.0 },
+            "화학·정유·에너지": { per: 10, pbr: 1.0 },
+            "철강·비철금속·소재": { per: 8, pbr: 0.8 },
+            "금융·지주사": { per: 6, pbr: 0.6 },
+            "증권·보험": { per: 6, pbr: 0.6 },
+            "건설·건자재": { per: 7, pbr: 0.7 },
+            "화장품·의류·소비재": { per: 15, pbr: 1.5 },
+            "미용의료·화장품·소비재": { per: 15, pbr: 1.5 },
+            "음식료·유통·엔터": { per: 15, pbr: 1.5 },
+            "엔터·미디어·플랫폼": { per: 20, pbr: 2.0 },
+            "로봇·기계·부품": { per: 25, pbr: 2.5 },
+            "통신장비·기타": { per: 12, pbr: 1.2 },
+            "default": { per: 15, pbr: 1.5 }
+        };
+
+        function getSectorByTicker(ticker) {
+            for (const sector in KOSPI200_COMPANIES) {
+                if (Object.values(KOSPI200_COMPANIES[sector]).includes(ticker)) return sector;
+            }
+            for (const sector in KOSDAQ150_COMPANIES) {
+                if (Object.values(KOSDAQ150_COMPANIES[sector]).includes(ticker)) return sector;
+            }
+            return "default";
+        }
+
+        function evaluateValuation(ticker, type, value) {
+            const sector = getSectorByTicker(ticker);
+            const baseline = SECTOR_BASELINES[sector] || SECTOR_BASELINES["default"];
+            const baseValue = baseline[type];
+
+            // 기준값의 80% 미만이면 저평가, 기준값의 130% 이하이면 적정, 그 초과면 고평가로 설정
+            const lowThreshold = baseValue * 0.8;
+            const highThreshold = baseValue * 1.3;
+
+            if (value < lowThreshold) {
+                return { text: "섹터 대비 낮음 (저평가)", color: "text-emerald-600 bg-emerald-50 border-emerald-200" };
+            } else if (value <= highThreshold) {
+                return { text: "섹터 대비 적정", color: "text-blue-600 bg-blue-50 border-blue-200" };
+            } else {
+                return { text: "섹터 대비 높음 (고평가)", color: "text-rose-600 bg-rose-50 border-rose-200" };
+            }
+        }
+        // =========================================================================
+
         async function loadFromGoogleCloud() {
             if (!GAS_URL) {
                 userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
@@ -1284,23 +1342,21 @@
                     else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
                 }
 
-                // 2. PER, PBR 포맷팅 및 색상 적용
+                // 2. PER, PBR 포맷팅 및 색상 적용 (섹터별 유동적 기준 적용)
                 let perHtml = '<span class="text-slate-400">-</span>';
                 let pbrHtml = '<span class="text-slate-400">-</span>';
                 
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
                     if (!isNaN(perVal)) {
-                        let colorClass = perVal < 10 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                                         (perVal <= 20 ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-rose-50 text-rose-600 border-rose-200');
-                        perHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${colorClass}" title="${perVal < 10 ? '저평가' : (perVal <= 20 ? '적정' : '고평가')}">${perVal}배</span>`;
+                        const evalPer = evaluateValuation(item.ticker, 'per', perVal);
+                        perHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPer.color}" title="${evalPer.text}">${perVal}배</span>`;
                     }
 
                     const pbrVal = parseFloat(globalQuantData[item.ticker].pbr);
                     if (!isNaN(pbrVal)) {
-                        let colorClass = pbrVal < 1.0 ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                                         (pbrVal <= 2.0 ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-rose-50 text-rose-600 border-rose-200');
-                        pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${colorClass}" title="${pbrVal < 1.0 ? '저평가' : (pbrVal <= 2.0 ? '적정' : '고평가')}">${pbrVal}배</span>`;
+                        const evalPbr = evaluateValuation(item.ticker, 'pbr', pbrVal);
+                        pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPbr.color}" title="${evalPbr.text}">${pbrVal}배</span>`;
                     }
                 }
                 
@@ -1472,23 +1528,25 @@
             document.getElementById('fnPeg').textContent = data.peg && data.peg !== "N/A" ? data.peg : "N/A";
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
 
+            // 섹터별 유동적 PER 평가 적용
             let perEvalText = "", perEvalColor = "";
             if (data.per && data.per !== "-" && data.per !== "N/A") {
                 const perVal = parseFloat(data.per);
-                if (perVal < 10) { perEvalText = "섹터 대비 낮음 (저평가)"; perEvalColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; }
-                else if (perVal <= 20) { perEvalText = "섹터 대비 적정"; perEvalColor = "text-blue-600 bg-blue-50 border-blue-200"; }
-                else { perEvalText = "섹터 대비 높음 (고평가)"; perEvalColor = "text-rose-600 bg-rose-50 border-rose-200"; }
+                const evalPer = evaluateValuation(lastFetchedData.ticker, 'per', perVal);
+                perEvalText = evalPer.text;
+                perEvalColor = evalPer.color;
             } else {
                 perEvalText = "데이터 부족"; perEvalColor = "text-slate-500 bg-slate-100 border-slate-200";
             }
             document.getElementById('fnPerEval').innerHTML = `<span class="px-2 py-0.5 rounded border ${perEvalColor}">${perEvalText}</span>`;
 
+            // 섹터별 유동적 PBR 평가 적용
             let pbrEvalText = "", pbrEvalColor = "";
             if (data.pbr && data.pbr !== "-" && data.pbr !== "N/A") {
                 const pbrVal = parseFloat(data.pbr);
-                if (pbrVal < 1.0) { pbrEvalText = "섹터 대비 낮음 (저평가)"; pbrEvalColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; }
-                else if (pbrVal <= 2.0) { pbrEvalText = "섹터 대비 적정"; pbrEvalColor = "text-blue-600 bg-blue-50 border-blue-200"; }
-                else { pbrEvalText = "섹터 대비 높음 (고평가)"; pbrEvalColor = "text-rose-600 bg-rose-50 border-rose-200"; }
+                const evalPbr = evaluateValuation(lastFetchedData.ticker, 'pbr', pbrVal);
+                pbrEvalText = evalPbr.text;
+                pbrEvalColor = evalPbr.color;
             } else {
                 pbrEvalText = "데이터 부족"; pbrEvalColor = "text-slate-500 bg-slate-100 border-slate-200";
             }
@@ -1811,11 +1869,9 @@
                     const newPer = simPrice / finalEps;
                     simPerResult.textContent = newPer.toFixed(2) + '배';
                     
-                    let perEvalText = "", perEvalColor = "";
-                    if (newPer < 10) { perEvalText = "섹터 대비 낮음 (저평가)"; perEvalColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; }
-                    else if (newPer <= 20) { perEvalText = "섹터 대비 적정"; perEvalColor = "text-blue-600 bg-blue-50 border-blue-200"; }
-                    else { perEvalText = "섹터 대비 높음 (고평가)"; perEvalColor = "text-rose-600 bg-rose-50 border-rose-200"; }
-                    if (simPerEval) simPerEval.innerHTML = `<span class="px-2 py-0.5 rounded border ${perEvalColor}">${perEvalText}</span>`;
+                    // 섹터별 유동적 PER 평가 적용
+                    const evalPer = evaluateValuation(lastFetchedData.ticker, 'per', newPer);
+                    if (simPerEval) simPerEval.innerHTML = `<span class="px-2 py-0.5 rounded border ${evalPer.color}">${evalPer.text}</span>`;
                 } else {
                     simPerResult.textContent = 'N/A';
                     if (simPerEval) simPerEval.innerHTML = `<span class="px-2 py-0.5 rounded border text-slate-500 bg-slate-100 border-slate-200">데이터 부족</span>`;
@@ -1826,11 +1882,9 @@
                     const newPbr = simPrice / bps;
                     simPbrResult.textContent = newPbr.toFixed(2) + '배';
                     
-                    let pbrEvalText = "", pbrEvalColor = "";
-                    if (newPbr < 1.0) { pbrEvalText = "섹터 대비 낮음 (저평가)"; pbrEvalColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; }
-                    else if (newPbr <= 2.0) { pbrEvalText = "섹터 대비 적정"; pbrEvalColor = "text-blue-600 bg-blue-50 border-blue-200"; }
-                    else { pbrEvalText = "섹터 대비 높음 (고평가)"; pbrEvalColor = "text-rose-600 bg-rose-50 border-rose-200"; }
-                    if (simPbrEval) simPbrEval.innerHTML = `<span class="px-2 py-0.5 rounded border ${pbrEvalColor}">${pbrEvalText}</span>`;
+                    // 섹터별 유동적 PBR 평가 적용
+                    const evalPbr = evaluateValuation(lastFetchedData.ticker, 'pbr', newPbr);
+                    if (simPbrEval) simPbrEval.innerHTML = `<span class="px-2 py-0.5 rounded border ${evalPbr.color}">${evalPbr.text}</span>`;
                 } else {
                     simPbrResult.textContent = 'N/A';
                     if (simPbrEval) simPbrEval.innerHTML = `<span class="px-2 py-0.5 rounded border text-slate-500 bg-slate-100 border-slate-200">데이터 부족</span>`;
