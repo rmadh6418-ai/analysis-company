@@ -192,10 +192,10 @@
                 <div>
                     <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <span>⭐</span> 나의 관심종목 (Watchlist)
-                        <button id="watchRefreshBtn" onclick="refreshWatchlistPrices()" class="ml-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-bold hover:bg-emerald-100 transition shadow-sm" title="관심종목 실시간 주가 및 AI목표주가 업데이트">실시간가 🔄</button>
+                        <button id="watchRefreshBtn" onclick="refreshWatchlistPrices()" class="ml-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-bold hover:bg-emerald-100 transition shadow-sm" title="관심종목 실시간 주가 업데이트">실시간가 🔄</button>
                         <span id="autoRefreshStatusWatch" class="hidden text-[10px] text-emerald-600 font-bold ml-1"><span class="auto-refresh-indicator"></span>자동갱신ON</span>
                     </h2>
-                    <p class="text-xs text-slate-500 mt-1">눈여겨보는 종목을 등록하면 AI 목표주가가 자동 갱신되며, <b>AI분석</b> 버튼을 누르면 상세 리포트를 확인할 수 있습니다.</p>
+                    <p class="text-xs text-slate-500 mt-1">눈여겨보는 종목을 등록하여 모니터링하며, <b>AI분석</b> 버튼을 누르면 상세 리포트를 확인할 수 있습니다.</p>
                 </div>
             </div>
 
@@ -213,7 +213,7 @@
                         <tr class="bg-slate-100 text-slate-700 text-xs">
                             <th class="p-2 border text-left">종목명 (코드)</th>
                             <th class="p-2 border text-right">현재가 (등락률)</th>
-                            <th class="p-2 border text-right">AI목표주가 (상승여력)</th>
+                            <th class="p-2 border text-right">ROE</th>
                             <th class="p-2 border text-center">PER</th>
                             <th class="p-2 border text-center">PBR</th>
                             <th class="p-2 border text-center">관리 / 분석</th>
@@ -283,10 +283,9 @@
                         <p class="text-xs font-semibold text-slate-400 mb-1">현재가</p>
                         <p id="naverPrice" class="text-2xl font-extrabold text-slate-800">-</p>
                     </div>
-                    <div class="bg-purple-50 p-4 rounded-xl shadow-sm border border-purple-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-bold text-purple-800 mb-1">AI 적정 목표주가</p>
-                        <p id="aiTargetPrice" class="text-xl font-extrabold text-slate-800">분석 대기중</p>
-                        <p id="targetUpside" class="text-xs font-bold mt-1 text-slate-500">-</p>
+                    <div class="bg-indigo-50 p-4 rounded-xl shadow-sm border border-indigo-200 text-center flex flex-col justify-center h-full">
+                        <p class="text-xs font-bold text-indigo-800 mb-1">ROE (자기자본이익률)</p>
+                        <p id="fnRoe" class="text-xl font-extrabold text-slate-800">-</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">전일대비 등락률</p>
@@ -682,7 +681,6 @@
         let myChart = null;
         let predChartObj = null;
         let aiParsedStrategy = {}; 
-        let parsedAiTargetPrice = 0; 
         
         let userPortfolio = [];
         let selectedPortCode = '';
@@ -693,7 +691,6 @@
         // 관심종목 변수
         let userWatchlist = [];
         let selectedWatchCode = '';
-        let isUpdatingWatchlistAi = false;
 
         // config.json 파일에서 불러올 구글 Apps Script URL 변수
         let GAS_URL = "";
@@ -942,7 +939,6 @@
             
             renderWatchlistTable();
             startAutoRefreshTimer(); // 자동 갱신 타이머 시작
-            autoUpdateWatchlistAiTargets(false); // 관심종목 AI목표주가 자동 산출
         };
 
         // =========================================================================
@@ -1362,9 +1358,6 @@
             renderWatchlistTable();
             document.getElementById('watchSearchInput').value = '';
             selectedWatchCode = '';
-
-            // 등록 즉시 백그라운드에서 해당 종목 AI 목표주가 산출
-            autoUpdateWatchlistAiTargets(false);
         }
 
         function removeWatchlistItem(ticker) {
@@ -1385,19 +1378,15 @@
                 return;
             }
 
-            const hasApiKey = Boolean(localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput')?.value.trim());
-
             let html = '';
             userWatchlist.forEach(item => {
                 let currentPriceStr = '데이터연동중';
-                let currentPriceNum = 0;
                 let changeText = '-';
                 let changeColor = 'text-slate-500';
 
                 // 1. 가격 및 등락률 셋팅
                 if (livePortfolioPrices[item.ticker]) {
                     currentPriceStr = livePortfolioPrices[item.ticker] + '원';
-                    currentPriceNum = parseInt(livePortfolioPrices[item.ticker].replace(/,/g, ''));
                     if (livePortfolioChanges[item.ticker]) {
                         changeText = livePortfolioChanges[item.ticker].text;
                         if (livePortfolioChanges[item.ticker].isUp) changeColor = 'text-red-500 font-bold';
@@ -1405,15 +1394,15 @@
                     }
                 } else if (globalQuantData && globalQuantData[item.ticker]) {
                     currentPriceStr = String(globalQuantData[item.ticker].price) + '원';
-                    currentPriceNum = parseInt(String(globalQuantData[item.ticker].price).replace(/,/g, ''));
                     changeText = globalQuantData[item.ticker].changeRate || '-';
                     if (changeText.startsWith('+')) changeColor = 'text-red-500 font-bold';
                     else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
                 }
 
-                // 2. PER, PBR 포맷팅 및 색상 적용 (섹터별 유동적 기준 적용)
+                // 2. PER, PBR, ROE 포맷팅
                 let perHtml = '<span class="text-slate-400">-</span>';
                 let pbrHtml = '<span class="text-slate-400">-</span>';
+                let roeHtml = '<span class="text-slate-400">-</span>';
                 
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
@@ -1427,32 +1416,17 @@
                         const evalPbr = evaluateValuation(item.ticker, 'pbr', pbrVal);
                         pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPbr.color}" title="${evalPbr.text}">${pbrVal}배</span>`;
                     }
+                    
+                    const roeVal = globalQuantData[item.ticker].roe;
+                    if (roeVal && roeVal !== "-") {
+                        const numRoe = parseFloat(roeVal);
+                        let roeColor = 'text-slate-800';
+                        if(numRoe >= 10) roeColor = 'text-red-600 font-bold';
+                        else if(numRoe < 0) roeColor = 'text-blue-600 font-bold';
+                        roeHtml = `<div class="font-bold ${roeColor}">${roeVal}%</div>`;
+                    }
                 }
                 
-                // 3. AI 목표주가 및 상승여력 계산
-                let aiTargetPriceHtml = '';
-                let upsideHtml = '';
-                if (item.aiTargetPrice && item.aiTargetPrice !== 'AI분석전' && item.aiTargetPrice !== '산출실패') {
-                    aiTargetPriceHtml = `<div class="font-bold text-purple-600">${item.aiTargetPrice}</div>`;
-                    if (currentPriceNum > 0) {
-                        const targetNum = parseInt(item.aiTargetPrice.replace(/,/g, '').replace(/원/g, ''));
-                        if (!isNaN(targetNum) && targetNum > 0) {
-                            const diffRate = ((targetNum - currentPriceNum) / currentPriceNum) * 100;
-                            if (diffRate > 0) {
-                                upsideHtml = `<div class="text-[10px] text-red-500 font-bold mt-0.5">상승여력: +${diffRate.toFixed(1)}%</div>`;
-                            } else {
-                                upsideHtml = `<div class="text-[10px] text-blue-500 font-bold mt-0.5">초과상태: ${diffRate.toFixed(1)}%</div>`;
-                            }
-                        }
-                    }
-                } else if (item.aiTargetPrice === '산출실패') {
-                    aiTargetPriceHtml = `<div class="text-[11px] text-rose-500 font-semibold">산출실패</div>`;
-                } else if (hasApiKey) {
-                    aiTargetPriceHtml = `<div class="text-[11px] text-purple-500 font-semibold animate-pulse">자동 산출중...</div>`;
-                } else {
-                    aiTargetPriceHtml = `<div class="text-[11px] text-slate-400">API키 필요</div>`;
-                }
-
                 html += `<tr class="hover:bg-amber-50/30 transition border-b">
                     <td class="p-2 text-left font-bold text-slate-800">
                         <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-amber-600 text-left underline underline-offset-2">${item.corpName}</button>
@@ -1463,8 +1437,7 @@
                         <div class="text-[11px] ${changeColor}">${changeText}</div>
                     </td>
                     <td class="p-2 text-right align-middle">
-                        ${aiTargetPriceHtml}
-                        ${upsideHtml}
+                        ${roeHtml}
                     </td>
                     <td class="p-2 text-center align-middle">${perHtml}</td>
                     <td class="p-2 text-center align-middle">${pbrHtml}</td>
@@ -1524,140 +1497,6 @@
             if(!isSilent) {
                 btn.textContent = "실시간가 🔄"; 
                 btn.disabled = false;
-                // 수동으로 실시간가 갱신 시 AI 목표주가도 최신 주가 기준으로 함께 재갱신
-                autoUpdateWatchlistAiTargets(true);
-            }
-        }
-
-        // ⭐ 관심종목 AI 목표주가 백그라운드 자동 산출 함수 (프롬프트/파싱/Rate-Limit 강화)
-        async function autoUpdateWatchlistAiTargets(forceUpdate = false) {
-            if (isUpdatingWatchlistAi) return;
-            const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('apiKeyInput').value.trim();
-            if (!apiKey || userWatchlist.length === 0) {
-                renderWatchlistTable();
-                return;
-            }
-
-            isUpdatingWatchlistAi = true;
-            let hasAnyChange = false;
-
-            try {
-                for (let item of userWatchlist) {
-                    if (forceUpdate || !item.aiTargetPrice || item.aiTargetPrice === 'AI분석전' || item.aiTargetPrice === '산출실패') {
-                        const qData = globalQuantData && globalQuantData[item.ticker] ? globalQuantData[item.ticker] : null;
-                        let price = "정보없음", per = "-", pbr = "-", targetP = "-", peg = "-";
-                        
-                        if (qData) { 
-                            price = qData.price; 
-                            per = qData.per; 
-                            pbr = qData.pbr; 
-                            targetP = qData.targetPrice; 
-                            peg = qData.peg || "-";
-                        }
-                        if (livePortfolioPrices[item.ticker]) {
-                            price = livePortfolioPrices[item.ticker];
-                        }
-                        
-                        // 1. 프롬프트 강화: 무조건 JSON 형태만 뱉도록 강력 지시 (할루시네이션 원천 차단)
-                        const prompt = `당신은 엄격한 퀀트 시스템입니다. 아래 [데이터]만을 기반으로 [${item.corpName}(${item.ticker})]의 단기(1~3개월) 적정 목표주가를 산출하세요.
-🚨 [할루시네이션(환각) 절대 방지 규칙]
-1. 증권사평균목표가(${targetP})가 존재한다면 이를 최우선 기준점으로 삼고 과도하게 벗어나지 않게 산출하세요.
-2. 현재가(${price}), PER(${per}), PBR(${pbr}), PEG(${peg}) 등 주어진 실제 데이터 범위 내에서만 합리적으로 판단하며, 절대 임의의 숫자를 지어내지 마세요.
-3. 부연 설명, 마크다운 기호(\`\`\`) 등을 절대 쓰지 말고 오직 순수한 JSON 형식으로만 응답하세요.
-출력 예시: {"targetPrice": 85000}
-
-[데이터]
-현재가: ${price}
-증권사평균목표가: ${targetP}
-PER: ${per}
-PBR: ${pbr}
-PEG: ${peg}`;
-
-                        let fetchConfig = {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                                contents: [{ parts: [{ text: prompt }] }], 
-                                generationConfig: { temperature: 0.0, topK: 1, topP: 0.1 } 
-                            })
-                        };
-
-                        try {
-                            // 기본 모델 호출
-                            let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
-                            let response = await fetch(url, fetchConfig);
-                            
-                            // 3. Rate Limit(429 Too Many Requests) 방어 로직
-                            if (response.status === 429) {
-                                console.warn(`[${item.corpName}] API 호출 한도 초과(429). 5초 대기 후 재시도...`);
-                                await new Promise(r => setTimeout(r, 5000));
-                                response = await fetch(url, fetchConfig);
-                            }
-
-                            if (!response.ok) {
-                                url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
-                                response = await fetch(url, fetchConfig);
-                            }
-                            
-                            const data = await response.json();
-                            let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                            
-                            if (aiText) {
-                                let numVal = 0;
-                                
-                                // 2. 파싱 로직 1단계: 완벽한 JSON 추출 시도
-                                try {
-                                    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-                                    if (jsonMatch) {
-                                        const parsed = JSON.parse(jsonMatch[0]);
-                                        if (parsed.targetPrice) numVal = parseInt(String(parsed.targetPrice).replace(/,/g, ''), 10);
-                                        else if (parsed.target_price) numVal = parseInt(String(parsed.target_price).replace(/,/g, ''), 10);
-                                    }
-                                } catch (e) {
-                                    console.warn("JSON 파싱 실패, 텍스트 파싱으로 전환");
-                                }
-
-                                // 2. 파싱 로직 2단계: JSON 실패 시, AI가 떠든 말 중에서 '마지막에 결론으로 낸 숫자' 추출
-                                if (!numVal || isNaN(numVal) || numVal === 0) {
-                                    let cleanText = aiText.replace(/,/g, '');
-                                    let matches = cleanText.match(/\d+/g);
-                                    if (matches && matches.length > 0) {
-                                        numVal = parseInt(matches[matches.length - 1], 10); // 가장 마지막 숫자 채택
-                                    }
-                                }
-
-                                if (!isNaN(numVal) && numVal > 0) {
-                                    item.aiTargetPrice = numVal.toLocaleString('ko-KR') + '원';
-                                    hasAnyChange = true;
-                                    localStorage.setItem('userWatchlistList', JSON.stringify(userWatchlist));
-                                    renderWatchlistTable();
-                                } else {
-                                    item.aiTargetPrice = '산출실패';
-                                    renderWatchlistTable();
-                                }
-                            } else {
-                                if (!item.aiTargetPrice) {
-                                    item.aiTargetPrice = '산출실패';
-                                    renderWatchlistTable();
-                                }
-                            }
-                        } catch (e) { 
-                            console.error('Watchlist AI Target Fetch Error:', e); 
-                            if (!item.aiTargetPrice) {
-                                item.aiTargetPrice = '산출실패';
-                                renderWatchlistTable();
-                            }
-                        }
-                        
-                        // 구글 API 무료 티어(15 RPM) 한도 회피를 위해 종목당 4초씩 대기 (매우 중요)
-                        await new Promise(r => setTimeout(r, 4000));
-                    }
-                }
-            } finally {
-                isUpdatingWatchlistAi = false;
-                if (hasAnyChange) {
-                    saveToGoogleCloud();
-                }
             }
         }
 
@@ -1726,7 +1565,6 @@ PEG: ${peg}`;
             if(!key) { alert('API Key를 입력해주세요.'); return; }
             localStorage.setItem('geminiApiKey', key); 
             alert('Gemini API Key가 안전하게 저장되었습니다.');
-            autoUpdateWatchlistAiTargets(false);
         }
 
         function toggleInputs() {
@@ -1761,6 +1599,8 @@ PEG: ${peg}`;
             document.getElementById('fnDiv').textContent = data.dividend && data.dividend !== "-" ? data.dividend : "N/A";
             document.getElementById('fnPeg').textContent = data.peg && data.peg !== "N/A" ? data.peg : "N/A";
             document.getElementById('fnPegDesc').textContent = data.pegDesc || "EPS 데이터 부족";
+            
+            document.getElementById('fnRoe').textContent = data.roe && data.roe !== "-" ? data.roe + "%" : "N/A";
 
             // 섹터별 유동적 PER 평가 적용
             let perEvalText = "", perEvalColor = "";
@@ -2000,7 +1840,7 @@ PEG: ${peg}`;
             document.getElementById('uiMa20Value').textContent = tech.ma20 !== '-' ? tech.ma20 + "원" : "데이터 부족";
             document.getElementById('uiMa60Value').textContent = tech.ma60 !== '-' ? tech.ma60 + "원" : "데이터 부족";
 
-            aiParsedStrategy = {}; parsedAiTargetPrice = 0;
+            aiParsedStrategy = {};
             const aiFields = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3', 'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3', 'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'];
             aiFields.forEach(id => {
                 document.getElementById(id).textContent = "대기중"; document.getElementById(id).className = "text-base font-bold text-slate-400";
@@ -2010,7 +1850,7 @@ PEG: ${peg}`;
             document.getElementById('corpNameTitle').textContent = data.name; document.getElementById('corpCodeTitle').textContent = `(${ticker})`;
             document.getElementById('moatLink').href = `https://www.morningstar.com/stocks/xkrx/${ticker}/quote`;
 
-            lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.fwdPer || data.pbr, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc };
+            lastFetchedData = { corpName: data.name, ticker, price: data.price, targetPrice: data.targetPrice, changeRate: data.changeRate, marketCap: data.marketCap, foreignRate: data.foreignRate, per: data.per, fwdPer: data.fwdPer || data.pbr, pbr: data.pbr, dividend: data.dividend, direction: data.direction, peg: data.peg, pegDesc: data.pegDesc, roe: data.roe || "-" };
 
             if (simEpsInput && lastFetchedData) {
                 let currentPriceNum = parseFloat(String(lastFetchedData.price).replace(/,/g, '').replace(/원/g, ''));
@@ -2229,14 +2069,14 @@ PEG: ${peg}`;
 
             let portfolioSummaryString = '';
             userPortfolio.forEach((p, idx) => {
-                let currentPriceStr = '데이터 없음'; let per = '-', pbr = '-', targetP = '-';
+                let currentPriceStr = '데이터 없음'; let per = '-', pbr = '-', roe = '-';
                 if (livePortfolioPrices[p.ticker]) currentPriceStr = livePortfolioPrices[p.ticker];
                 else if (globalQuantData && globalQuantData[p.ticker]) currentPriceStr = globalQuantData[p.ticker].price;
-                if (globalQuantData && globalQuantData[p.ticker]) { const q = globalQuantData[p.ticker]; per = q.per; pbr = q.pbr; targetP = q.targetPrice; }
+                if (globalQuantData && globalQuantData[p.ticker]) { const q = globalQuantData[p.ticker]; per = q.per; pbr = q.pbr; roe = q.roe; }
                 let diffRate = '계산불가';
                 if (currentPriceStr !== '데이터 없음') { const curPNum = parseInt(currentPriceStr.replace(/,/g,'')); diffRate = (((curPNum - p.avgPrice) / p.avgPrice) * 100).toFixed(2) + '%'; }
                 
-                portfolioSummaryString += `[종목${idx+1}: ${p.corpName}(${p.ticker})]\n- 평단가: ${p.avgPrice.toLocaleString()}원 | 매수금: ${p.investAmount.toLocaleString()}원\n- 현재가: ${currentPriceStr}원 (손익률: ${diffRate}) | 목표가: ${targetP}원 | PER: ${per} | PBR: ${pbr}\n\n`;
+                portfolioSummaryString += `[종목${idx+1}: ${p.corpName}(${p.ticker})]\n- 평단가: ${p.avgPrice.toLocaleString()}원 | 매수금: ${p.investAmount.toLocaleString()}원\n- 현재가: ${currentPriceStr}원 (손익률: ${diffRate}) | ROE: ${roe}% | PER: ${per} | PBR: ${pbr}\n\n`;
             });
 
             const today = new Date();
@@ -2331,7 +2171,7 @@ ${portfolioSummaryString}
 현재 시점을 기준으로 [${ld.corpName} (${ld.ticker})]에 대한 심층 리포트를 작성하세요.
 
 [종목 기본 데이터]
-현재가:${ld.price}원, 증권사목표가:${ld.targetPrice}원, 등락률:${ld.changeRate}, PER:${ld.per}배.
+현재가:${ld.price}원, 등락률:${ld.changeRate}, PER:${ld.per}배, ROE:${ld.roe}%.
 
 [기술적 지표 데이터]
 - 5일 이평선: ${tech.ma5}원
@@ -2347,7 +2187,6 @@ ${actionPlanContext}
 
 [작성 규칙] - 아래 형식을 글자 하나 틀리지 말고 첫 줄부터 출력하세요. 타점과 예측가는 기호 없이 숫자만 작성.
 MOAT_RATING: [Wide/Narrow/None 중 택1]
-AI_TARGET_PRICE: [금액]원
 BUY_DOWN_1: [금액]원 / [비중]%
 BUY_DOWN_2: [금액]원 / [비중]%
 BUY_DOWN_3: [금액]원 / [비중]%
@@ -2367,7 +2206,7 @@ PRED_D4: [예상종가]원
 PRED_D5: [예상종가]원
 
 위 내용 아래부터는 마크다운 굵은글씨(**)를 사용하여 다음 내용을 포함한 심층 분석 리포트를 작성하세요.
-1. AI 목표주가 산출 근거 (영업이익 트렌드, PEG, 밸류에이션, 증권사 평균 목표가 등을 명시하여 반영)
+1. 핵심 종목 진단 분석 근거 (영업이익 트렌드, PEG, 밸류에이션 등을 명시하여 반영)
 2. 💡 최적 자금 배분 및 대응 전략 (필수): 사용자의 평단가, 투입 금액, 대기 자금(또는 신규 투자금)을 종합 분석하여 현재 상황에서 가장 합리적인 행동 지침(전액 투입, 분할 투입, 현금 관망 등)과 그 이유를 명확하게 제시하세요.
 3. 맞춤형 실전 매수 전략 및 근거: 제공된 [기술적 지표 데이터]의 이평선 가격 및 RSI/MACD와 현재가를 비교하여 논리적으로 모순 없이 매수 타점을 작성하세요. 없는 차트 데이터를 절대 지어내지 마세요.
 4. 맞춤형 실전 매도 전략 및 근거: 익절 1~3차 목표가 설정 근거와, 리스크 관리를 위한 손절 1~3차 설정 근거를 기술적 지표 기반으로 구체적으로 제시하세요.
@@ -2394,28 +2233,6 @@ PRED_D5: [예상종가]원
 
                 let result = extractAndClean(/MOAT_RATING:\s*(.+)/i, aiText);
                 if (result.val) { document.getElementById('moatRating').textContent = result.val; document.getElementById('moatRating').className = "text-lg font-extrabold text-amber-700 my-0"; aiText = result.remainingText; }
-
-                result = extractAndClean(/AI_TARGET_PRICE:\s*(.+)/i, aiText);
-                if (result.val) {
-                    document.getElementById('aiTargetPrice').textContent = result.val; document.getElementById('aiTargetPrice').className = "text-2xl font-extrabold text-purple-700";
-                    parsedAiTargetPrice = parseInt(result.val.replace(/,/g, '').replace(/원/g, '')) || 0;
-                    
-                    const currentP = parseInt(String(ld.price).replace(/,/g, '').replace(/원/g, '')); const targetUpsideEl = document.getElementById('targetUpside');
-                    if (!isNaN(currentP) && currentP > 0 && parsedAiTargetPrice > 0) {
-                        const diffRate = ((parsedAiTargetPrice - currentP) / currentP) * 100;
-                        if (diffRate > 0) { targetUpsideEl.textContent = `현재가 대비 상승 여력: +${diffRate.toFixed(1)}%`; targetUpsideEl.className = "text-xs font-bold mt-1 text-red-600"; } 
-                        else { targetUpsideEl.textContent = `현재가 초과: ${diffRate.toFixed(1)}%`; targetUpsideEl.className = "text-xs font-bold mt-1 text-blue-600"; }
-                    }
-                    aiText = result.remainingText;
-
-                    // 관심종목에 해당 종목이 있을 경우 AI 목표주가를 연동 및 저장
-                    const watchIndex = userWatchlist.findIndex(w => w.ticker === ld.ticker);
-                    if (watchIndex !== -1) {
-                        userWatchlist[watchIndex].aiTargetPrice = result.val;
-                        saveWatchlistToLocal();
-                        renderWatchlistTable();
-                    }
-                }
 
                 const tradeFields = ['BUY_DOWN_1', 'BUY_DOWN_2', 'BUY_DOWN_3', 'BUY_UP_1', 'BUY_UP_2', 'BUY_UP_3', 'SELL_PROFIT_1', 'SELL_PROFIT_2', 'SELL_PROFIT_3', 'SELL_LOSS_1', 'SELL_LOSS_2', 'SELL_LOSS_3'];
                 const tradeIds = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3', 'aiSellProfit1', 'aiSellProfit2', 'aiSellProfit3', 'aiSellLoss1', 'aiSellLoss2', 'aiSellLoss3'];
@@ -2740,7 +2557,7 @@ PRED_D5: [예상종가]원
             if (lastFetchedData && lastFetchedData.corpName) {
                 dynamicContext += `[현재 화면에서 분석 중인 타겟 종목]: ${lastFetchedData.corpName} (종목코드: ${lastFetchedData.ticker})\n`;
                 dynamicContext += `- 현재가: ${lastFetchedData.price}원 (등락률: ${lastFetchedData.changeRate})\n`;
-                dynamicContext += `- 밸류에이션: PER ${lastFetchedData.per}배, PBR ${lastFetchedData.pbr}배\n`;
+                dynamicContext += `- 밸류에이션: PER ${lastFetchedData.per}배, PBR ${lastFetchedData.pbr}배, ROE ${lastFetchedData.roe}%\n`;
                 
                 if (globalQuantData && globalQuantData[lastFetchedData.ticker]) {
                     const tech = globalQuantData[lastFetchedData.ticker].tech || {};
@@ -2776,7 +2593,7 @@ PRED_D5: [예상종가]원
                             if (livePortfolioPrices[compCode]) cPrice = livePortfolioPrices[compCode];
                             
                             mentionedCompaniesContext += `[질문에서 언급된 타 기업 데이터: ${compName} (${compCode})]\n`;
-                            mentionedCompaniesContext += `- 현재가: ${cPrice}원, 목표가: ${qData.targetPrice || '-'}원\n`;
+                            mentionedCompaniesContext += `- 현재가: ${cPrice}원, ROE: ${qData.roe || '-'}%\n`;
                             mentionedCompaniesContext += `- 밸류에이션: PER ${qData.per || '-'}, PBR ${qData.pbr || '-'}, 배당수익률 ${qData.dividend || '-'}\n`;
                             mentionedCompaniesContext += `- 차트 지표: RSI(14) ${tech.rsi || '-'}, MACD ${tech.macd || '-'}, 20일선 ${tech.ma20 || '-'}, 60일선 ${tech.ma60 || '-'}\n\n`;
                         }
