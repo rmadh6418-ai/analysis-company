@@ -109,7 +109,7 @@
                     <thead>
                         <tr class="bg-slate-100 text-slate-700 text-xs">
                             <th class="p-2 border text-left">종목명 (코드)</th>
-                            <th class="p-2 border text-right">현재가</th>
+                            <th class="p-2 border text-right">현재가 (등락률)</th>
                             <th class="p-2 border text-right">내 평단가</th>
                             <th class="p-2 border text-right">수익률</th>
                             <th class="p-2 border text-right">총 매수금액</th>
@@ -267,7 +267,7 @@
             </details>
         </div>
 
-        <div id="dashboardArea" class="hidden space-y-6">
+        <div id="dashboardArea" class="hidden space-y-6 pt-4">
             <div class="bg-slate-800 text-white p-4 rounded-xl flex justify-between items-center shadow">
                 <div>
                     <span id="corpNameTitle" class="text-2xl font-extrabold">-</span>
@@ -1185,10 +1185,27 @@
                 const profitRate = currentPrice > 0 ? (((currentPrice - item.avgPrice) / item.avgPrice) * 100) : 0;
                 const rateColor = profitRate > 0 ? 'text-red-600 font-bold' : (profitRate < 0 ? 'text-blue-600 font-bold' : 'text-slate-700');
                 const weightRate = totalValue > 0 ? ((evalValue / totalValue) * 100) : 0;
+                
+                let changeText = '-';
+                let changeColor = 'text-slate-500';
+                if (livePortfolioPrices[item.ticker]) {
+                    if (livePortfolioChanges[item.ticker]) {
+                        changeText = livePortfolioChanges[item.ticker].text;
+                        if (livePortfolioChanges[item.ticker].isUp) changeColor = 'text-red-500 font-bold';
+                        else if (livePortfolioChanges[item.ticker].isDown) changeColor = 'text-blue-500 font-bold';
+                    }
+                } else if (globalQuantData && globalQuantData[item.ticker]) {
+                    changeText = globalQuantData[item.ticker].changeRate || '-';
+                    if (changeText.startsWith('+')) changeColor = 'text-red-500 font-bold';
+                    else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
+                }
 
                 html += `<tr class="hover:bg-slate-50 transition border-b">
                     <td class="p-2 text-left font-bold text-slate-800"><button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-blue-600 text-left underline underline-offset-2">${item.corpName}</button><span class="text-[11px] font-mono text-slate-400 block">${item.ticker}</span></td>
-                    <td class="p-2 text-right font-medium">${currentPrice > 0 ? currentPrice.toLocaleString() + '원' : '데이터연동'}</td>
+                    <td class="p-2 text-right align-middle">
+                        <div class="font-medium">${currentPrice > 0 ? currentPrice.toLocaleString() + '원' : '데이터연동'}</div>
+                        <div class="text-[11px] ${changeColor} mt-0.5">${changeText}</div>
+                    </td>
                     <td class="p-2 text-right font-semibold">${item.avgPrice.toLocaleString()}원</td>
                     <td class="p-2 text-right ${rateColor}">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
                     <td class="p-2 text-right font-medium">${item.investAmount.toLocaleString()}원</td>
@@ -1541,11 +1558,15 @@
                             price = livePortfolioPrices[item.ticker];
                         }
                         
-                        // 1. 프롬프트 강화: 무조건 JSON 형태만 뱉도록 강력 지시
-                        const prompt = `주식 퀀트 애널리스트로서 아래 데이터를 바탕으로 [${item.corpName}(${item.ticker})]의 단기(1~3개월) 적정 AI 목표주가를 산출해.
-조건1: 부연 설명이나 마크다운 문법을 절대 쓰지 말고, 오직 순수한 JSON 형식으로만 대답할 것.
-조건2: 출력 예시 -> {"targetPrice": 85000}
+                        // 1. 프롬프트 강화: 무조건 JSON 형태만 뱉도록 강력 지시 (할루시네이션 원천 차단)
+                        const prompt = `당신은 엄격한 퀀트 시스템입니다. 아래 [데이터]만을 기반으로 [${item.corpName}(${item.ticker})]의 단기(1~3개월) 적정 목표주가를 산출하세요.
+🚨 [할루시네이션(환각) 절대 방지 규칙]
+1. 증권사평균목표가(${targetP})가 존재한다면 이를 최우선 기준점으로 삼고 과도하게 벗어나지 않게 산출하세요.
+2. 현재가(${price}), PER(${per}), PBR(${pbr}), PEG(${peg}) 등 주어진 실제 데이터 범위 내에서만 합리적으로 판단하며, 절대 임의의 숫자를 지어내지 마세요.
+3. 부연 설명, 마크다운 기호(\`\`\`) 등을 절대 쓰지 말고 오직 순수한 JSON 형식으로만 응답하세요.
+출력 예시: {"targetPrice": 85000}
 
+[데이터]
 현재가: ${price}
 증권사평균목표가: ${targetP}
 PER: ${per}
@@ -1689,6 +1710,15 @@ PEG: ${peg}`;
             }
 
             fetchDashboardData();
+
+            // 분석 대시보드 영역으로 스크롤 이동
+            setTimeout(() => {
+                const dashboardEl = document.getElementById('dashboardArea');
+                if(dashboardEl) {
+                    const topPos = dashboardEl.getBoundingClientRect().top + window.pageYOffset - 20;
+                    window.scrollTo({ top: topPos, behavior: 'smooth' });
+                }
+            }, 300);
         }
 
         function saveApiKey() {
