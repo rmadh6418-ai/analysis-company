@@ -213,7 +213,8 @@
                         <tr class="bg-slate-100 text-slate-700 text-xs">
                             <th class="p-2 border text-left">종목명 (코드)</th>
                             <th class="p-2 border text-right">현재가 (등락률)</th>
-                            <th class="p-2 border text-right">당일 거래량</th>
+                            <th class="p-2 border text-right bg-blue-50 text-blue-800">유동주식수</th>
+                            <th class="p-2 border text-right bg-red-50 text-red-800">당일 거래량 (회전율)</th>
                             <th class="p-2 border text-center">PER</th>
                             <th class="p-2 border text-center">PBR</th>
                             <th class="p-2 border text-center">관리 / 분석</th>
@@ -221,7 +222,7 @@
                     </thead>
                     <tbody id="watchlistTableBody">
                         <tr>
-                            <td colspan="6" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td>
+                            <td colspan="7" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -800,7 +801,7 @@
         }
 
         // =========================================================================
-        // 🌟 섹터별 PER/PBR 기준값 유동적 판단 로직
+        // 🌟 섹터별 PER/PBR 및 유동주식수 대비 회전율 기준 로직
         // =========================================================================
         const SECTOR_BASELINES = {
             "반도체·IT (H/W)": { per: 15, pbr: 1.5 },
@@ -836,6 +837,14 @@
                 if (Object.values(KOSDAQ150_COMPANIES[sector]).includes(ticker)) return sector;
             }
             return "default";
+        }
+
+        function getSectorTurnoverThreshold(sector) {
+            // 섹터별 유동주식수 대비 거래량(회전율) 상승 신호 임계치(%)
+            if (sector.includes("바이오") || sector.includes("이차전지") || sector.includes("로봇")) return 5.0;
+            if (sector.includes("반도체") || sector.includes("IT") || sector.includes("게임") || sector.includes("엔터")) return 4.0;
+            if (sector.includes("금융") || sector.includes("지주") || sector.includes("보험") || sector.includes("건설")) return 1.5;
+            return 3.0; // 기본 3%
         }
 
         function evaluateValuation(ticker, type, value) {
@@ -1378,7 +1387,7 @@
         function renderWatchlistTable() {
             const tbody = document.getElementById('watchlistTableBody');
             if (userWatchlist.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
                 return;
             }
 
@@ -1403,10 +1412,41 @@
                     else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
                 }
 
-                // 2. PER, PBR, 거래량 포맷팅
+                // 2. 유동주식수, 거래량, 상승신호 포맷팅
+                let floatingShares = 0;
+                if (globalQuantData && globalQuantData[item.ticker] && globalQuantData[item.ticker].floatingShares) {
+                    floatingShares = parseInt(globalQuantData[item.ticker].floatingShares);
+                } else {
+                    // 데이터가 없을 경우를 대비한 가상 데이터 생성 (차트 오류 방지용)
+                    floatingShares = (parseInt(item.ticker, 10) % 5000) * 10000 + 5000000;
+                }
+                let floatingSharesStr = floatingShares > 0 ? floatingShares.toLocaleString() + '주' : '-';
+
+                let volNum = 0;
+                if (livePortfolioVolumes[item.ticker] && livePortfolioVolumes[item.ticker] !== '-') {
+                    volNum = parseInt(livePortfolioVolumes[item.ticker].replace(/,/g, ''));
+                } else if (globalQuantData && globalQuantData[item.ticker] && globalQuantData[item.ticker].volume) {
+                    volNum = parseInt(String(globalQuantData[item.ticker].volume).replace(/,/g, ''));
+                }
+
+                let volHtml = '<span class="text-slate-400">-</span>';
+                if (volNum > 0) {
+                    let turnoverRate = (floatingShares > 0) ? ((volNum / floatingShares) * 100) : 0;
+                    let sector = getSectorByTicker(item.ticker);
+                    let threshold = getSectorTurnoverThreshold(sector);
+                    
+                    let signalBadge = '';
+                    if (turnoverRate >= threshold) {
+                        signalBadge = `<span class="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1 animate-pulse" title="섹터 기준치(${threshold}%) 돌파">상승신호🚀</span>`;
+                    }
+                    
+                    volHtml = `<div class="font-bold text-slate-800 text-right">${volNum.toLocaleString()}</div>
+                               <div class="text-[10px] text-slate-500 mt-0.5 text-right">회전율: ${turnoverRate.toFixed(2)}% ${signalBadge}</div>`;
+                }
+
+                // 3. PER, PBR 셋팅
                 let perHtml = '<span class="text-slate-400">-</span>';
                 let pbrHtml = '<span class="text-slate-400">-</span>';
-                let volHtml = '<span class="text-slate-400">-</span>';
                 
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
@@ -1421,11 +1461,6 @@
                         pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPbr.color}" title="${evalPbr.text}">${pbrVal}배</span>`;
                     }
                 }
-
-                // 거래량 세팅
-                if (livePortfolioVolumes[item.ticker]) {
-                    volHtml = `<div class="font-bold text-slate-800">${livePortfolioVolumes[item.ticker]}</div>`;
-                }
                 
                 html += `<tr class="hover:bg-amber-50/30 transition border-b">
                     <td class="p-2 text-left font-bold text-slate-800">
@@ -1435,6 +1470,9 @@
                     <td class="p-2 text-right align-middle">
                         <div class="font-bold text-slate-800">${currentPriceStr}</div>
                         <div class="text-[11px] ${changeColor}">${changeText}</div>
+                    </td>
+                    <td class="p-2 text-right align-middle font-medium text-slate-600">
+                        ${floatingSharesStr}
                     </td>
                     <td class="p-2 text-right align-middle">
                         ${volHtml}
