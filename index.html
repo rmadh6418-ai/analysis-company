@@ -1237,30 +1237,34 @@
             catch(e) {}
         }
 
-        // 🌟 [추가] 정확한 총발행주식수 및 유동비율 실시간 파싱 함수 (CORS 우회)
-        async function fetchAccurateSharesAndFloat(tickers) {
-            if (!tickers || tickers.length === 0) return;
-            const uniqueTickers = [...new Set(tickers)];
-            const chunks = [];
-            for (let i = 0; i < uniqueTickers.length; i += 10) { chunks.push(uniqueTickers.slice(i, i + 10)); }
-            for (const chunk of chunks) {
-                await Promise.all(chunk.map(async (ticker) => {
-                    try {
-                        const targetUrl = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
-                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-                        const res = await fetch(proxyUrl);
-                        if (!res.ok) return;
-                        const data = await res.json();
-                        if (data && data.stockItemTotalInfos) {
-                            const floatInfo = data.stockItemTotalInfos.find(info => info.key === "유동주식비율");
-                            const totalInfo = data.stockItemTotalInfos.find(info => info.key === "상장주식수");
-                            if (!KRX_ACCURATE_SHARES_DB[ticker]) KRX_ACCURATE_SHARES_DB[ticker] = { total: 0, floatRatio: 0 };
-                            if (totalInfo && totalInfo.value) KRX_ACCURATE_SHARES_DB[ticker].total = parseInt(totalInfo.value.replace(/,/g, ''), 10);
-                            if (floatInfo && floatInfo.value) KRX_ACCURATE_SHARES_DB[ticker].floatRatio = parseFloat(floatInfo.value) / 100;
-                        }
-                    } catch (e) { console.warn(`[${ticker}] 정밀 수집 실패`, e); }
-                }));
-                await new Promise(resolve => setTimeout(resolve, 300));
+        // 🌟 구글 앱스 스크립트(GAS_URL) 경유 최신 주식수·유동비율 동기화
+        async function syncLatestSharesFromWeb(tickers) {
+            if (!GAS_URL || !tickers || tickers.length === 0) return;
+            const uniqueTickers = [...new Set(tickers.map(t => String(t || '').trim()).filter(Boolean))];
+
+            for (let i = 0; i < uniqueTickers.length; i += 25) {
+                const chunk = uniqueTickers.slice(i, i + 25);
+                try {
+                    const url = `${GAS_URL}?shares_tickers=${encodeURIComponent(chunk.join(','))}&_=${Date.now()}`;
+                    const res = await fetch(url);
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    const sharesMap = data && data.shares ? data.shares : {};
+
+                    for (const [ticker, info] of Object.entries(sharesMap)) {
+                        if (!info) continue;
+                        const prev = KRX_ACCURATE_SHARES_DB[ticker] || { total: 0, floatRatio: 0 };
+                        const nextTotal = Number(info.total) > 0 ? Number(info.total) : prev.total;
+                        const nextFloat = Number(info.floatRatio) > 0 ? Number(info.floatRatio) : prev.floatRatio;
+
+                        KRX_ACCURATE_SHARES_DB[ticker] = {
+                            total: nextTotal,
+                            floatRatio: nextFloat
+                        };
+                    }
+                } catch (e) {
+                    console.warn("GAS 주식수 동기화 실패:", e);
+                }
             }
         }
         
@@ -1314,7 +1318,17 @@
             fetchAccurateSharesAndFloat(activeTickers).then(() => {
                 renderPortfolioTable();
                 renderWatchlistTable();
-            });
+
+                const initialTickers = [
+                    ...userPortfolio.map(p => p.ticker),
+                    ...userWatchlist.map(w => w.ticker)
+                ];
+                if (initialTickers.length > 0) {
+                    syncLatestSharesFromWeb(initialTickers).then(() => {
+                        renderPortfolioTable();
+                        renderWatchlistTable();
+                    });
+                }
             startAutoRefreshTimer(); 
         };
 
@@ -1444,6 +1458,14 @@
 
             renderPortfolioTable();
             calculateInvestment();
+
+            const portTickers = userPortfolio.map(p => p.ticker);
+            if (portTickers.length > 0) {
+                syncLatestSharesFromWeb(portTickers).then(() => {
+                    renderPortfolioTable();
+                    calculateInvestment();
+                });
+            }
             
             if(!isSilent) {
                 btn.textContent = "실시간가 🔄"; 
@@ -1918,6 +1940,13 @@
             } catch(e) { console.error("관심종목 갱신 중 오류 발생", e); }
 
             renderWatchlistTable();
+
+            const watchTickers = userWatchlist.map(w => w.ticker);
+            if (watchTickers.length > 0) {
+                syncLatestSharesFromWeb(watchTickers).then(() => {
+                    renderWatchlistTable();
+                });
+            }
             
             if(!isSilent) {
                 btn.textContent = "실시간가 🔄"; 
