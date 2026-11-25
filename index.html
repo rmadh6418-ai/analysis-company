@@ -1180,6 +1180,33 @@
             catch(e) {}
         }
 
+        // 🌟 [추가] 정확한 총발행주식수 및 유동비율 실시간 파싱 함수 (CORS 우회)
+        async function fetchAccurateSharesAndFloat(tickers) {
+            if (!tickers || tickers.length === 0) return;
+            const uniqueTickers = [...new Set(tickers)];
+            const chunks = [];
+            for (let i = 0; i < uniqueTickers.length; i += 10) { chunks.push(uniqueTickers.slice(i, i + 10)); }
+            for (const chunk of chunks) {
+                await Promise.all(chunk.map(async (ticker) => {
+                    try {
+                        const targetUrl = `https://m.stock.naver.com/api/stock/${ticker}/basic`;
+                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                        const res = await fetch(proxyUrl);
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        if (data && data.stockItemTotalInfos) {
+                            const floatInfo = data.stockItemTotalInfos.find(info => info.key === "유동주식비율");
+                            const totalInfo = data.stockItemTotalInfos.find(info => info.key === "상장주식수");
+                            if (!KRX_ACCURATE_SHARES_DB[ticker]) KRX_ACCURATE_SHARES_DB[ticker] = { total: 0, floatRatio: 0 };
+                            if (totalInfo && totalInfo.value) KRX_ACCURATE_SHARES_DB[ticker].total = parseInt(totalInfo.value.replace(/,/g, ''), 10);
+                            if (floatInfo && floatInfo.value) KRX_ACCURATE_SHARES_DB[ticker].floatRatio = parseFloat(floatInfo.value) / 100;
+                        }
+                    } catch (e) { console.warn(`[${ticker}] 정밀 수집 실패`, e); }
+                }));
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+        
         window.onload = async () => {
             let unlocked = false;
             try { unlocked = sessionStorage.getItem('aiQuantUnlocked') === 'true'; } catch(e) {}
@@ -1221,8 +1248,16 @@
                 if(res.ok) globalQuantData = await res.json();
             } catch(e) {}
             
-            renderPortfolioTable();
-            renderWatchlistTable();
+            // 사용자가 등록한 포트폴리오 및 관심종목 티커만 추출
+            const activeTickers = [];
+            userPortfolio.forEach(p => activeTickers.push(p.ticker));
+            userWatchlist.forEach(w => activeTickers.push(w.ticker));
+
+            // 등록된 종목들의 정확한 유동비율 병렬 파싱 후 테이블 렌더링
+            fetchAccurateSharesAndFloat(activeTickers).then(() => {
+                renderPortfolioTable();
+                renderWatchlistTable();
+            });
             startAutoRefreshTimer(); 
         };
 
@@ -1409,7 +1444,11 @@
                 notifyUser(`[${corpName}] 종목이 포트폴리오에 등록되었습니다.`);
             }
 
-            savePortfolioToLocal(); renderPortfolioTable();
+            savePortfolioToLocal();
+            // 신규 등록된 종목의 정밀 주식수 파싱 후 테이블 다시 그리기
+            fetchAccurateSharesAndFloat([ticker]).then(() => {
+                renderPortfolioTable();
+            });
             document.getElementById('portSearchInput').value = ''; document.getElementById('portAvgPriceInput').value = ''; document.getElementById('portInvestAmountInput').value = '';
             selectedPortCode = '';
         }
@@ -1451,68 +1490,57 @@
 
             let totalValue = 0;
             userPortfolio.forEach(item => {
-                let currentPrice = 0; let priceStr = "";
-                if (livePortfolioPrices[item.ticker]) priceStr = livePortfolioPrices[item.ticker];
-                else if (globalQuantData && globalQuantData[item.ticker]) priceStr = String(globalQuantData[item.ticker].price);
-                currentPrice = parseInt(priceStr.replace(/,/g, '')) || 0;
-
+                let currentPriceStr = livePortfolioPrices[item.ticker] || (globalQuantData && globalQuantData[item.ticker] ? String(globalQuantData[item.ticker].price) : "0");
+                let currentPrice = parseInt(currentPriceStr.replace(/,/g, '')) || 0;
                 const shares = item.avgPrice > 0 ? (item.investAmount / item.avgPrice) : 0;
                 const evalValue = currentPrice > 0 ? Math.floor(shares * currentPrice) : item.investAmount;
                 item._currentPrice = currentPrice; item._evalValue = evalValue; totalValue += evalValue;
                 item._sector = getSectorByTicker(item.ticker);
             });
 
-            // 섹터별로 종목 그룹화 정렬 후 같은 섹터 내에서는 평가금액 순 정렬
             userPortfolio.sort((a, b) => {
                 if (a._sector !== b._sector) return a._sector.localeCompare(b._sector, 'ko');
                 return b._evalValue - a._evalValue;
             });
 
+            const sectorCounts = {};
+            userPortfolio.forEach(item => { sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1; });
+
             let html = '';
-            let lastSector = null;
+            const sectorSeen = {}; 
+
             userPortfolio.forEach(item => {
-                const currentPrice = item._currentPrice; const evalValue = item._evalValue;
+                const currentPrice = item._currentPrice, evalValue = item._evalValue;
                 const profitRate = currentPrice > 0 ? (((currentPrice - item.avgPrice) / item.avgPrice) * 100) : 0;
                 const rateColor = profitRate > 0 ? 'text-red-600 font-bold' : (profitRate < 0 ? 'text-blue-600 font-bold' : 'text-slate-700');
                 const weightRate = totalValue > 0 ? ((evalValue / totalValue) * 100) : 0;
                 
-                let changeText = '-';
-                let changeColor = 'text-slate-500';
-                if (livePortfolioPrices[item.ticker]) {
-                    if (livePortfolioChanges[item.ticker]) {
-                        changeText = livePortfolioChanges[item.ticker].text;
-                        if (livePortfolioChanges[item.ticker].isUp) changeColor = 'text-red-500 font-bold';
-                        else if (livePortfolioChanges[item.ticker].isDown) changeColor = 'text-blue-500 font-bold';
-                    }
+                let changeText = '-', changeColor = 'text-slate-500';
+                if (livePortfolioPrices[item.ticker] && livePortfolioChanges[item.ticker]) {
+                    changeText = livePortfolioChanges[item.ticker].text;
+                    changeColor = livePortfolioChanges[item.ticker].isUp ? 'text-red-500 font-bold' : (livePortfolioChanges[item.ticker].isDown ? 'text-blue-500 font-bold' : changeColor);
                 } else if (globalQuantData && globalQuantData[item.ticker]) {
                     changeText = globalQuantData[item.ticker].changeRate || '-';
-                    if (changeText.startsWith('+')) changeColor = 'text-red-500 font-bold';
-                    else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
+                    changeColor = changeText.startsWith('+') ? 'text-red-500 font-bold' : (changeText.startsWith('-') ? 'text-blue-500 font-bold' : changeColor);
                 }
 
-                // 섹터 그룹 헤더 행 표시
-                if (item._sector !== lastSector) {
-                    const baseline = SECTOR_BASELINES[item._sector] || SECTOR_BASELINES["default"];
-                    const threshold = getSectorTurnoverThreshold(item._sector);
-                    html += `<tr class="bg-slate-200/70 border-y border-slate-300">
-                        <td colspan="9" class="px-3 py-1.5 text-left text-xs font-extrabold text-slate-800">
-                            📂 [${item._sector}] 섹터 그룹 <span class="text-[11px] font-semibold text-slate-600 ml-2">(섹터 기준: PER ${baseline.per}배↓ / PBR ${baseline.pbr}배↓ / 회전율 ${threshold}%↑)</span>
-                        </td>
-                    </tr>`;
-                    lastSector = item._sector;
+                let sectorTd = '';
+                if (!sectorSeen[item._sector]) {
+                    sectorTd = `<td rowspan="${sectorCounts[item._sector]}" class="p-2 text-left align-middle bg-slate-50/60 border-r border-b border-slate-200">${buildSectorCellHtml(item.ticker)}</td>`;
+                    sectorSeen[item._sector] = true;
                 }
 
                 html += `<tr class="hover:bg-slate-50 transition border-b">
-                    <td class="p-2 text-left align-middle bg-slate-50/60 border-r border-slate-200">${buildSectorCellHtml(item.ticker)}</td>
-                    <td class="p-2 text-left font-bold text-slate-800 align-middle"><button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-blue-600 text-left underline underline-offset-2">${item.corpName}</button><span class="text-[11px] font-mono text-slate-400 block">${item.ticker}</span></td>
+                    ${sectorTd}
+                    <td class="p-2 text-left font-bold text-slate-800 align-middle"><button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-blue-600 text-left underline underline-offset-2">${item.corpName}</button><span class="text-[11px] font-mono text-slate-400 block mt-0.5">${item.ticker}</span></td>
                     <td class="p-2 text-right align-middle">
-                        <div class="font-medium">${currentPrice > 0 ? currentPrice.toLocaleString() + '원' : '데이터연동'}</div>
-                        <div class="text-[11px] ${changeColor} mt-0.5">${changeText}</div>
+                        <div class="font-medium whitespace-nowrap">${currentPrice > 0 ? currentPrice.toLocaleString() + '원' : '데이터연동'}</div>
+                        <div class="text-[11px] ${changeColor} mt-0.5 whitespace-nowrap">${changeText}</div>
                     </td>
-                    <td class="p-2 text-right font-semibold align-middle">${item.avgPrice.toLocaleString()}원</td>
-                    <td class="p-2 text-right ${rateColor} align-middle">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
-                    <td class="p-2 text-right font-medium align-middle">${item.investAmount.toLocaleString()}원</td>
-                    <td class="p-2 text-right font-semibold text-slate-900 align-middle">${evalValue.toLocaleString()}원</td>
+                    <td class="p-2 text-right font-semibold align-middle whitespace-nowrap">${item.avgPrice.toLocaleString()}원</td>
+                    <td class="p-2 text-right ${rateColor} align-middle whitespace-nowrap">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
+                    <td class="p-2 text-right font-medium align-middle whitespace-nowrap">${item.investAmount.toLocaleString()}원</td>
+                    <td class="p-2 text-right font-semibold text-slate-900 align-middle whitespace-nowrap">${evalValue.toLocaleString()}원</td>
                     <td class="p-2 text-right font-extrabold text-indigo-600 align-middle">${weightRate.toFixed(1)}%</td>
                     <td class="p-2 text-center whitespace-nowrap align-middle"><button onclick="editPortfolioItem('${item.ticker}')" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition mr-1">수정</button><button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button></td>
                 </tr>`;
@@ -1662,7 +1690,10 @@
             
             userWatchlist.push({ ticker, corpName });
             saveWatchlistToLocal(); 
-            renderWatchlistTable();
+            // 신규 등록된 종목의 정밀 주식수 파싱 후 테이블 다시 그리기
+            fetchAccurateSharesAndFloat([ticker]).then(() => {
+                renderWatchlistTable();
+            });
             document.getElementById('watchSearchInput').value = '';
             selectedWatchCode = '';
             notifyUser(`[${corpName}] 종목이 관심종목에 등록되었습니다.`);
@@ -1682,131 +1713,101 @@
         function renderWatchlistTable() {
             const tbody = document.getElementById('watchlistTableBody');
             if (userWatchlist.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td></tr>`;
                 return;
             }
 
-            // 섹터별로 관심종목 정렬 및 그룹화
-            userWatchlist.forEach(item => {
-                item._sector = getSectorByTicker(item.ticker);
-            });
+            userWatchlist.forEach(item => { item._sector = getSectorByTicker(item.ticker); });
             userWatchlist.sort((a, b) => {
                 if (a._sector !== b._sector) return a._sector.localeCompare(b._sector, 'ko');
                 return a.corpName.localeCompare(b.corpName, 'ko');
             });
 
+            const sectorCounts = {};
+            userWatchlist.forEach(item => { sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1; });
+
             let html = '';
-            let lastSector = null;
+            const sectorSeen = {};
+
             userWatchlist.forEach(item => {
                 const sector = item._sector;
-                const baseline = SECTOR_BASELINES[sector] || SECTOR_BASELINES["default"];
                 const threshold = getSectorTurnoverThreshold(sector);
 
-                if (sector !== lastSector) {
-                    html += `<tr class="bg-amber-100/70 border-y border-amber-300">
-                        <td colspan="9" class="px-3 py-1.5 text-left text-xs font-extrabold text-amber-950">
-                            📂 [${sector}] 섹터 관심종목 그룹 <span class="text-[11px] font-semibold text-amber-800 ml-2">(기준: PER ${baseline.per}배↓ / PBR ${baseline.pbr}배↓ / 회전율 ${threshold}%↑)</span>
-                        </td>
-                    </tr>`;
-                    lastSector = sector;
-                }
-
-                let currentPriceStr = '데이터연동중';
-                let currentPriceNum = 0;
-                let changeText = '-';
-                let changeColor = 'text-slate-500';
+                let currentPriceStr = '데이터연동중', currentPriceNum = 0, changeText = '-', changeColor = 'text-slate-500';
 
                 if (livePortfolioPrices[item.ticker]) {
                     currentPriceStr = livePortfolioPrices[item.ticker] + '원';
                     currentPriceNum = parseInt(String(livePortfolioPrices[item.ticker]).replace(/,/g, ''), 10) || 0;
                     if (livePortfolioChanges[item.ticker]) {
                         changeText = livePortfolioChanges[item.ticker].text;
-                        if (livePortfolioChanges[item.ticker].isUp) changeColor = 'text-red-500 font-bold';
-                        else if (livePortfolioChanges[item.ticker].isDown) changeColor = 'text-blue-500 font-bold';
+                        changeColor = livePortfolioChanges[item.ticker].isUp ? 'text-red-500 font-bold' : (livePortfolioChanges[item.ticker].isDown ? 'text-blue-500 font-bold' : changeColor);
                     }
                 } else if (globalQuantData && globalQuantData[item.ticker]) {
                     currentPriceStr = String(globalQuantData[item.ticker].price) + '원';
                     currentPriceNum = parseInt(String(globalQuantData[item.ticker].price).replace(/,/g, ''), 10) || 0;
                     changeText = globalQuantData[item.ticker].changeRate || '-';
-                    if (changeText.startsWith('+')) changeColor = 'text-red-500 font-bold';
-                    else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
+                    changeColor = changeText.startsWith('+') ? 'text-red-500 font-bold' : (changeText.startsWith('-') ? 'text-blue-500 font-bold' : changeColor);
                 }
 
-                // 🌟 총발행주식수 및 유동주식수 정밀 데이터 추출
                 const sharesObj = getAccurateSharesData(item.ticker, currentPriceNum);
-                const totalShares = sharesObj.total;
-                const floatingShares = sharesObj.floating;
-                const freeFloatRatio = sharesObj.ratio;
+                const totalShares = sharesObj.total, floatingShares = sharesObj.floating, freeFloatRatio = sharesObj.ratio;
                 
-                let sharesHtml = `<div class="font-bold text-slate-800 text-right">총 ${Math.floor(totalShares).toLocaleString()}주</div>
-                                  <div class="text-[11px] text-blue-700 font-semibold text-right mt-0.5">유동: ${Math.floor(floatingShares).toLocaleString()}주 (${freeFloatRatio.toFixed(1)}%)</div>`;
+                let sharesHtml = `<div class="font-bold text-slate-800 text-right whitespace-nowrap">총 ${Math.floor(totalShares).toLocaleString()}주</div>
+                                  <div class="text-[11px] text-blue-700 font-semibold text-right mt-0.5 whitespace-nowrap">유동: ${Math.floor(floatingShares).toLocaleString()}주 (${freeFloatRatio.toFixed(1)}%)</div>`;
 
                 let volNum = 0;
-                if (livePortfolioVolumes[item.ticker] && livePortfolioVolumes[item.ticker] !== '-') {
-                    volNum = parseInt(livePortfolioVolumes[item.ticker].replace(/,/g, ''));
-                } else if (globalQuantData && globalQuantData[item.ticker] && globalQuantData[item.ticker].volume) {
-                    volNum = parseInt(String(globalQuantData[item.ticker].volume).replace(/,/g, ''));
-                }
+                if (livePortfolioVolumes[item.ticker] && livePortfolioVolumes[item.ticker] !== '-') { volNum = parseInt(livePortfolioVolumes[item.ticker].replace(/,/g, '')); } 
+                else if (globalQuantData && globalQuantData[item.ticker] && globalQuantData[item.ticker].volume) { volNum = parseInt(String(globalQuantData[item.ticker].volume).replace(/,/g, '')); }
 
                 let volHtml = '<span class="text-slate-400">-</span>';
                 if (volNum > 0) {
                     let turnoverRate = (floatingShares > 0) ? ((volNum / floatingShares) * 100) : 0;
-                    let signalBadge = '';
-                    if (turnoverRate >= threshold) {
-                        signalBadge = `<span class="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1 animate-pulse" title="섹터 기준치(${threshold}%) 돌파">상승신호🚀</span>`;
-                    }
-                    volHtml = `<div class="font-bold text-slate-800 text-right">${volNum.toLocaleString()}주</div>
-                               <div class="text-[11px] text-slate-500 mt-0.5 text-right">회전율: ${turnoverRate.toFixed(2)}% ${signalBadge}</div>`;
+                    let signalBadge = turnoverRate >= threshold ? `<span class="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1 animate-pulse">상승신호🚀</span>` : '';
+                    volHtml = `<div class="font-bold text-slate-800 text-right whitespace-nowrap">${volNum.toLocaleString()}주</div>
+                               <div class="text-[11px] text-slate-500 mt-0.5 text-right whitespace-nowrap">회전율: ${turnoverRate.toFixed(2)}% ${signalBadge}</div>`;
                 }
 
-                // 🌟 외국인 소진율 및 증감 정밀 표시
                 const fData = getAccurateForeignData(item.ticker);
-                const fRate = fData.rate;
-                const fChange = fData.change;
-                const fRateStr = `<div class="font-bold text-slate-800">${fRate.toFixed(2)}%</div>`;
-                let fColor = fChange > 0 ? 'text-red-600 bg-red-50 border-red-200' : (fChange < 0 ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-slate-500 bg-slate-100 border-slate-200');
-                let fArrow = fChange > 0 ? '▲ +' : (fChange < 0 ? '▼ ' : '');
-                const fChangeHtml = `<div class="inline-block text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${fColor} mt-1">${fArrow}${fChange.toFixed(2)}%p</div>`;
-                let foreignHtml = `${fRateStr}${fChangeHtml}`;
+                let fColor = fData.change > 0 ? 'text-red-600 bg-red-50 border-red-200' : (fData.change < 0 ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-slate-500 bg-slate-100 border-slate-200');
+                let fArrow = fData.change > 0 ? '▲ +' : (fData.change < 0 ? '▼ ' : '');
+                let foreignHtml = `<div class="font-bold text-slate-800">${fData.rate.toFixed(2)}%</div>
+                                   <div class="inline-block text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${fColor} mt-1 whitespace-nowrap">${fArrow}${fData.change.toFixed(2)}%p</div>`;
 
-                let perHtml = '<span class="text-slate-400">-</span>';
-                let pbrHtml = '<span class="text-slate-400">-</span>';
-                
+                let perHtml = '<span class="text-slate-400">-</span>', pbrHtml = '<span class="text-slate-400">-</span>';
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
                     if (!isNaN(perVal)) {
                         const evalPer = evaluateValuation(item.ticker, 'per', perVal);
-                        perHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPer.color}" title="${evalPer.text}">${perVal}배</span>`;
+                        perHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPer.color} whitespace-nowrap inline-block" title="${evalPer.text}">${perVal}배</span>`;
                     }
-
                     const pbrVal = parseFloat(globalQuantData[item.ticker].pbr);
                     if (!isNaN(pbrVal)) {
                         const evalPbr = evaluateValuation(item.ticker, 'pbr', pbrVal);
-                        pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPbr.color}" title="${evalPbr.text}">${pbrVal}배</span>`;
+                        pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPbr.color} whitespace-nowrap inline-block" title="${evalPbr.text}">${pbrVal}배</span>`;
                     }
                 }
 
+                let sectorTd = '';
+                if (!sectorSeen[sector]) {
+                    sectorTd = `<td rowspan="${sectorCounts[sector]}" class="p-2 text-left align-middle bg-amber-50/40 border-r border-b border-slate-200">${buildSectorCellHtml(item.ticker)}</td>`;
+                    sectorSeen[sector] = true;
+                }
+
                 html += `<tr class="hover:bg-amber-50/30 transition border-b">
-                    <td class="p-2 text-left align-middle bg-amber-50/40 border-r border-slate-200">
-                        ${buildSectorCellHtml(item.ticker)}
-                    </td>
+                    ${sectorTd}
                     <td class="p-2 text-left align-middle">
                         <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="font-bold text-slate-800 hover:text-amber-600 text-left underline underline-offset-2 block">${item.corpName}</button>
                         <span class="text-[11px] font-mono text-slate-400 bg-slate-50 px-1 rounded border border-slate-100 inline-block mt-0.5">${item.ticker}</span>
                     </td>
                     <td class="p-2 text-right align-middle">
-                        <div class="font-bold text-slate-800">${currentPriceStr}</div>
-                        <div class="text-[11px] ${changeColor} mt-0.5">${changeText}</div>
+                        <div class="font-bold text-slate-800 whitespace-nowrap">${currentPriceStr}</div>
+                        <div class="text-[11px] ${changeColor} mt-0.5 whitespace-nowrap">${changeText}</div>
                     </td>
-                    <td class="p-2 text-right align-middle">
-                        ${sharesHtml}
-                    </td>
-                    <td class="p-2 text-right align-middle">
-                        ${volHtml}
-                    </td>
-                    <td class="p-2 text-center align-middle">${foreignHtml}</td>
-                    <td class="p-2 text-center align-middle">${perHtml}</td>
-                    <td class="p-2 text-center align-middle">${pbrHtml}</td>
+                    <td class="p-2 text-right align-middle">${sharesHtml}</td>
+                    <td class="p-2 text-right align-middle">${volHtml}</td>
+                    <td class="p-2 text-center align-middle whitespace-nowrap">${foreignHtml}</td>
+                    <td class="p-2 text-center align-middle whitespace-nowrap">${perHtml}</td>
+                    <td class="p-2 text-center align-middle whitespace-nowrap">${pbrHtml}</td>
                     <td class="p-2 text-center whitespace-nowrap align-middle">
                         <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white px-2 py-1 rounded transition mr-1 font-bold">AI분석</button>
                         <button onclick="removeWatchlistItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button>
