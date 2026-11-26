@@ -892,84 +892,6 @@
         }
 
         // =========================================================================
-        // 🌟 KRX/DART 공시 기반 주요 종목 총발행주식수 및 유동주식수 정밀 데이터베이스
-        // =========================================================================
-        const KRX_ACCURATE_SHARES_DB = {
-            "005930": { total: 5969782550, floatRatio: 0.758 }, // 삼성전자
-            "000660": { total: 728002365, floatRatio: 0.739 },  // SK하이닉스
-            "373220": { total: 234000000, floatRatio: 0.182 },  // LG에너지솔루션
-            "207940": { total: 71174000, floatRatio: 0.249 },   // 삼성바이오로직스
-            "005380": { total: 209416191, floatRatio: 0.635 },  // 현대차
-            "000270": { total: 402044203, floatRatio: 0.621 },  // 기아
-            "068270": { total: 217056511, floatRatio: 0.732 },  // 셀트리온
-            "105560": { total: 393528423, floatRatio: 0.824 },  // KB금융
-            "005490": { total: 82624377, floatRatio: 0.745 },   // POSCO홀딩스
-            "035420": { total: 162408594, floatRatio: 0.812 },  // NAVER
-            "055550": { total: 509393404, floatRatio: 0.818 },  // 신한지주
-            "006400": { total: 68764530, floatRatio: 0.731 },   // 삼성SDI
-            "051910": { total: 70592343, floatRatio: 0.666 },   // LG화학
-            "012330": { total: 92991779, floatRatio: 0.678 },   // 현대모비스
-            "035720": { total: 443523100, floatRatio: 0.735 },  // 카카오
-            "028260": { total: 170520025, floatRatio: 0.562 },  // 삼성물산
-            "086790": { total: 292356598, floatRatio: 0.852 },  // 하나금융지주
-            "138040": { total: 190720114, floatRatio: 0.485 },  // 메리츠금융지주
-            "012450": { total: 45581161, floatRatio: 0.654 },   // 한화에어로스페이스
-            "034020": { total: 640561146, floatRatio: 0.692 },  // 두산에너빌리티
-            "042700": { total: 96993920, floatRatio: 0.443 },   // 한미반도체
-            "329180": { total: 88773116, floatRatio: 0.248 },   // HD현대중공업
-            "009540": { total: 70773116, floatRatio: 0.627 },   // HD한국조선해양
-            "015760": { total: 641964077, floatRatio: 0.489 },  // 한국전력
-            "259960": { total: 48365445, floatRatio: 0.585 },   // 크래프톤
-            "011200": { total: 750039496, floatRatio: 0.412 },  // HMM
-            "032830": { total: 200000000, floatRatio: 0.456 },  // 삼성생명
-            "000810": { total: 47374837, floatRatio: 0.578 },   // 삼성화재
-            "003670": { total: 77463220, floatRatio: 0.402 },   // 포스코퓨처엠
-            "096770": { total: 100634389, floatRatio: 0.582 },  // SK이노베이션
-            "066570": { total: 163647814, floatRatio: 0.658 },  // LG전자
-            "033780": { total: 133822497, floatRatio: 0.774 },  // KT&G
-            "316140": { total: 742591507, floatRatio: 0.841 },  // 우리금융지주
-            "017670": { total: 214790053, floatRatio: 0.698 },  // SK텔레콤
-            "030200": { total: 252021685, floatRatio: 0.765 },  // KT
-            "267260": { total: 36047135, floatRatio: 0.618 },   // HD현대일렉트릭
-            "010130": { total: 20703283, floatRatio: 0.472 },   // 고려아연
-            "042660": { total: 306359827, floatRatio: 0.452 },  // 한화오션
-            "010140": { total: 880000000, floatRatio: 0.764 },  // 삼성중공업
-            "352820": { total: 41652408, floatRatio: 0.615 },   // 하이브
-            "003490": { total: 368220612, floatRatio: 0.631 },  // 대한항공
-            "009150": { total: 74693696, floatRatio: 0.742 },   // 삼성전기
-            "018260": { total: 77377800, floatRatio: 0.419 },   // 삼성에스디에스
-            "000100": { total: 80209052, floatRatio: 0.715 },   // 유한양행
-            "247540": { total: 97801344, floatRatio: 0.538 },   // 에코프로비엠
-            "086520": { total: 133138255, floatRatio: 0.785 },  // 에코프로
-            "196170": { total: 53147228, floatRatio: 0.752 },   // 알테오젠
-            "028300": { total: 130854320, floatRatio: 0.892 },  // HLB
-            "066970": { total: 36258668, floatRatio: 0.698 },   // 엘앤에프
-            "058470": { total: 15242370, floatRatio: 0.569 },   // 리노공업
-            "277810": { total: 19399858, floatRatio: 0.421 },   // 레인보우로보틱스
-            "403870": { total: 82716080, floatRatio: 0.584 },   // HPSP
-            "214150": { total: 64148835, floatRatio: 0.385 },   // 클래시스
-            "145020": { total: 12183511, floatRatio: 0.521 },   // 휴젤
-            "000250": { total: 23456112, floatRatio: 0.648 },   // 삼천당제약
-            "141080": { total: 36285190, floatRatio: 0.731 },   // 리가켐바이오
-            "348370": { total: 20856140, floatRatio: 0.712 },   // 엔켐
-            "039030": { total: 12319550, floatRatio: 0.654 },   // 이오테크닉스
-            "035900": { total: 35532420, floatRatio: 0.741 },   // JYP Ent.
-            "041510": { total: 23814101, floatRatio: 0.578 },   // 에스엠
-            "263750": { total: 64241360, floatRatio: 0.551 },   // 펄어비스
-            "293490": { total: 82541200, floatRatio: 0.492 },   // 카카오게임즈
-            "036570": { total: 21954022, floatRatio: 0.684 },   // 엔씨소프트
-            "251270": { total: 85953502, floatRatio: 0.285 },   // 넷마블
-            "064350": { total: 109142293, floatRatio: 0.662 },  // 현대로템
-            "047810": { total: 97475107, floatRatio: 0.695 },   // 한국항공우주
-            "079550": { total: 22000000, floatRatio: 0.528 },   // LIG넥스원
-            "298040": { total: 9324548, floatRatio: 0.514 },    // 효성중공업
-            "010120": { total: 30000000, floatRatio: 0.525 },   // LS ELECTRIC
-            "003230": { total: 7533015, floatRatio: 0.531 },    // 삼양식품
-            "090430": { total: 58492759, floatRatio: 0.524 },   // 아모레퍼시픽
-            "278470": { total: 38112685, floatRatio: 0.618 }    // 에이피알
-        };
-
-        // =========================================================================
         // 🌟 섹터별 PER/PBR 및 유동주식수 대비 회전율 기준 로직
         // =========================================================================
         const SECTOR_BASELINES = {
@@ -1048,39 +970,38 @@
             return totalWon;
         }
         
-        // 🌟 총발행주식수 및 유동주식수 정밀 추출 함수 (캐싱 적용)
+        // 🌟 총발행주식수 및 유동주식수 정밀 추출 함수 (수동 DB 삭제 완료 / 서버 데이터 최우선)
         function getAccurateSharesData(ticker, currentPriceNum) {
             if (sharesCache[ticker]) return sharesCache[ticker];
 
             const qData = (globalQuantData && globalQuantData[ticker]) ? globalQuantData[ticker] : null;
             let totalShares = 0; let floatingShares = 0;
 
+            // 1순위: 파이썬 봇이 긁어온 최신 서버 데이터 (quant_data.json)
             if (qData) {
                 const rawTotal = parseInt(String(qData.totalShares || qData.listedShares || qData.shares || '').replace(/,/g, ''), 10);
                 const rawFloat = parseInt(String(qData.floatingShares || qData.freeFloatShares || '').replace(/,/g, ''), 10);
                 const rawFloatRate = parseFloat(String(qData.freeFloatRate || qData.floatingRate || '').replace(/%/g, ''));
-                if (!isNaN(rawTotal) && rawTotal > 100000) totalShares = rawTotal;
-                if (!isNaN(rawFloat) && rawFloat > 50000) floatingShares = rawFloat; 
+                
+                if (!isNaN(rawTotal) && rawTotal > 10000) totalShares = rawTotal;
+                
+                if (!isNaN(rawFloat) && rawFloat > 5000) floatingShares = rawFloat; 
                 else if (totalShares > 0 && !isNaN(rawFloatRate) && rawFloatRate > 0) floatingShares = Math.floor(totalShares * (rawFloatRate / 100));
             }
 
-            if ((!totalShares || !floatingShares) && KRX_ACCURATE_SHARES_DB[ticker]) {
-                const dbEntry = KRX_ACCURATE_SHARES_DB[ticker];
-                if (!totalShares) totalShares = dbEntry.total;
-                if (!floatingShares) floatingShares = Math.floor(totalShares * dbEntry.floatRatio);
-            }
-
-            if (!totalShares && qData && qData.marketCap) {
+            // 2순위: 시가총액 역산 로직 (서버 데이터 누락 시 방어선)
+            if (totalShares === 0 && qData && qData.marketCap) {
                 const mcWon = parseMarketCapToWon(String(qData.marketCap));
                 const priceNum = parseInt(String(qData.price || '').replace(/,/g, ''), 10) || currentPriceNum || 0;
                 if (mcWon > 0 && priceNum > 0) totalShares = Math.round(mcWon / priceNum);
             }
 
-            if (!totalShares || isNaN(totalShares)) {
+            // 3순위: 최후 방어 보정값
+            if (totalShares === 0 || isNaN(totalShares)) {
                 const num = parseInt(ticker.replace(/\D/g, '') || '100000', 10);
                 totalShares = ((num % 850) + 150) * 100000;
             }
-            if (!floatingShares || isNaN(floatingShares)) {
+            if (floatingShares === 0 || isNaN(floatingShares)) {
                 const sector = getSectorByTicker(ticker);
                 let defaultFloatRatio = 0.65;
                 if (sector.includes("금융") || sector.includes("증권")) defaultFloatRatio = 0.78;
