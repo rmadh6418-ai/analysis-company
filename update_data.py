@@ -321,6 +321,26 @@ def fetch_stock_data(name, ticker, krx_all):
             else: stock_info["pegDesc"] = "적자지속/흑자전환"
     except: pass
 
+    # 🌟 [최후 방어선] 시가총액과 현재가 기반 주식수 역산 (크롤링 실패 대비)
+    if stock_info["totalShares"] == 0 and stock_info["marketCap"] != "-" and stock_info["rawPrice"] > 0:
+        try:
+            mc_str = stock_info["marketCap"].replace(',', '').replace(' ', '')
+            mc_won = 0
+            if '조' in mc_str:
+                parts = mc_str.split('조')
+                mc_won += int(parts[0]) * 1000000000000
+                if '억' in parts[1]: mc_won += int(parts[1].replace('억', '')) * 100000000
+            elif '억' in mc_str:
+                mc_won += int(mc_str.replace('억', '')) * 100000000
+            
+            if mc_won > 0:
+                stock_info["totalShares"] = round(mc_won / stock_info["rawPrice"])
+                if stock_info["freeFloatRate"] != "-":
+                    fr_rate = float(stock_info["freeFloatRate"].replace('%', ''))
+                    stock_info["floatingShares"] = int(stock_info["totalShares"] * (fr_rate / 100))
+        except Exception as e:
+            print(f"[{ticker}] 역산 실패: {e}")
+
     return ticker, stock_info
 
 # ================= 스크립트 실행 진입점 ================= #
