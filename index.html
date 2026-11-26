@@ -228,6 +228,11 @@
                         <!-- 섹터 필터 동적 생성 영역 -->
                         <div id="watchSectorFilters" class="flex flex-wrap gap-2 pt-1 border-t border-amber-200/50">
                         </div>
+                        
+                        <!-- 🌟 내 관심종목 내 이름 검색 필터 추가 -->
+                        <div class="flex justify-end mt-2 mb-1">
+                            <input type="text" id="watchFilterInput" oninput="renderWatchlistTable()" placeholder="🔍 등록된 관심종목 내 검색..." class="border border-amber-300 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-amber-500 shadow-sm w-full md:w-64">
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -715,6 +720,11 @@
 
         </div>
     </div>
+
+    <!-- 🚀 상단(관심종목)으로 단번에 스크롤 이동하는 버튼 (챗봇과 겹치지 않게 왼쪽 배치) -->
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="fixed bottom-6 left-6 z-[9980] bg-slate-700 text-white p-4 rounded-full shadow-2xl hover:bg-slate-800 transition transform hover:scale-105 flex items-center justify-center" title="맨 위로 가기">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7" /></svg>
+    </button>
 
     <!-- 🤖 챗봇 플로팅 UI 추가부분 -->
     <button id="chatbotToggleBtn" onclick="toggleChatbot()" class="fixed bottom-6 right-6 z-[9990] bg-indigo-600 text-white p-4 rounded-full shadow-2xl hover:bg-indigo-700 transition transform hover:scale-105 flex items-center justify-center">
@@ -1735,14 +1745,20 @@
                 filterContainer.innerHTML = '';
             }
 
-            // 🌟 2. 선택된 섹터 필터링
+            // 🌟 2. 선택된 섹터 및 종목명 검색 필터링
             let filteredWatchlist = [...userWatchlist]; 
             if (currentWatchSectorFilter !== '전체') {
                 filteredWatchlist = filteredWatchlist.filter(item => getSectorByTicker(item.ticker) === currentWatchSectorFilter);
             }
 
+            // 🌟 검색어 필터 실시간 적용
+            const searchKeyword = document.getElementById('watchFilterInput') ? document.getElementById('watchFilterInput').value.trim().toLowerCase() : '';
+            if (searchKeyword) {
+                filteredWatchlist = filteredWatchlist.filter(item => item.corpName.toLowerCase().includes(searchKeyword));
+            }
+
             if (filteredWatchlist.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-xs text-slate-400">해당 섹터에 등록된 관심종목이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-xs text-slate-400">조건에 맞는 관심종목이 없습니다.</td></tr>`;
                 return;
             }
 
