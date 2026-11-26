@@ -861,10 +861,10 @@
         }
 
         const KOSPI200_COMPANIES = {
-            "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680", "삼화콘덴서": "001820", "케이씨": "029460", "케이씨텍": "281820"},
+            "반도체·IT·장비": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680", "삼화콘덴서": "001820", "케이씨": "029460", "케이씨텍": "281820"},
             "이차전지·소재": {"LG에너지솔루션": "373220", "POSCO홀딩스": "005490", "삼성SDI": "006400", "포스코퓨처엠": "003670", "에코프로머티": "450080", "엘앤에프": "066970", "코스모신소재": "005070", "코스모화학": "005420", "솔루스첨단소재": "336370", "금양": "001570", "더블유씨피": "393890", "롯데에너지머티리얼즈": "020150", "SK아이이테크놀로지": "361610"},
-            "플랫폼·게임·IT(S/W)": {"NAVER": "035420", "카카오": "035720", "크래프톤": "259960", "엔씨소프트": "036570", "넷마블": "251270", "카카오페이": "377300", "카카오뱅크": "323410", "삼성에스디에스": "018260", "현대오토에버": "307950", "롯데이노베이트": "286940", "포스코DX": "022100", "다우기술": "023590", "에스원": "012750", "NHN": "181710", "더블유게임즈": "192080"},
-            "통신·미디어": {"SK텔레콤": "017670", "KT": "030200", "LG유플러스": "032640", "제일기획": "030000", "이노션": "214320", "CJ ENM": "035760", "스튜디오드래곤": "253450"},
+            "플랫폼·게임·소프트웨어": {"NAVER": "035420", "카카오": "035720", "크래프톤": "259960", "엔씨소프트": "036570", "넷마블": "251270", "카카오페이": "377300", "카카오뱅크": "323410", "삼성에스디에스": "018260", "현대오토에버": "307950", "롯데이노베이트": "286940", "포스코DX": "022100", "다우기술": "023590", "에스원": "012750", "NHN": "181710", "더블유게임즈": "192080"},
+            "엔터·미디어·통신": {"SK텔레콤": "017670", "KT": "030200", "LG유플러스": "032640", "제일기획": "030000", "이노션": "214320", "CJ ENM": "035760", "스튜디오드래곤": "253450"},
             "자동차·부품·타이어": {"현대차": "005380", "기아": "000270", "현대모비스": "012330", "현대글로비스": "086280", "현대위아": "011210", "HL만도": "204320", "에스엘": "005850", "한국타이어앤테크놀로지": "161390", "금호타이어": "073240", "넥센타이어": "002350", "화신": "010690", "성우하이텍": "015750", "명신산업": "009900", "DN오토모티브": "007340"},
             "조선·기계·운송": {"HD한국조선해양": "009540", "HD현대중공업": "329180", "삼성중공업": "010140", "한화오션": "042660", "한화엔진": "082740", "HD현대마린엔진": "071970", "HD현대마린솔루션": "443060", "HMM": "011200", "대한항공": "003490", "아시아나항공": "020560", "팬오션": "028670", "CJ대한통운": "000120", "두산밥캣": "241560", "HD현대건설기계": "267270", "한국카본": "017960", "현대엘리베이": "017800", "두산로보틱스": "454910", "SK오션플랜트": "100090", "경동나비엔": "009450", "세진중공업": "075580", "대한조선": "439260", "한화머시너리앤서비스홀딩스": "0220W0"},
             "방위산업·우주항공": {"한화에어로스페이스": "012450", "현대로템": "064350", "한국항공우주": "047810", "LIG넥스원": "079550", "한화시스템": "272210", "풍산": "103140"},
@@ -875,19 +875,53 @@
             "금융·지주사": {"KB금융": "105560", "신한지주": "055550", "하나금융지주": "086790", "우리금융지주": "316140", "메리츠금융지주": "138040", "기업은행": "024110", "BNK금융지주": "138930", "DGB금융지주": "139130", "JB금융지주": "175330", "SK": "034730", "LG": "003550", "HD현대": "267250", "CJ": "001040", "LS": "006260", "한화": "000880", "GS": "078930", "삼성물산": "028260", "두산": "000150", "효성": "004800", "BGF": "027410", "롯데지주": "004990", "롯데지주우": "00499K", "현대지에프홀딩스": "005440", "케이뱅크": "279570"},
             "증권·보험": {"삼성생명": "032830", "삼성화재": "000810", "DB손해보험": "005830", "현대해상": "001450", "한화생명": "088350", "한화손해보험": "000370", "롯데손해보험": "000400", "코리안리": "003690", "미래에셋증권": "006800", "한국금융지주": "071050", "NH투자증권": "005940", "삼성증권": "016360", "키움증권": "039490", "대신증권": "003540", "한화투자증권": "003530", "신영증권": "001720", "유안타증권": "003470", "유안타증권우": "003475", "서울보증보험": "031210"},
             "건설·건자재": {"현대건설": "000720", "GS건설": "006360", "대우건설": "047040", "DL이앤씨": "375500", "HDC현대산업개발": "294870", "삼성E&A": "028050", "KCC": "002380", "아세아시멘트": "183190", "한일시멘트": "300720", "동서": "026960", "아세아": "002030"},
-            "화장품·의류·소비재": {"아모레퍼시픽": "090430", "LG생활건강": "051900", "한국콜마": "161890", "코스맥스": "192820", "아모레G": "002790", "애경산업": "018250", "F&F": "383220", "영원무역": "111110", "한섬": "020000", "휠라홀딩스": "081660", "코웨이": "021240", "쿠쿠홈시스": "284740", "에이피알": "278470", "영원무역홀딩스": "009970", "신세계인터내셔날": "031430"},
-            "음식료·유통·엔터": {"하이브": "352820", "KT&G": "033780", "CJ제일제당": "097950", "삼양식품": "003230", "오리온": "271560", "농심": "004370", "롯데웰푸드": "280360", "하이트진로": "000080", "대상": "001680", "오뚜기": "007310", "롯데칠성": "005300", "이마트": "139480", "BGF리테일": "282330", "GS리테일": "007070", "신세계": "004170", "롯데쇼핑": "023530", "현대백화점": "069960", "호텔신라": "008770", "강원랜드": "035250", "GKL": "114090", "빙그레": "005180", "현대그린푸드": "453340", "SK네트웍스": "001740", "롯데칠성우": "005305"}
+            "미용의료·화장품·소비재": {"아모레퍼시픽": "090430", "LG생활건강": "051900", "한국콜마": "161890", "코스맥스": "192820", "아모레G": "002790", "애경산업": "018250", "F&F": "383220", "영원무역": "111110", "한섬": "020000", "휠라홀딩스": "081660", "코웨이": "021240", "쿠쿠홈시스": "284740", "에이피알": "278470", "영원무역홀딩스": "009970", "신세계인터내셔날": "031430"},
+            "음식료·유통": {"KT&G": "033780", "CJ제일제당": "097950", "삼양식품": "003230", "오리온": "271560", "농심": "004370", "롯데웰푸드": "280360", "하이트진로": "000080", "대상": "001680", "오뚜기": "007310", "롯데칠성": "005300", "이마트": "139480", "BGF리테일": "282330", "GS리테일": "007070", "신세계": "004170", "롯데쇼핑": "023530", "현대백화점": "069960", "호텔신라": "008770", "강원랜드": "035250", "GKL": "114090", "빙그레": "005180", "현대그린푸드": "453340", "SK네트웍스": "001740", "롯데칠성우": "005305"}
         };
 
         const KOSDAQ150_COMPANIES = {
-            "반도체·장비 (IT H/W)": {"씨엠티엑스": "388210", "리노공업": "058470", "HPSP": "403870", "이오테크닉스": "039030", "주성엔지니어링": "036930", "솔브레인": "357780", "동진쎄미켐": "005290", "하나머티리얼즈": "166090", "원익IPS": "240810", "테크윙": "089030", "ISC": "095340", "심텍": "222800", "대덕전자": "353200", "파크시스템스": "140860", "티씨케이": "064760", "원익QnC": "074600", "두산테스나": "131970", "유진테크": "084370", "SFA반도체": "036540", "네오셈": "253590", "덕산네오룩스": "213420", "피에스케이": "031980", "고영": "098460", "제주반도체": "080220", "테스": "095610", "원익홀딩스": "030530", "에스티아이": "039440", "아이쓰리시스템": "214430", "하나마이크론": "067310", "에스앤에스텍": "101490", "티에스이": "131290", "코미코": "183300", "와이씨": "232140", "퀄리타스반도체": "432720", "어보브반도체": "102120", "가온칩스": "399720", "오픈엣지테크놀로지": "394280", "에이직랜드": "445090", "텔레칩스": "054450", "넥스틴": "348210", "파두": "440110", "에스에이엠티": "031330", "GST": "083450", "브이엠": "089970", "이엔에프테크놀로지": "102710", "필옵틱스": "161580", "제이앤티씨": "204270", "샘씨엔에스": "252990", "티엘비": "356860", "기가비스": "420770"},
+            "반도체·IT·장비": {"씨엠티엑스": "388210", "리노공업": "058470", "HPSP": "403870", "이오테크닉스": "039030", "주성엔지니어링": "036930", "솔브레인": "357780", "동진쎄미켐": "005290", "하나머티리얼즈": "166090", "원익IPS": "240810", "테크윙": "089030", "ISC": "095340", "심텍": "222800", "대덕전자": "353200", "파크시스템스": "140860", "티씨케이": "064760", "원익QnC": "074600", "두산테스나": "131970", "유진테크": "084370", "SFA반도체": "036540", "네오셈": "253590", "덕산네오룩스": "213420", "피에스케이": "031980", "고영": "098460", "제주반도체": "080220", "테스": "095610", "원익홀딩스": "030530", "에스티아이": "039440", "아이쓰리시스템": "214430", "하나마이크론": "067310", "에스앤에스텍": "101490", "티에스이": "131290", "코미코": "183300", "와이씨": "232140", "퀄리타스반도체": "432720", "어보브반도체": "102120", "가온칩스": "399720", "오픈엣지테크놀로지": "394280", "에이직랜드": "445090", "텔레칩스": "054450", "넥스틴": "348210", "파두": "440110", "에스에이엠티": "031330", "GST": "083450", "브이엠": "089970", "이엔에프테크놀로지": "102710", "필옵틱스": "161580", "제이앤티씨": "204270", "샘씨엔에스": "252990", "티엘비": "356860", "기가비스": "420770"},
             "이차전지·소재": {"에코프로비엠": "247540", "에코프로": "086520", "대주전자재료": "078600", "엔켐": "348370", "나노신소재": "121600", "피엔티": "137400", "동화기업": "025900", "성일하이텍": "365340", "더블유씨피": "393890", "윤성에프앤씨": "372170", "천보": "278280", "에코프로에이치엔": "383310", "새빗켐": "107600", "씨아이에스": "222080", "신성델타테크": "065350", "레이크머티리얼즈": "281740", "포스코엠텍": "009520", "이녹스첨단소재": "272290", "탑머티리얼": "360070", "제이오": "418550", "신성에스티": "416180"},
             "제약·바이오": {"알테오젠": "196170", "HLB": "028300", "삼천당제약": "000250", "리가켐바이오": "141080", "에스티팜": "237690", "휴젤": "145020", "클래시스": "214150", "파마리서치": "214450", "셀트리온제약": "068760", "케어젠": "214370", "에이비엘바이오": "298380", "메디톡스": "086900", "오스코텍": "039200", "펩트론": "087010", "차바이오텍": "085660", "보로노이": "310210", "HK이노엔": "195940", "네이처셀": "007390", "올릭스": "226950", "엘앤씨바이오": "290650", "씨젠": "096530", "동국제약": "086450", "디앤디파마텍": "347850", "제넥신": "095700", "현대바이오": "048410", "젬백스": "082270", "루닛": "328130", "뷰노": "338220", "제이엘케이": "322510", "코어라인소프트": "384470", "큐로셀": "372320", "신테카바이오": "226330", "툴젠": "199800", "바이오다인": "314930", "큐리언트": "115180", "제이에스링크": "127120", "앱클론": "174900", "지아이이노베이션": "358570", "로킷헬스케어": "376900", "에이프릴바이오": "397030", "지투지바이오": "456160", "씨어스": "458870", "알지노믹스": "476830", "리브스메드": "491000", "에임드바이오": "0009K0"},
-            "게임·IT(S/W)": {"펄어비스": "263750", "카카오게임즈": "293490", "위메이드": "112040", "넥슨게임즈": "225570", "컴투스": "078340", "네오위즈": "095660", "웹젠": "069080", "안랩": "053800", "위메이드맥스": "101730", "데브시스터즈": "194480", "한글과컴퓨터": "030520", "다우데이타": "032190", "엠게임": "058630", "아이티센": "124500", "코나아이": "052400", "NHN한국사이버결제": "060250", "엠로": "058970", "마음AI": "377220", "솔트룩스": "304100", "크라우드웍스": "355390", "폴라리스오피스": "041020", "이스트소프트": "047560"},
-            "엔터·미디어·플랫폼": {"JYP Ent.": "035900", "에스엠": "041510", "와이지엔터테인먼트": "122870", "SOOP": "067160", "CJ ENM": "035760", "스튜디오드래곤": "253450", "디어유": "376300", "초록뱀미디어": "047820", "삼화네트웍스": "046390", "카페24": "042000"},
+            "플랫폼·게임·소프트웨어": {"펄어비스": "263750", "카카오게임즈": "293490", "위메이드": "112040", "넥슨게임즈": "225570", "컴투스": "078340", "네오위즈": "095660", "웹젠": "069080", "안랩": "053800", "위메이드맥스": "101730", "데브시스터즈": "194480", "한글과컴퓨터": "030520", "다우데이타": "032190", "엠게임": "058630", "아이티센": "124500", "코나아이": "052400", "NHN한국사이버결제": "060250", "엠로": "058970", "마음AI": "377220", "솔트룩스": "304100", "크라우드웍스": "355390", "폴라리스오피스": "041020", "이스트소프트": "047560"},
+            "엔터·미디어·통신": {"JYP Ent.": "035900", "에스엠": "041510", "와이지엔터테인먼트": "122870", "SOOP": "067160", "하이브": "352820", "디어유": "376300", "초록뱀미디어": "047820", "삼화네트웍스": "046390", "카페24": "042000"},
             "미용의료·화장품·소비재": {"실리콘투": "257720", "원텍": "336570", "브이티": "018290", "마녀공장": "439090", "코스메카코리아": "241710", "펌텍코리아": "251970", "감성코퍼레이션": "036620", "메가스터디교육": "215200", "아난티": "025980", "제이투케이바이오": "420570", "씨앤씨인터내셔널": "352480"},
             "로봇·기계·부품": {"레인보우로보틱스": "277810", "에스에프에이": "056190", "로보티즈": "108490", "에스피지": "058610", "휴림로봇": "090710", "로보스타": "090360", "티로보틱스": "117730", "유일로보틱스": "388720", "에브리봇": "270660", "유진로봇": "056080", "알에스오토메이션": "140670", "하이젠알앤엠": "160190", "삼현": "437730", "성광벤드": "014620", "태광": "023160", "서진시스템": "178320", "비에이치아이": "083650", "엔젤로보틱스": "455900", "뉴로메카": "348340", "에스비비테크": "389500", "큐렉소": "060280", "클로봇": "466100"},
-            "통신장비·기타": {"케이엠더블유": "032500", "쏠리드": "050890", "인텔리안테크": "189300", "RFHIC": "218410", "쎄트렉아이": "099320", "제룡전기": "033100", "LS마린솔루션": "060370", "동성화인텍": "033500", "시노펙스": "025320", "우리기술투자": "041190", "미래에셋벤처투자": "100790", "서부T&D": "006730", "삼표시멘트": "038500", "하림지주": "003380", "에코아이": "448280", "대한광통신": "010170", "아주IB투자": "027360", "이녹스": "088390", "스피어": "347700"}
+            "기타·통신장비": {"케이엠더블유": "032500", "쏠리드": "050890", "인텔리안테크": "189300", "RFHIC": "218410", "쎄트렉아이": "099320", "제룡전기": "033100", "LS마린솔루션": "060370", "동성화인텍": "033500", "시노펙스": "025320", "우리기술투자": "041190", "미래에셋벤처투자": "100790", "서부T&D": "006730", "삼표시멘트": "038500", "하림지주": "003380", "에코아이": "448280", "대한광통신": "010170", "아주IB투자": "027360", "이녹스": "088390", "스피어": "347700"}
+        };
+        
+        const ALL_COMPANIES = {};
+        const CODE_TO_NAME = {};
+        for (const sector in KOSPI200_COMPANIES) {
+            for (const [name, code] of Object.entries(KOSPI200_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; }
+        }
+        for (const sector in KOSDAQ150_COMPANIES) {
+            for (const [name, code] of Object.entries(KOSDAQ150_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; }
+        }
+
+        // =========================================================================
+        // 🌟 섹터별 PER/PBR 및 유동주식수 대비 회전율 기준 로직
+        // =========================================================================
+        const SECTOR_BASELINES = {
+            "반도체·IT·장비": { per: 15, pbr: 1.5 },
+            "이차전지·소재": { per: 30, pbr: 3.0 },
+            "플랫폼·게임·소프트웨어": { per: 25, pbr: 2.5 },
+            "엔터·미디어·통신": { per: 15, pbr: 1.5 },
+            "자동차·부품·타이어": { per: 8, pbr: 0.8 },
+            "조선·기계·운송": { per: 12, pbr: 1.2 },
+            "방위산업·우주항공": { per: 20, pbr: 2.0 },
+            "원전·전력설비": { per: 15, pbr: 1.5 },
+            "제약·바이오": { per: 40, pbr: 4.0 },
+            "화학·정유·에너지": { per: 10, pbr: 1.0 },
+            "철강·비철금속·소재": { per: 8, pbr: 0.8 },
+            "금융·지주사": { per: 6, pbr: 0.6 },
+            "증권·보험": { per: 6, pbr: 0.6 },
+            "건설·건자재": { per: 7, pbr: 0.7 },
+            "미용의료·화장품·소비재": { per: 15, pbr: 1.5 },
+            "음식료·유통": { per: 15, pbr: 1.5 },
+            "로봇·기계·부품": { per: 25, pbr: 2.5 },
+            "기타·통신장비": { per: 12, pbr: 1.2 },
+            "default": { per: 15, pbr: 1.5 }
         };
         
         const ALL_COMPANIES = {};
@@ -1704,23 +1738,45 @@
 
         function renderWatchlistTable() {
             const tbody = document.getElementById('watchlistTableBody');
-            
-            // 🌟 1. 섹터 탭 버튼 그리기
             const filterContainer = document.getElementById('watchSectorFilters');
+            
+            // 🌟 1. 정렬 드롭다운과 섹터 탭 동적 생성
             if (filterContainer && userWatchlist.length > 0) {
                 const sectors = ['전체', ...new Set(userWatchlist.map(item => getSectorByTicker(item.ticker)))];
-                filterContainer.innerHTML = sectors.map(sec => {
+                
+                // 현재 선택된 정렬 상태 가져오기 (없으면 기본값 sector)
+                const sortSelectEl = document.getElementById('watchSortSelect');
+                const currentSort = sortSelectEl ? sortSelectEl.value : 'sector';
+
+                let filterHtml = '<div class="flex flex-wrap gap-2 flex-1">';
+                filterHtml += sectors.map(sec => {
                     const activeCls = sec === currentWatchSectorFilter ? 'bg-amber-500 text-white font-bold border-amber-600 shadow-md' : 'bg-white text-slate-600 border-amber-200 hover:bg-amber-50';
                     return `<button onclick="setWatchSector('${sec}')" class="px-3 py-1.5 text-[11px] border rounded-full transition ${activeCls}">${sec}</button>`;
                 }).join('');
+                filterHtml += '</div>';
+
+                // 🌟 정렬 기능 셀렉트 박스 동적 추가
+                filterHtml += `
+                <select id="watchSortSelect" onchange="renderWatchlistTable()" class="border border-amber-300 bg-amber-50 text-amber-900 rounded-lg px-3 py-1.5 text-xs font-bold focus:outline-none shrink-0 cursor-pointer shadow-sm">
+                    <option value="sector" ${currentSort==='sector'?'selected':''}>📂 섹터별 정렬 (기본)</option>
+                    <option value="change_desc" ${currentSort==='change_desc'?'selected':''}>📈 등락률 상위순</option>
+                    <option value="change_asc" ${currentSort==='change_asc'?'selected':''}>📉 등락률 하위순</option>
+                    <option value="turnover_desc" ${currentSort==='turnover_desc'?'selected':''}>🔥 회전율 상위순</option>
+                    <option value="turnover_asc" ${currentSort==='turnover_asc'?'selected':''}>❄️ 회전율 하위순</option>
+                    <option value="foreign_desc" ${currentSort==='foreign_desc'?'selected':''}>💰 외인증감 상위순</option>
+                    <option value="foreign_asc" ${currentSort==='foreign_asc'?'selected':''}>💸 외인증감 하위순</option>
+                </select>`;
+
+                filterContainer.innerHTML = filterHtml;
+                filterContainer.className = "flex flex-col md:flex-row justify-between items-center gap-3 pt-2 border-t border-amber-200/50";
             } else if (filterContainer) {
                 filterContainer.innerHTML = '';
             }
 
-            // 🌟 2. 선택된 섹터만 필터링하기
-            let filteredWatchlist = userWatchlist;
+            // 🌟 2. 선택된 섹터 필터링
+            let filteredWatchlist = [...userWatchlist]; 
             if (currentWatchSectorFilter !== '전체') {
-                filteredWatchlist = userWatchlist.filter(item => getSectorByTicker(item.ticker) === currentWatchSectorFilter);
+                filteredWatchlist = filteredWatchlist.filter(item => getSectorByTicker(item.ticker) === currentWatchSectorFilter);
             }
 
             if (filteredWatchlist.length === 0) {
@@ -1728,22 +1784,65 @@
                 return;
             }
 
+            // 🌟 3. 정렬을 위한 실시간 데이터 사전 계산 (등락률, 회전율, 외인증감 추출)
             filteredWatchlist.forEach(item => {
                 item._sector = getSectorByTicker(item.ticker);
+                
+                let currentPriceNum = 0;
+                let changeRateNum = 0;
+                if (livePortfolioPrices[item.ticker]) {
+                    currentPriceNum = parseInt(String(livePortfolioPrices[item.ticker]).replace(/,/g, ''), 10) || 0;
+                    if (livePortfolioChanges[item.ticker]) {
+                        changeRateNum = parseFloat(livePortfolioChanges[item.ticker].text.replace(/%/g, '')) || 0;
+                        if (livePortfolioChanges[item.ticker].isDown) changeRateNum = -Math.abs(changeRateNum);
+                    }
+                } else if (globalQuantData && globalQuantData[item.ticker]) {
+                    currentPriceNum = parseInt(String(globalQuantData[item.ticker].price).replace(/,/g, ''), 10) || 0;
+                    let cStr = globalQuantData[item.ticker].changeRate || '0%';
+                    changeRateNum = parseFloat(cStr.replace(/%/g, '').replace(/\+/g, '')) || 0;
+                    if (cStr.includes('-')) changeRateNum = -Math.abs(changeRateNum);
+                }
+                item._changeRate = changeRateNum;
+
+                const sharesObj = getAccurateSharesData(item.ticker, currentPriceNum);
+                let volNum = 0;
+                if (livePortfolioVolumes[item.ticker] && livePortfolioVolumes[item.ticker] !== '-') {
+                    volNum = parseInt(livePortfolioVolumes[item.ticker].replace(/,/g, ''));
+                } else if (globalQuantData && globalQuantData[item.ticker] && globalQuantData[item.ticker].volume) {
+                    volNum = parseInt(String(globalQuantData[item.ticker].volume).replace(/,/g, ''));
+                }
+                item._turnover = (sharesObj.floating > 0) ? ((volNum / sharesObj.floating) * 100) : 0;
+
+                const fData = getAccurateForeignData(item.ticker);
+                item._foreignChange = fData.change || 0;
             });
+
+            // 🌟 4. 드롭다운 선택값(sortMode)에 따라 배열 랭킹 정렬 실행
+            const sortMode = document.getElementById('watchSortSelect') ? document.getElementById('watchSortSelect').value : 'sector';
+            
             filteredWatchlist.sort((a, b) => {
+                if (sortMode === 'change_desc') return b._changeRate - a._changeRate;
+                if (sortMode === 'change_asc') return a._changeRate - b._changeRate;
+                if (sortMode === 'turnover_desc') return b._turnover - a._turnover;
+                if (sortMode === 'turnover_asc') return a._turnover - b._turnover;
+                if (sortMode === 'foreign_desc') return b._foreignChange - a._foreignChange;
+                if (sortMode === 'foreign_asc') return a._foreignChange - b._foreignChange;
+                
                 if (a._sector !== b._sector) return a._sector.localeCompare(b._sector, 'ko');
                 return a.corpName.localeCompare(b.corpName, 'ko');
             });
 
             const sectorCounts = {};
-            filteredWatchlist.forEach(item => {
-                sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1;
-            });
+            if (sortMode === 'sector') {
+                filteredWatchlist.forEach(item => {
+                    sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1;
+                });
+            }
 
             let html = '';
             let lastSector = null;
             
+            // 🌟 5. 정렬된 배열을 기반으로 테이블 화면 렌더링
             filteredWatchlist.forEach(item => {
                 const sector = item._sector;
                 const baseline = SECTOR_BASELINES[sector] || SECTOR_BASELINES["default"];
@@ -1795,7 +1894,6 @@
                 const fRate = fData.rate;
                 const fChange = fData.change;
                 
-                // 🌟 서버 데이터에서 연속 순매수 일수(foreignIncDays) 확인하기
                 let fIncDays = 0;
                 if (globalQuantData && globalQuantData[item.ticker] && globalQuantData[item.ticker].foreignIncDays) {
                     fIncDays = parseInt(globalQuantData[item.ticker].foreignIncDays) || 0;
@@ -1805,7 +1903,6 @@
                 let fColor = fChange > 0 ? 'text-red-600 bg-red-50 border-red-200' : (fChange < 0 ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-slate-500 bg-slate-100 border-slate-200');
                 let fArrow = fChange > 0 ? '▲ +' : (fChange < 0 ? '▼ ' : '');
                 
-                // 🌟 5일 이상 증가 시 불꽃 점멸 뱃지 생성
                 let fireBadge = '';
                 if (fIncDays >= 5) {
                     fireBadge = `<div class="text-[10px] font-extrabold text-purple-700 bg-purple-100 border border-purple-200 rounded px-1.5 py-0.5 mt-1 whitespace-nowrap animate-pulse">🔥${fIncDays}일 연속 순매수</div>`;
@@ -1817,7 +1914,6 @@
                 let perHtml = '<span class="text-slate-400">-</span>';
                 let pbrHtml = '<span class="text-slate-400">-</span>';
                 
-                // 🌟 PER, PBR '배' 글자 추가 및 박스 크기 고정 (w-16)
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
                     if (!isNaN(perVal)) {
@@ -1833,13 +1929,18 @@
                 }
 
                 let sectorTdHtml = '';
-                if (sector !== lastSector) {
-                    sectorTdHtml = `<td rowspan="${sectorCounts[sector]}" class="p-2 text-left align-middle bg-amber-50/40 border-r border-slate-200 whitespace-nowrap">
+                // 랭킹 정렬 시 묶여있던 섹터 그룹을 풀어서 각 열마다 보여주도록 자동 조정
+                if (sortMode === 'sector') {
+                    if (sector !== lastSector) {
+                        sectorTdHtml = `<td rowspan="${sectorCounts[sector]}" class="p-2 text-left align-middle bg-amber-50/40 border-r border-slate-200 whitespace-nowrap">
+                            ${buildSectorCellHtml(item.ticker)}
+                        </td>`;
+                        lastSector = sector;
+                    }
+                } else {
+                    sectorTdHtml = `<td class="p-2 text-left align-middle bg-amber-50/40 border-r border-slate-200 whitespace-nowrap">
                         ${buildSectorCellHtml(item.ticker)}
                     </td>`;
-                    lastSector = sector;
-                } else {
-                    sectorTdHtml = '';
                 }
 
                 html += `<tr class="hover:bg-amber-50/30 transition border-b">
