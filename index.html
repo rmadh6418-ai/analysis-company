@@ -222,15 +222,15 @@
                 <table class="w-full text-sm border-collapse">
                     <thead>
                         <tr class="bg-slate-100 text-slate-700 text-xs">
-                            <th class="p-2 border text-left">섹터 (분석기준)</th>
-                            <th class="p-2 border text-left">종목명 (코드)</th>
-                            <th class="p-2 border text-right">현재가 (등락률)</th>
-                            <th class="p-2 border text-right bg-blue-50 text-blue-800">총발행/유동주식수 (비율)</th>
-                            <th class="p-2 border text-right bg-red-50 text-red-800">당일 거래량 (회전율)</th>
-                            <th class="p-2 border text-center">외국인 소진율 (증감)</th>
-                            <th class="p-2 border text-center">PER</th>
-                            <th class="p-2 border text-center">PBR</th>
-                            <th class="p-2 border text-center">관리 / 분석</th>
+                            <th class="p-2 border text-left whitespace-nowrap">섹터 (분석기준)</th>
+                            <th class="p-2 border text-left whitespace-nowrap">종목명 (코드)</th>
+                            <th class="p-2 border text-right whitespace-nowrap">현재가 (등락률)</th>
+                            <th class="p-2 border text-right bg-blue-50 text-blue-800 whitespace-nowrap">총발행/유동주식수 (비율)</th>
+                            <th class="p-2 border text-right bg-red-50 text-red-800 whitespace-nowrap">당일 거래량 (회전율)</th>
+                            <th class="p-2 border text-center whitespace-nowrap">외국인 소진율 (증감)</th>
+                            <th class="p-2 border text-center whitespace-nowrap">PER</th>
+                            <th class="p-2 border text-center whitespace-nowrap">PBR</th>
+                            <th class="p-2 border text-center whitespace-nowrap">관리 / 분석</th>
                         </tr>
                     </thead>
                     <tbody id="watchlistTableBody">
@@ -523,6 +523,50 @@
                         </div>
 
                         <!-- 결과 -->
+                        <div class="flex justify-between items-center pt-2 bg-blue-50 p-4 rounded-lg">
+                            <span class="text-sm font-bold text-blue-800">총 추가 금액</span>
+                            <span id="wsTotalCost" class="text-xl font-extrabold text-blue-900">0원</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💧 직관적인 물타기 계산기 (모바일 앱 스타일) -->
+                <div id="waterSimulatorBox" class="hidden mb-4 bg-white border border-blue-200 rounded-xl shadow-md overflow-hidden w-full lg:w-2/3 mx-auto mt-4">
+                    <div class="bg-blue-600 px-5 py-3 flex justify-between items-center text-white">
+                        <h3 class="font-extrabold text-base flex items-center gap-2">💧 <span id="wsCorpName">종목명</span> 물타기 계산기</h3>
+                    </div>
+                    <div class="p-5 space-y-6">
+                        <div class="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div class="text-center w-5/12 flex flex-col items-center justify-center">
+                                <p class="text-[11px] font-bold text-slate-500 mb-1">현재 평균 수익률</p>
+                                <p id="wsCurrentReturn" class="text-xl font-extrabold text-slate-800">-</p>
+                                <p id="wsCurrentAvg" class="text-xs font-medium text-slate-500 mt-1">-</p>
+                            </div>
+                            <div class="w-2/12 flex justify-center text-slate-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                            </div>
+                            <div class="text-center w-5/12 flex flex-col items-center justify-center">
+                                <p class="text-[11px] font-bold text-blue-600 mb-1">물타기 후 예상 ⓘ</p>
+                                <p id="wsExpectedReturn" class="text-xl font-extrabold text-blue-600">-</p>
+                                <p id="wsExpectedAvg" class="text-xs font-medium text-slate-500 mt-1">-</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                                <label class="text-sm font-bold text-slate-700">사고 싶은 가격은?</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="wsBuyPrice" oninput="calculateWater()" class="w-28 text-right font-bold text-lg text-slate-900 focus:outline-none placeholder-slate-300 bg-transparent" placeholder="0">
+                                    <span class="text-sm font-bold text-slate-700">원 ✏️</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                                <label class="text-sm font-bold text-slate-700">몇 주 더 살까요?</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="wsBuyQty" oninput="calculateWater()" class="w-20 text-right font-bold text-lg text-slate-900 focus:outline-none placeholder-slate-300 bg-transparent" placeholder="0">
+                                    <span class="text-sm font-bold text-slate-700">주 ✏️</span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="flex justify-between items-center pt-2 bg-blue-50 p-4 rounded-lg">
                             <span class="text-sm font-bold text-blue-800">총 추가 금액</span>
                             <span id="wsTotalCost" class="text-xl font-extrabold text-blue-900">0원</span>
@@ -1732,11 +1776,11 @@
         function renderWatchlistTable() {
             const tbody = document.getElementById('watchlistTableBody');
             if (userWatchlist.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다. 위에서 종목을 추가해주세요.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td></tr>`;
                 return;
             }
 
-            // 섹터별로 관심종목 정렬 및 그룹화
+            // 🌟 1. 섹터별로 관심종목 먼저 정렬 (이게 있어야 병합이 안 꼬입니다!)
             userWatchlist.forEach(item => {
                 item._sector = getSectorByTicker(item.ticker);
             });
@@ -1745,7 +1789,7 @@
                 return a.corpName.localeCompare(b.corpName, 'ko');
             });
 
-            // 🌟 1. 섹터별 종목 개수를 미리 세어줍니다 (병합 rowspan 용도)
+            // 🌟 2. 섹터별 종목 개수를 미리 카운트 (병합 rowspan 용도)
             const sectorCounts = {};
             userWatchlist.forEach(item => {
                 sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1;
@@ -1818,7 +1862,7 @@
                 let perHtml = '<span class="text-slate-400">-</span>';
                 let pbrHtml = '<span class="text-slate-400">-</span>';
                 
-                // 🌟 PER, PBR '배' 글자 삭제 및 줄바꿈 금지(whitespace-nowrap) 적용
+                // 🌟 PER, PBR '배' 글자 삭제 및 줄바꿈 금지 적용
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
                     if (!isNaN(perVal)) {
@@ -1833,7 +1877,7 @@
                     }
                 }
 
-                // 🌟 섹터 병합 (하나로 합치기) 로직
+                // 🌟 섹터 병합 (하나로 합치기)
                 let sectorTdHtml = '';
                 if (sector !== lastSector) {
                     html += `<tr class="bg-amber-100/70 border-y border-amber-300">
@@ -2749,13 +2793,14 @@ PRED_D5: [예상종가]원
         function calculateInvestment() {
             const mode = document.getElementById('analysisModeSelect').value;
             const returnBox = document.getElementById('expectedReturnBox');
-            const simCurrentView = document.getElementById('simCurrentView'); const simAverageView = document.getElementById('simAverageView');
+            const simCurrentView = document.getElementById('simCurrentView'); 
+            const simAverageView = document.getElementById('simAverageView');
             const buyIds = ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3', 'aiBuyUp1', 'aiBuyUp2', 'aiBuyUp3'];
             buyIds.forEach(id => { const el = document.getElementById('calc_' + id); if (el) el.classList.add('hidden'); });
 
             if (mode === 'current') {
                 const investAmt = parseInt(document.getElementById('investAmountInput').value);
-                if (isNaN(investAmt) || investAmt <= 0) { returnBox.classList.add('hidden'); return; }
+                if (isNaN(investAmt) || investAmt <= 0) { returnBox.classList.add('hidden'); document.getElementById('waterSimulatorBox').classList.add('hidden'); return; }
 
                 let totalShares = 0;
                 ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3'].forEach(id => {
@@ -2777,9 +2822,10 @@ PRED_D5: [예상종가]원
                 document.getElementById('simModeBadge').textContent = "신규 진입 시나리오"; simCurrentView.classList.remove('hidden'); simAverageView.classList.add('hidden');
                 document.getElementById('simTotalInvestNew').textContent = investAmt.toLocaleString() + '원'; document.getElementById('simTotalSharesNew').textContent = totalShares.toLocaleString() + '주 예상';
                 runSellSimulation(totalShares, investAmt); returnBox.classList.remove('hidden');
+                document.getElementById('waterSimulatorBox').classList.add('hidden');
             } else {
                 const avgPrice = parseInt(document.getElementById('myAvgPriceInput').value); const currentInvest = parseInt(document.getElementById('currentInvestInput').value); const standbyCash = parseInt(document.getElementById('standbyCashInput').value) || 0; 
-                if (isNaN(avgPrice) || isNaN(currentInvest) || avgPrice <= 0 || currentInvest <= 0) { returnBox.classList.add('hidden'); return; }
+                if (isNaN(avgPrice) || isNaN(currentInvest) || avgPrice <= 0 || currentInvest <= 0) { returnBox.classList.add('hidden'); document.getElementById('waterSimulatorBox').classList.add('hidden'); return; }
 
                 const currentShares = currentInvest / avgPrice; let addedShares = 0; let actualStandbyUsed = 0;
                 ['aiBuyDown1', 'aiBuyDown2', 'aiBuyDown3'].forEach(id => {
@@ -2792,26 +2838,22 @@ PRED_D5: [예상종가]원
                 });
 
                 const newTotalShares = currentShares + addedShares; const newTotalInvest = currentInvest + actualStandbyUsed; const newAvgPrice = newTotalShares > 0 ? (newTotalInvest / newTotalShares) : 0;
-                document.getElementById('simModeBadge').textContent = "기존보유/물타기 시나리오"; simCurrentView.classList.add('hidden'); simAverageView.classList.add('hidden'); simAverageView.classList.remove('hidden');
+                document.getElementById('simModeBadge').textContent = "기존보유/물타기 시나리오"; simCurrentView.classList.add('hidden'); simAverageView.classList.remove('hidden');
                 document.getElementById('simOldAvgPrice').textContent = avgPrice.toLocaleString() + '원'; document.getElementById('simInvestedStandby').textContent = standbyCash > 0 ? `+${actualStandbyUsed.toLocaleString()}원` : '0원 (대기금 없음)';
                 document.getElementById('simNewAvgPrice').textContent = Math.floor(newAvgPrice).toLocaleString() + '원'; document.getElementById('simTotalSharesAvg').textContent = Math.floor(newTotalShares).toLocaleString() + '주';
                 runSellSimulation(newTotalShares, newTotalInvest); returnBox.classList.remove('hidden');
-            }
 
-            // 🌟 2-1. 기존 보유 모드일 때만 직관적인 물타기 위젯 켜기
-            if (mode === 'average') {
+                // 🌟 직관적인 물타기 위젯 켜기
                 document.getElementById('waterSimulatorBox').classList.remove('hidden');
                 if (lastFetchedData) {
                     document.getElementById('wsCorpName').textContent = lastFetchedData.corpName;
                     document.getElementById('wsBuyPrice').value = parseInt(String(lastFetchedData.price).replace(/,/g, '')) || 0;
                     calculateWater();
                 }
-            } else {
-                document.getElementById('waterSimulatorBox').classList.add('hidden');
             }
         }
 
-        // 🌟 2-2. 물타기 계산 전용 로직
+        // 🌟 물타기 계산 전용 로직
         function calculateWater() {
             const currentInvest = parseInt(document.getElementById('currentInvestInput').value) || 0;
             const myAvgPrice = parseInt(document.getElementById('myAvgPriceInput').value) || 0;
@@ -2820,22 +2862,18 @@ PRED_D5: [예상종가]원
             const currentShares = currentInvest / myAvgPrice;
             const currentPrice = parseInt(String(lastFetchedData.price).replace(/,/g, '')) || 0;
             
-            // 1) 기존 수익률 세팅
             const currentReturn = ((currentPrice - myAvgPrice) / myAvgPrice) * 100;
             const crEl = document.getElementById('wsCurrentReturn');
             crEl.textContent = (currentReturn > 0 ? '+' : '') + currentReturn.toFixed(2) + '%';
             crEl.className = `text-xl font-extrabold ${currentReturn > 0 ? 'text-red-600' : 'text-blue-600'}`;
             document.getElementById('wsCurrentAvg').textContent = myAvgPrice.toLocaleString() + '원';
 
-            // 2) 입력값 수집
             const buyPrice = parseInt(document.getElementById('wsBuyPrice').value) || 0;
             const buyQty = parseInt(document.getElementById('wsBuyQty').value) || 0;
 
-            // 3) 총 추가 금액 세팅
             const addAmount = buyPrice * buyQty;
             document.getElementById('wsTotalCost').textContent = addAmount.toLocaleString() + '원';
 
-            // 4) 물타기 결과 계산
             if (buyQty > 0 && buyPrice > 0) {
                 const totalInvest = currentInvest + addAmount;
                 const totalShares = currentShares + buyQty;
