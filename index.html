@@ -970,8 +970,9 @@
             return totalWon;
         }
         
-        // 🌟 총발행주식수 및 유동주식수 정밀 추출 함수 (수동 DB 삭제 완료 / 서버 데이터 최우선)
+        // 🌟 총발행주식수 및 유동주식수 정밀 추출 함수 (서버 데이터 최우선 + 초기 가짜 캐싱 버그 완벽 해결)
         function getAccurateSharesData(ticker, currentPriceNum) {
+            // 캐시(메모리)에 진짜 데이터가 있으면 즉시 반환
             if (sharesCache[ticker]) return sharesCache[ticker];
 
             const qData = (globalQuantData && globalQuantData[ticker]) ? globalQuantData[ticker] : null;
@@ -1011,8 +1012,14 @@
             }
 
             const freeFloatRatio = totalShares > 0 ? (floatingShares / totalShares) * 100 : 0;
-            sharesCache[ticker] = { total: totalShares, floating: floatingShares, ratio: freeFloatRatio };
-            return sharesCache[ticker];
+            const result = { total: totalShares, floating: floatingShares, ratio: freeFloatRatio };
+
+            // 🔥 핵심 해결책: 서버 데이터(globalQuantData)가 도착하지 않은 상태에서 만들어진 가짜 숫자는 기억(캐싱)하지 않음!
+            if (globalQuantData) {
+                sharesCache[ticker] = result;
+            }
+            
+            return result;
         }
 
         // 🌟 외국인 소진율 및 증감 정밀 추출 함수
