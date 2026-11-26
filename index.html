@@ -924,44 +924,6 @@
             "default": { per: 15, pbr: 1.5 }
         };
         
-        const ALL_COMPANIES = {};
-        const CODE_TO_NAME = {};
-        for (const sector in KOSPI200_COMPANIES) {
-            for (const [name, code] of Object.entries(KOSPI200_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; }
-        }
-        for (const sector in KOSDAQ150_COMPANIES) {
-            for (const [name, code] of Object.entries(KOSDAQ150_COMPANIES[sector])) { ALL_COMPANIES[name] = code; CODE_TO_NAME[code] = name; }
-        }
-
-        // =========================================================================
-        // 🌟 섹터별 PER/PBR 및 유동주식수 대비 회전율 기준 로직
-        // =========================================================================
-        const SECTOR_BASELINES = {
-            "반도체·IT (H/W)": { per: 15, pbr: 1.5 },
-            "반도체·장비 (IT H/W)": { per: 15, pbr: 1.5 },
-            "이차전지·소재": { per: 30, pbr: 3.0 },
-            "플랫폼·게임·IT(S/W)": { per: 25, pbr: 2.5 },
-            "게임·IT(S/W)": { per: 25, pbr: 2.5 },
-            "통신·미디어": { per: 10, pbr: 1.0 },
-            "자동차·부품·타이어": { per: 8, pbr: 0.8 },
-            "조선·기계·운송": { per: 12, pbr: 1.2 },
-            "방위산업·우주항공": { per: 20, pbr: 2.0 },
-            "원전·전력설비": { per: 15, pbr: 1.5 },
-            "제약·바이오": { per: 40, pbr: 4.0 },
-            "화학·정유·에너지": { per: 10, pbr: 1.0 },
-            "철강·비철금속·소재": { per: 8, pbr: 0.8 },
-            "금융·지주사": { per: 6, pbr: 0.6 },
-            "증권·보험": { per: 6, pbr: 0.6 },
-            "건설·건자재": { per: 7, pbr: 0.7 },
-            "화장품·의류·소비재": { per: 15, pbr: 1.5 },
-            "미용의료·화장품·소비재": { per: 15, pbr: 1.5 },
-            "음식료·유통·엔터": { per: 15, pbr: 1.5 },
-            "엔터·미디어·플랫폼": { per: 20, pbr: 2.0 },
-            "로봇·기계·부품": { per: 25, pbr: 2.5 },
-            "통신장비·기타": { per: 12, pbr: 1.2 },
-            "default": { per: 15, pbr: 1.5 }
-        };
-
         function getSectorByTicker(ticker) {
             for (const sector in KOSPI200_COMPANIES) {
                 if (Object.values(KOSPI200_COMPANIES[sector]).includes(ticker)) return sector;
