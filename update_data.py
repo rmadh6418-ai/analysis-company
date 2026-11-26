@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import pandas as pd
 from bs4 import BeautifulSoup
-from pykrx import stock
 
 # ================= KOSPI 200 전체 종목 분류 ================= #
 KOSPI200_SECTORS = {
@@ -46,30 +45,8 @@ TARGET_STOCKS = {}
 for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companies)
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
-# ================= 새로 추가된 함수: 한국거래소(KRX) 전체 주식수 한 번에 불러오기 ================= #
-def get_krx_df():
-    from pykrx import stock
-    import pandas as pd
-    from datetime import datetime, timedelta
-
-    print("📊 KRX 공식 데이터 수집 시작...")
-    
-    # 오늘부터 과거 7일 중 가장 최근 거래일(데이터가 있는 날)을 찾습니다.
-    for i in range(7):
-        target_date = (datetime.today() - timedelta(days=i)).strftime("%Y%m%d")
-        try:
-            # KOSPI 상장주식수 호출 시도
-            krx_kospi = stock.get_market_cap(target_date, market="KOSPI")
-            if not krx_kospi.empty:
-                print(f"✅ KRX 공식 데이터 기준일: {target_date}")
-                krx_kosdaq = stock.get_market_cap(target_date, market="KOSDAQ")
-                return pd.concat([krx_kospi, krx_kosdaq])
-        except Exception as e:
-            pass # 에러 발생 시 하루 전으로 넘어가서 다시 시도
-            
-    # 7일 내에 데이터를 못 찾은 경우 (이론상 발생하기 어려움)
-    print("⚠️ 최근 7일 내 KRX 데이터를 찾지 못했습니다. 빈 데이터프레임을 반환합니다.")
-    return pd.DataFrame()
+# KRX(pykrx)는 사용하지 않습니다. 총발행주식수는 네이버 종목 API에서 우선 수집하고,
+# 해당 값이 없을 때만 시가총액/현재가로 보조 계산합니다.
 
 
 # ================= 유동주식비율 전용 파서 ================= #
@@ -192,7 +169,7 @@ def fetch_free_float_from_wisereport(session, ticker):
 
 
 # ================= 개별 종목 정보 수집 메인 함수 ================= #
-def fetch_stock_data(name, ticker, krx_all):
+def fetch_stock_data(name, ticker):
     # 기술적 지표 저장 공간 확보 (새로 추가된 주식수 필드 포함)
     stock_info = {
         "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
@@ -204,12 +181,6 @@ def fetch_stock_data(name, ticker, krx_all):
         "tech": {"ma5": "-", "ma20": "-", "ma33": "-", "ma60": "-", "ma120": "-", "rsi": "-", "macd": "-"},
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
     }
-    
-    # 🌟 [신규 추가] 1. KRX 데이터베이스에서 공식 총발행주식수 가져오기
-    if ticker in krx_all.index:
-        try:
-            stock_info["totalShares"] = int(krx_all.loc[ticker, "상장주식수"])
-        except: pass
     
     session = requests.Session()
     # 🌟 [우회 로직] GitHub Actions IP 차단을 강력하게 방어하는 브라우저 위장 헤더
@@ -458,27 +429,21 @@ def fetch_stock_data(name, ticker, krx_all):
             else: stock_info["pegDesc"] = "적자지속/흑자전환"
     except: pass
 
-    # 🌟 [최후 방어선] 시가총액과 현재가 기반 주식수 역산 (소수점 '조/억' 단위 대응)
+    # [보조 계산] 네이버 API에서 총주식수를 못 받았을 때 시가총액/현재가로 근사
     if stock_info["totalShares"] == 0 and stock_info["marketCap"] != "-" and stock_info["rawPrice"] > 0:
         try:
-            mc_str = stock_info["marketCap"].replace(",", "").replace(" ", "")
-            mc_won = 0.0
-            if "조" in mc_str:
-                jo_part, rest = mc_str.split("조", 1)
-                if jo_part:
-                    mc_won += float(jo_part) * 1_000_000_000_000
-                if "억" in rest:
-                    eok_part = rest.split("억", 1)[0]
-                    if eok_part:
-                        mc_won += float(eok_part) * 100_000_000
-            elif "억" in mc_str:
-                eok_part = mc_str.split("억", 1)[0]
-                if eok_part:
-                    mc_won += float(eok_part) * 100_000_000
-
+            mc_str = stock_info["marketCap"].replace(',', '').replace(' ', '')
+            mc_won = 0
+            if '조' in mc_str:
+                parts = mc_str.split('조')
+                mc_won += int(parts[0]) * 1000000000000
+                if '억' in parts[1]: mc_won += int(parts[1].replace('억', '')) * 100000000
+            elif '억' in mc_str:
+                mc_won += int(mc_str.replace('억', '')) * 100000000
+            
             if mc_won > 0:
                 stock_info["totalShares"] = round(mc_won / stock_info["rawPrice"])
-                if stock_info["freeFloatRate"] != "-" and stock_info["floatingShares"] == 0:
+                if stock_info["freeFloatRate"] != "-":
                     fr_rate = float(stock_info["freeFloatRate"].replace("%", ""))
                     stock_info["floatingShares"] = round(
                         stock_info["totalShares"] * fr_rate / 100
@@ -486,18 +451,17 @@ def fetch_stock_data(name, ticker, krx_all):
         except Exception as e:
             print(f"[{ticker}] 역산 실패: {e}")
 
+    return ticker, stock_info
+
 # ================= 스크립트 실행 진입점 ================= #
 if __name__ == "__main__":
     quant_data = {}
     print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 및 퀀트 지표(MA, RSI, MACD, 주식수) 연산 시작...")
     start_time = time.time()
     
-    # 🌟 스레드 시작 전 1회만 호출하여 전체 주식수를 로드해옵니다 (엄청나게 빠름)
-    krx_all_data = get_krx_df()
-
+    # KRX 호출 없이 종목별 API/보조 계산으로 주식수 정보를 수집합니다.
     with ThreadPoolExecutor(max_workers=10) as executor:
-        # fetch_stock_data 함수에 krx_all_data를 파라미터로 추가 전달
-        futures = {executor.submit(fetch_stock_data, name, ticker, krx_all_data): ticker for name, ticker in TARGET_STOCKS.items()}
+        futures = {executor.submit(fetch_stock_data, name, ticker): ticker for name, ticker in TARGET_STOCKS.items()}
         for future in futures:
             ticker, data = future.result()
             quant_data[ticker] = data
