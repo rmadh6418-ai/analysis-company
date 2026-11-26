@@ -1129,32 +1129,30 @@
                     if(savedStandby) document.getElementById('portfolioStandbyCash').value = savedStandby;
                 } catch(e) {}
                 document.getElementById('cloudSyncStatus').innerHTML = "<span class='text-red-600 font-bold'>연동 안됨(로컬모드)</span>";
-                renderPortfolioTable();
-                renderWatchlistTable();
                 return;
             }
             try {
-                const res = await fetch(GAS_URL + "?_=" + Date.now());
-                const data = await res.json();
+                // 🌟 3초 타임아웃 강제 설정 (무한 로딩 방지)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
                 
-                if (data && data.portfolio) {
-                    userPortfolio = data.portfolio;
-                    renderPortfolioTable();
-                }
-                if (data && data.watchlist) {
-                    userWatchlist = data.watchlist;
-                    renderWatchlistTable();
-                }
+                const res = await fetch(GAS_URL + "?_=" + Date.now(), { signal: controller.signal });
+                clearTimeout(timeoutId); // 성공 시 타이머 해제
+                
+                const data = await res.json();
+                if (data && data.portfolio) { userPortfolio = data.portfolio; }
+                if (data && data.watchlist) { userWatchlist = data.watchlist; }
                 if (data && data.standbyCash !== undefined) {
                     document.getElementById('portfolioStandbyCash').value = data.standbyCash;
                     updatePortfolioSummary();
                 }
             } catch (e) {
-                console.error("구글 시트 로드 실패", e);
+                console.warn("구글 시트 서버 응답 지연 - 로컬 데이터로 대체합니다.");
                 try {
+                    userPortfolio = JSON.parse(localStorage.getItem('userPortfolioList') || '[]');
                     userWatchlist = JSON.parse(localStorage.getItem('userWatchlistList') || '[]');
                 } catch(err) {}
-                renderWatchlistTable();
+                document.getElementById('cloudSyncStatus').innerHTML = "<span class='text-red-600 font-bold'>서버 지연(로컬)</span>";
             }
         }
 
@@ -1184,17 +1182,19 @@
                 if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
             } catch(e) {}
 
+            // 🌟 1. 설정 파일 로드 (타임아웃 2초)
             try {
-                const configRes = await fetch('./config.json?v=' + new Date().getTime(), { cache: 'no-store' });
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const configRes = await fetch('./config.json?v=' + new Date().getTime(), { cache: 'no-store', signal: controller.signal });
+                clearTimeout(timeoutId);
                 if(configRes.ok) {
                     const config = await configRes.json();
                     GAS_URL = config.GAS_URL;
                 }
             } catch(e) {
-                console.warn('config.json을 불러오지 못했습니다.');
+                console.warn('config.json 로드 지연');
             }
-
-            await loadFromGoogleCloud();
 
             generateQuickButtons('kospiQuickBtns', KOSPI200_COMPANIES, 'bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-800 border-blue-200');
             generateQuickButtons('kosdaqQuickBtns', KOSDAQ150_COMPANIES, 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border-emerald-200');
@@ -1205,10 +1205,19 @@
                 if (!e.target.closest('#watchSearchInput') && !e.target.closest('#watchSuggestionBox')) document.getElementById('watchSuggestionBox').classList.add('hidden');
             });
 
-            try {
-                const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store' });
-                if(res.ok) globalQuantData = await res.json();
-            } catch(e) {}
+            // 🌟 2. 퀀트 데이터 로드 (타임아웃 3초 적용)
+            const quantPromise = (async () => {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                    const res = await fetch('./quant_data.json?v=' + new Date().getTime(), { cache: 'no-store', signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if(res.ok) globalQuantData = await res.json();
+                } catch(e) { console.warn('quant_data.json 로드 지연'); }
+            })();
+
+            // 🌟 3. 구글 시트와 퀀트 데이터를 병렬(동시)로 가져와서 대기 시간 절반으로 단축!
+            await Promise.all([loadFromGoogleCloud(), quantPromise]);
             
             renderPortfolioTable();
             renderWatchlistTable();
