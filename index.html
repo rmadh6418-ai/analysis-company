@@ -480,57 +480,7 @@
                 </div>
 
                 <!-- 💧 직관적인 물타기 계산기 (모바일 앱 스타일) -->
-                <div id="waterSimulatorBox" class="hidden mb-4 bg-white border border-blue-200 rounded-xl shadow-md overflow-hidden w-full lg:w-2/3 mx-auto mt-4">
-                    <div class="bg-blue-600 px-5 py-3 flex justify-between items-center text-white">
-                        <h3 class="font-extrabold text-base flex items-center gap-2">💧 <span id="wsCorpName">종목명</span> 물타기 계산기</h3>
-                    </div>
-                    <div class="p-5 space-y-6">
-                        <!-- 수익률 비교 -->
-                        <div class="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div class="text-center w-5/12 flex flex-col items-center justify-center">
-                                <p class="text-[11px] font-bold text-slate-500 mb-1">현재 평균 수익률</p>
-                                <p id="wsCurrentReturn" class="text-xl font-extrabold text-slate-800">-</p>
-                                <p id="wsCurrentAvg" class="text-xs font-medium text-slate-500 mt-1">-</p>
-                            </div>
-                            <div class="w-2/12 flex justify-center text-slate-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                            </div>
-                            <div class="text-center w-5/12 flex flex-col items-center justify-center">
-                                <p class="text-[11px] font-bold text-blue-600 mb-1">물타기 후 예상 ⓘ</p>
-                                <p id="wsExpectedReturn" class="text-xl font-extrabold text-blue-600">-</p>
-                                <p id="wsExpectedAvg" class="text-xs font-medium text-slate-500 mt-1">-</p>
-                            </div>
-                        </div>
-
-                        <!-- 입력 폼 -->
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
-                                <label class="text-sm font-bold text-slate-700">사고 싶은 가격은?</label>
-                                <div class="flex items-center gap-1">
-                                    <input type="number" id="wsBuyPrice" oninput="calculateWater()" class="w-28 text-right font-bold text-lg text-slate-900 focus:outline-none placeholder-slate-300 bg-transparent" placeholder="0">
-                                    <span class="text-sm font-bold text-slate-700">원 ✏️</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
-                                <label class="text-sm font-bold text-slate-700">몇 주 더 살까요?</label>
-                                <div class="flex items-center gap-1">
-                                    <input type="number" id="wsBuyQty" oninput="calculateWater()" class="w-20 text-right font-bold text-lg text-slate-900 focus:outline-none placeholder-slate-300 bg-transparent" placeholder="0">
-                                    <span class="text-sm font-bold text-slate-700">주 ✏️</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 결과 -->
-                        <div class="flex justify-between items-center pt-2 bg-blue-50 p-4 rounded-lg">
-                            <span class="text-sm font-bold text-blue-800">총 추가 금액</span>
-                            <span id="wsTotalCost" class="text-xl font-extrabold text-blue-900">0원</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 💧 직관적인 물타기 계산기 (모바일 앱 스타일) -->
-                <div id="waterSimulatorBox" class="hidden mb-4 bg-white border border-blue-200 rounded-xl shadow-md overflow-hidden w-full lg:w-2/3 mx-auto mt-4">
+                <div id="waterSimulatorBox" class="hidden mb-4 bg-white border border-blue-200 rounded-xl shadow-md overflow-hidden">
                     <div class="bg-blue-600 px-5 py-3 flex justify-between items-center text-white">
                         <h3 class="font-extrabold text-base flex items-center gap-2">💧 <span id="wsCorpName">종목명</span> 물타기 계산기</h3>
                     </div>
@@ -1555,14 +1505,21 @@
                 item._sector = getSectorByTicker(item.ticker);
             });
 
-            // 섹터별로 종목 그룹화 정렬 후 같은 섹터 내에서는 평가금액 순 정렬
+            // 🌟 포트폴리오 종목 정렬 (섹터별 -> 평가금액 순)
             userPortfolio.sort((a, b) => {
                 if (a._sector !== b._sector) return a._sector.localeCompare(b._sector, 'ko');
                 return b._evalValue - a._evalValue;
             });
 
+            // 🌟 병합을 위한 섹터 카운트
+            const sectorCounts = {};
+            userPortfolio.forEach(item => {
+                sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1;
+            });
+
             let html = '';
             let lastSector = null;
+            
             userPortfolio.forEach(item => {
                 const currentPrice = item._currentPrice; const evalValue = item._evalValue;
                 const profitRate = currentPrice > 0 ? (((currentPrice - item.avgPrice) / item.avgPrice) * 100) : 0;
@@ -1583,36 +1540,40 @@
                     else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
                 }
 
-                // 섹터 그룹 헤더 행 표시
+                // 🌟 섹터 병합 처리 (가로줄 삭제됨)
+                let sectorTdHtml = '';
                 if (item._sector !== lastSector) {
-                    const baseline = SECTOR_BASELINES[item._sector] || SECTOR_BASELINES["default"];
-                    const threshold = getSectorTurnoverThreshold(item._sector);
-                    html += `<tr class="bg-slate-200/70 border-y border-slate-300">
-                        <td colspan="9" class="px-3 py-1.5 text-left text-xs font-extrabold text-slate-800">
-                            📂 [${item._sector}] 섹터 그룹 <span class="text-[11px] font-semibold text-slate-600 ml-2">(섹터 기준: PER ${baseline.per}배↓ / PBR ${baseline.pbr}배↓ / 회전율 ${threshold}%↑)</span>
-                        </td>
-                    </tr>`;
+                    sectorTdHtml = `<td rowspan="${sectorCounts[item._sector]}" class="p-2 text-left align-middle bg-slate-50/60 border-r border-slate-200 whitespace-nowrap">
+                        ${buildSectorCellHtml(item.ticker)}
+                    </td>`;
                     lastSector = item._sector;
+                } else {
+                    sectorTdHtml = '';
                 }
 
                 html += `<tr class="hover:bg-slate-50 transition border-b">
-                    <td class="p-2 text-left align-middle bg-slate-50/60 border-r border-slate-200">${buildSectorCellHtml(item.ticker)}</td>
-                    <td class="p-2 text-left font-bold text-slate-800 align-middle"><button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-blue-600 text-left underline underline-offset-2">${item.corpName}</button><span class="text-[11px] font-mono text-slate-400 block">${item.ticker}</span></td>
-                    <td class="p-2 text-right align-middle">
+                    ${sectorTdHtml}
+                    <td class="p-2 text-left font-bold text-slate-800 align-middle whitespace-nowrap">
+                        <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="hover:text-blue-600 text-left underline underline-offset-2 block">${item.corpName}</button>
+                        <span class="text-[11px] font-mono text-slate-400 block mt-0.5">${item.ticker}</span>
+                    </td>
+                    <td class="p-2 text-right align-middle whitespace-nowrap">
                         <div class="font-medium">${currentPrice > 0 ? currentPrice.toLocaleString() + '원' : '데이터연동'}</div>
                         <div class="text-[11px] ${changeColor} mt-0.5">${changeText}</div>
                     </td>
-                    <td class="p-2 text-right font-semibold align-middle">${item.avgPrice.toLocaleString()}원</td>
-                    <td class="p-2 text-right ${rateColor} align-middle">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
-                    <td class="p-2 text-right font-medium align-middle">${item.investAmount.toLocaleString()}원</td>
-                    <td class="p-2 text-right font-semibold text-slate-900 align-middle">${evalValue.toLocaleString()}원</td>
-                    <td class="p-2 text-right font-extrabold text-indigo-600 align-middle">${weightRate.toFixed(1)}%</td>
-                    <td class="p-2 text-center whitespace-nowrap align-middle"><button onclick="editPortfolioItem('${item.ticker}')" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition mr-1">수정</button><button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button></td>
+                    <td class="p-2 text-right font-semibold align-middle whitespace-nowrap">${item.avgPrice.toLocaleString()}원</td>
+                    <td class="p-2 text-right ${rateColor} align-middle whitespace-nowrap">${currentPrice > 0 ? (profitRate > 0 ? '+' : '') + profitRate.toFixed(2) + '%' : '-'}</td>
+                    <td class="p-2 text-right font-medium align-middle whitespace-nowrap">${item.investAmount.toLocaleString()}원</td>
+                    <td class="p-2 text-right font-semibold text-slate-900 align-middle whitespace-nowrap">${evalValue.toLocaleString()}원</td>
+                    <td class="p-2 text-right font-extrabold text-indigo-600 align-middle whitespace-nowrap">${weightRate.toFixed(1)}%</td>
+                    <td class="p-2 text-center whitespace-nowrap align-middle">
+                        <button onclick="editPortfolioItem('${item.ticker}')" class="text-xs bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition mr-1 font-bold">수정</button>
+                        <button onclick="removePortfolioItem('${item.ticker}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-rose-50 hover:text-white px-2 py-1 rounded transition">삭제</button>
+                    </td>
                 </tr>`;
             });
             tbody.innerHTML = html; updatePortfolioSummary(); renderPortfolioPieChart();
         }
-
         function updatePortfolioSummary() {
             let totalInvest = 0, totalValue = 0;
             userPortfolio.forEach(item => {
