@@ -213,23 +213,47 @@ def fetch_stock_data(name, ticker, krx_all):
     try:
         html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
         
-        # 🌟 [신규 추가] BeautifulSoup을 이용해 HTML에서 유동주식 비율 안전하게 파싱
+        # 🌟 [보강] 다중 키워드 + 정규표현식 기반 유동비율 추출
         try:
             soup = BeautifulSoup(html, 'html.parser')
-            # '유동주식수/비율'이 적힌 <th>나 <em> 태그를 찾음
-            th_tags = soup.find_all(['th', 'em'])
-            for th in th_tags:
-                if '유동주식수/비율' in th.text:
-                    # 바로 옆의 <td> 태그 안에 텍스트 추출 (예: 4,525,095,000 / 75.80%)
-                    td = th.find_parent('tr').find('td')
-                    if td and '/' in td.text:
-                        rate_str = td.text.split('/')[-1].replace('%', '').strip()
-                        float_rate = float(rate_str)
-                        stock_info["freeFloatRate"] = f"{float_rate:.2f}%"
-                        # 유동비율을 구했다면, 유동주식수도 즉시 계산
-                        if stock_info["totalShares"] > 0:
-                            stock_info["floatingShares"] = int(stock_info["totalShares"] * (float_rate / 100))
-                        break
+            keywords = ["발행주식수/유동비율", "유동주식수/비율", "유동주식비율", "유동비율"]
+            found_rate = None
+
+            for tag in soup.find_all(['th', 'em', 'span', 'dt']):
+                label_text = " ".join(tag.get_text().split())
+                if any(kw in label_text for kw in keywords):
+                    parent_container = tag.find_parent(['tr', 'dl', 'div'])
+                    if parent_container:
+                        val_el = parent_container.find(['td', 'dd'])
+                        target_text = val_el.get_text(" ", strip=True) if val_el else parent_container.get_text(" ", strip=True)
+                        # 보통 "상장주식수 / 유동비율%" 또는 "유동주식수 / 유동비율%" 형태이므로 '/' 뒤쪽 우선 탐색
+                        candidates = target_text.split('/')[-1] if '/' in target_text else target_text
+                        rate_match = re.search(r'(\d{1,3}(?:\.\d+)?)\s*%', candidates) or re.search(r'(\d{1,3}(?:\.\d+)?)\s*%', target_text)
+                        if rate_match:
+                            val_float = float(rate_match.group(1))
+                            if 0 < val_float <= 100:
+                                found_rate = val_float
+                                break
+
+            # HTML 구조가 달랐을 경우 원문 텍스트에서 키워드 주변 비율 패턴 재탐색
+            if found_rate is None:
+                plain_text = " ".join(soup.get_text().split())
+                for kw in keywords:
+                    idx = plain_text.find(kw)
+                    if idx != -1:
+                        snippet = plain_text[idx:idx+120]
+                        tail = snippet.split('/')[-1] if '/' in snippet else snippet
+                        m = re.search(r'(\d{1,3}(?:\.\d+)?)\s*%', tail) or re.search(r'(\d{1,3}(?:\.\d+)?)\s*%', snippet)
+                        if m:
+                            val_float = float(m.group(1))
+                            if 0 < val_float <= 100:
+                                found_rate = val_float
+                                break
+
+            if found_rate is not None:
+                stock_info["freeFloatRate"] = f"{found_rate:.2f}%"
+                if stock_info["totalShares"] > 0:
+                    stock_info["floatingShares"] = int(stock_info["totalShares"] * (found_rate / 100))
         except Exception as e:
             print(f"[{ticker}] 유동비율 추출 오류: {e}")
         
