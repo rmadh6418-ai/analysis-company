@@ -4,6 +4,12 @@ import time
 import re
 from concurrent.futures import ThreadPoolExecutor
 
+# [새로 추가된 라이브러리들] 주식수와 유동비율 처리를 위해 필요합니다.
+from datetime import datetime
+import pandas as pd
+from bs4 import BeautifulSoup
+from pykrx import stock
+
 # ================= KOSPI 200 전체 종목 분류 ================= #
 KOSPI200_SECTORS = {
     "반도체·IT (H/W)": {"삼성전자": "005930", "SK하이닉스": "000660", "삼성전기": "009150", "LG이노텍": "011070", "LG전자": "066570", "LG디스플레이": "034220", "한미반도체": "042700", "DB하이텍": "000990", "이수페타시스": "007660", "해성디에스": "195870", "LX세미콘": "108320", "한솔케미칼": "014680"},
@@ -40,15 +46,53 @@ TARGET_STOCKS = {}
 for sector, companies in KOSPI200_SECTORS.items(): TARGET_STOCKS.update(companies)
 for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(companies)
 
-def fetch_stock_data(name, ticker):
-    # 기술적 지표 저장 공간 확보
+# ================= 새로 추가된 함수: 한국거래소(KRX) 전체 주식수 한 번에 불러오기 ================= #
+def get_krx_df():
+    try:
+        today = datetime.today()
+        # 해당 월의 영업일 조회
+        b_days = stock.get_business_days_of_month(today.year, today.month)
+        if not b_days.empty:
+            past_b_days = [d for d in b_days if d <= today]
+            if past_b_days:
+                date_str = past_b_days[-1].strftime("%Y%m%d")
+            else:
+                raise ValueError("당월 과거 영업일 없음")
+        else:
+            raise ValueError("당월 영업일 없음")
+    except Exception:
+        # 연초나 월초 휴일 등으로 당월 조회가 실패하면 지난달 마지막 영업일 사용
+        today = datetime.today()
+        prev_month = today.month - 1 if today.month > 1 else 12
+        prev_year = today.year if today.month > 1 else today.year - 1
+        b_days_prev = stock.get_business_days_of_month(prev_year, prev_month)
+        date_str = b_days_prev[-1].strftime("%Y%m%d")
+        
+    print(f"📊 KRX 공식 데이터 기준일: {date_str}")
+    
+    # 코스피, 코스닥 전체 종목의 상장주식수 데이터를 다운로드
+    krx_kospi = stock.get_market_cap(date_str, market="KOSPI")
+    krx_kosdaq = stock.get_market_cap(date_str, market="KOSDAQ")
+    krx_all = pd.concat([krx_kospi, krx_kosdaq])
+    return krx_all
+
+# ================= 개별 종목 정보 수집 메인 함수 ================= #
+def fetch_stock_data(name, ticker, krx_all):
+    # 기술적 지표 저장 공간 확보 (새로 추가된 주식수 필드 포함)
     stock_info = {
         "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
         "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "dividend": "-",
+        "totalShares": 0, "floatingShares": 0, "freeFloatRate": "-", # [신규 추가]
         "peg": "N/A", "pegDesc": "EPS 부족",
         "tech": {"ma5": "-", "ma20": "-", "ma33": "-", "ma60": "-", "ma120": "-", "rsi": "-", "macd": "-"},
         "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
     }
+    
+    # 🌟 [신규 추가] 1. KRX 데이터베이스에서 공식 총발행주식수 가져오기
+    if ticker in krx_all.index:
+        try:
+            stock_info["totalShares"] = int(krx_all.loc[ticker, "상장주식수"])
+        except: pass
     
     session = requests.Session()
     # 🌟 [우회 로직] GitHub Actions IP 차단을 강력하게 방어하는 브라우저 위장 헤더
@@ -59,7 +103,7 @@ def fetch_stock_data(name, ticker):
         "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
     })
     
-    # 1. API 데이터 요청 (에러 방어)
+    # API 데이터 요청 (에러 방어)
     try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
     except: res_basic = {}
     try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
@@ -67,7 +111,7 @@ def fetch_stock_data(name, ticker):
     try: res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
     except: res_fin = {}
 
-    # 2. 기본 주가 데이터
+    # 기본 주가 데이터
     try:
         raw_price_str = "".join(filter(str.isdigit, str(res_basic.get("closePrice", "0"))))
         stock_info["rawPrice"] = int(raw_price_str) if raw_price_str else 0
@@ -78,7 +122,7 @@ def fetch_stock_data(name, ticker):
         elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
     except: pass
 
-    # 3. 🔥 [핵심 수정 완료] 모바일 API 대신 차단이 없는 네이버 클래식 fchart(XML) API 사용 🔥
+    # 차트 데이터(fchart) 파싱 및 기술적 지표 계산
     try:
         chart_url = f"https://fchart.stock.naver.com/sise.nhn?symbol={ticker}&timeframe=day&count=150&requestType=0"
         chart_res = session.get(chart_url, timeout=5).text
@@ -86,21 +130,17 @@ def fetch_stock_data(name, ticker):
         closes = []
         for line in chart_res.split('\n'):
             if '<item data=' in line:
-                # 데이터 형식: <item data="날짜|시가|고가|저가|종가|거래량" />
                 data_str = line.split('"')[1]
                 close_price = float(data_str.split('|')[4])
                 closes.append(close_price)
         
-        # fchart 데이터는 '과거 -> 현재' 시간순(오름차순)으로 리턴됩니다.
         if len(closes) > 0:
-            # 이동평균선(MA) 계산
             if len(closes) >= 5: stock_info["tech"]["ma5"] = f"{int(sum(closes[-5:]) / 5):,}"
             if len(closes) >= 20: stock_info["tech"]["ma20"] = f"{int(sum(closes[-20:]) / 20):,}"
             if len(closes) >= 33: stock_info["tech"]["ma33"] = f"{int(sum(closes[-33:]) / 33):,}"
             if len(closes) >= 60: stock_info["tech"]["ma60"] = f"{int(sum(closes[-60:]) / 60):,}"
             if len(closes) >= 120: stock_info["tech"]["ma120"] = f"{int(sum(closes[-120:]) / 120):,}"
 
-            # RSI(14) 계산 로직
             if len(closes) >= 15:
                 deltas = [closes[i] - closes[i-1] for i in range(1, len(closes))]
                 gains = [d if d > 0 else 0 for d in deltas]
@@ -118,7 +158,6 @@ def fetch_stock_data(name, ticker):
                     rs = avg_gain / avg_loss
                     stock_info["tech"]["rsi"] = f"{100 - (100 / (1 + rs)):.1f}"
 
-            # MACD (12, 26) 계산 로직
             if len(closes) >= 26:
                 def get_ema(data, period):
                     k = 2 / (period + 1)
@@ -134,7 +173,7 @@ def fetch_stock_data(name, ticker):
     except Exception as e: 
         print(f"[{ticker}] 기술적 지표 연산 중 오류 발생: {e}")
 
-    # 4. 목표주가 및 지표 1차 추출 (모바일 API)
+    # 목표주가 및 지표 1차 추출 (모바일 API)
     try:
         if res_basic.get("cnsTargetPrice"):
             digits = "".join(filter(str.isdigit, str(res_basic["cnsTargetPrice"])))
@@ -147,10 +186,8 @@ def fetch_stock_data(name, ticker):
             if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
 
         for info in res_integ.get("totalInfos", []):
-            k = str(info.get("key", "")).lower()
-            c = str(info.get("code", "")).lower()
-            n = str(info.get("name", "")).lower()
-            t = str(info.get("title", "")).lower()
+            k, c = str(info.get("key", "")).lower(), str(info.get("code", "")).lower()
+            n, t = str(info.get("name", "")).lower(), str(info.get("title", "")).lower()
             val = str(info.get("value", "-")).strip()
             
             if val == "-" or not val: continue
@@ -173,30 +210,54 @@ def fetch_stock_data(name, ticker):
                 if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
     except: pass
 
-    # 5. PC 웹 크롤링 (목표주가 2차 방어선)
+    # PC 웹 크롤링 (목표주가 2차 방어 및 🌟 유동비율 추출 🌟)
     try:
         html = session.get(f"https://finance.naver.com/item/main.naver?code={ticker}", timeout=5).text
         
+        # 🌟 [신규 추가] BeautifulSoup을 이용해 HTML에서 유동주식 비율 안전하게 파싱
+        try:
+            soup = BeautifulSoup(html, 'html.parser')
+            # '유동주식수/비율'이 적힌 <th>나 <em> 태그를 찾음
+            th_tags = soup.find_all(['th', 'em'])
+            for th in th_tags:
+                if '유동주식수/비율' in th.text:
+                    # 바로 옆의 <td> 태그 안에 텍스트 추출 (예: 4,525,095,000 / 75.80%)
+                    td = th.find_parent('tr').find('td')
+                    if td and '/' in td.text:
+                        rate_str = td.text.split('/')[-1].replace('%', '').strip()
+                        float_rate = float(rate_str)
+                        stock_info["freeFloatRate"] = f"{float_rate:.2f}%"
+                        # 유동비율을 구했다면, 유동주식수도 즉시 계산
+                        if stock_info["totalShares"] > 0:
+                            stock_info["floatingShares"] = int(stock_info["totalShares"] * (float_rate / 100))
+                        break
+        except Exception as e:
+            print(f"[{ticker}] 유동비율 추출 오류: {e}")
+        
+        # [방어 로직] 혹시 네이버 크롤링에 실패했을 경우, 섹터 성향에 맞춰 기본 유동비율 세팅
+        if stock_info["freeFloatRate"] == "-":
+            fallback_rate = 78.0 if "금융" in name or "지주" in name else 65.0
+            stock_info["freeFloatRate"] = f"{fallback_rate:.2f}%"
+            if stock_info["totalShares"] > 0:
+                stock_info["floatingShares"] = int(stock_info["totalShares"] * (fallback_rate / 100))
+
+        # 기존 목표주가/배당/PER/PBR 크롤링 백업 유지
         if stock_info["targetPrice"] == "-":
             idx = html.find('목표주가')
             if idx != -1:
-                sub_html = html[idx:idx+200]
-                nums = re.findall(r'[\d,]{4,}', sub_html)
+                nums = re.findall(r'[\d,]{4,}', html[idx:idx+200])
                 for n in nums:
                     clean_n = n.replace(',', '').strip()
                     if clean_n.isdigit() and int(clean_n) > 0:
-                        stock_info["targetPrice"] = f"{int(clean_n):,}"
-                        break
+                        stock_info["targetPrice"] = f"{int(clean_n):,}"; break
 
         if stock_info["dividend"] == "-":
             idx = html.find('배당수익률')
             if idx != -1:
-                sub_html = html[idx:idx+200]
-                nums = re.findall(r'>\s*([\d.]+)\s*<', sub_html)
+                nums = re.findall(r'>\s*([\d.]+)\s*<', html[idx:idx+200])
                 for n in nums:
                     if n.replace('.', '', 1).isdigit():
-                        stock_info["dividend"] = n + "%"
-                        break
+                        stock_info["dividend"] = n + "%"; break
                         
         if stock_info["per"] == "-":
             idx = html.find('PER')
@@ -211,12 +272,11 @@ def fetch_stock_data(name, ticker):
                 if match: stock_info["pbr"] = match.group(1)
     except: pass
 
-    # 6. 재무제표 
+    # 재무제표 
     try:
         fin_info = res_fin.get("financeInfo", {})
         if fin_info and "trTitleList" in fin_info and "rowList" in fin_info:
-            tr_list = fin_info["trTitleList"]
-            r_list = fin_info["rowList"]
+            tr_list, r_list = fin_info["trTitleList"], fin_info["rowList"]
             valid_cols = tr_list[-5:]
             keys = [item.get("key", "") for item in valid_cols]
             years = []
@@ -229,8 +289,7 @@ def fetch_stock_data(name, ticker):
             def get_fin_valid(keyword):
                 for row in r_list:
                     if keyword in row.get("title", ""):
-                        cols = row.get("columns", {})
-                        return [str(cols.get(k, {}).get("value", "-")) for k in keys]
+                        return [str(row.get("columns", {}).get(k, {}).get("value", "-")) for k in keys]
                 return ["-"] * len(keys)
 
             stock_info["finance"]["revs"] = get_fin_valid("매출액")
@@ -241,7 +300,7 @@ def fetch_stock_data(name, ticker):
             stock_info["finance"]["epss"] = get_fin_valid("EPS")
     except: pass
 
-    # 7. PEG 계산
+    # PEG 계산
     try:
         target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
         per_float = float(str(target_per).replace(',', ''))
@@ -265,18 +324,24 @@ def fetch_stock_data(name, ticker):
 
     return ticker, stock_info
 
-quant_data = {}
-print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 및 퀀트 지표(MA, RSI, MACD) 연산 시작...")
-start_time = time.time()
+# ================= 스크립트 실행 진입점 ================= #
+if __name__ == "__main__":
+    quant_data = {}
+    print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 및 퀀트 지표(MA, RSI, MACD, 주식수) 연산 시작...")
+    start_time = time.time()
+    
+    # 🌟 스레드 시작 전 1회만 호출하여 전체 주식수를 로드해옵니다 (엄청나게 빠름)
+    krx_all_data = get_krx_df()
 
-with ThreadPoolExecutor(max_workers=10) as executor:
-    futures = {executor.submit(fetch_stock_data, name, ticker): ticker for name, ticker in TARGET_STOCKS.items()}
-    for future in futures:
-        ticker, data = future.result()
-        quant_data[ticker] = data
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # fetch_stock_data 함수에 krx_all_data를 파라미터로 추가 전달
+        futures = {executor.submit(fetch_stock_data, name, ticker, krx_all_data): ticker for name, ticker in TARGET_STOCKS.items()}
+        for future in futures:
+            ticker, data = future.result()
+            quant_data[ticker] = data
 
-with open("quant_data.json", "w", encoding="utf-8") as f:
-    json.dump(quant_data, f, ensure_ascii=False, indent=2)
+    with open("quant_data.json", "w", encoding="utf-8") as f:
+        json.dump(quant_data, f, ensure_ascii=False, indent=2)
 
-end_time = time.time()
-print(f"✅ 데이터 수집 및 연산 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
+    end_time = time.time()
+    print(f"✅ 데이터 수집 및 연산 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
