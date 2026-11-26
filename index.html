@@ -234,7 +234,7 @@
                     </thead>
                     <tbody id="watchlistTableBody">
                         <tr>
-                            <td colspan="9" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td>
+                            <td colspan="8" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -304,9 +304,9 @@
                         <p class="text-xs font-semibold text-slate-400 mb-1">전일대비 등락률</p>
                         <p id="naverChange" class="text-2xl font-extrabold text-slate-800">-</p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
-                        <p class="text-xs font-semibold text-slate-400 mb-1">시가총액</p>
-                        <p id="naverMarketCap" class="text-2xl font-extrabold text-slate-700">-</p>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full overflow-hidden">
+                        <p class="text-xs font-semibold text-slate-400 mb-1 whitespace-nowrap">시가총액</p>
+                        <p id="naverMarketCap" class="text-lg xl:text-2xl font-extrabold text-slate-700 mb-0 whitespace-nowrap tracking-tighter">-</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center h-full">
                         <p class="text-xs font-semibold text-slate-400 mb-1">외국인 소진율</p>
@@ -435,56 +435,7 @@
                     </div>
                 </div>
                 
-                <div id="expectedReturnBox" class="hidden mb-4 bg-white border border-slate-300 rounded-xl shadow-md overflow-hidden">
-                    <div class="bg-slate-800 px-4 py-2 flex justify-between items-center">
-                        <span class="font-bold text-white text-sm">💡 AI 트레이딩 실전 시뮬레이터</span>
-                        <span id="simModeBadge" class="text-xs bg-slate-600 text-white px-2 py-0.5 rounded font-semibold">-</span>
-                    </div>
-                    <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1">📥 투입 및 매수 시뮬레이션</h4>
-                            <div id="simCurrentView" class="space-y-2">
-                                <div class="flex justify-between text-sm"><span class="text-slate-500">총 투입 자금:</span> <span id="simTotalInvestNew" class="font-bold text-slate-800">-</span></div>
-                                <div class="border-t border-slate-200 my-2"></div>
-                                <div class="flex justify-between text-sm"><span class="text-slate-500">예상 매수 수량:</span> <span id="simTotalSharesNew" class="font-bold text-rose-600">-</span></div>
-                            </div>
-                            <div id="simAverageView" class="hidden space-y-2">
-                                <div class="flex justify-between text-sm"><span class="text-slate-500">기존 평단가:</span> <span id="simOldAvgPrice" class="font-semibold text-slate-700">-</span></div>
-                                <div class="flex justify-between text-sm"><span class="text-slate-500">대기자금 투입:</span> <span id="simInvestedStandby" class="font-semibold text-blue-600">-</span></div>
-                                <div class="border-t border-slate-200 my-2"></div>
-                                <div class="flex justify-between text-[15px] font-bold text-rose-600 bg-rose-50 p-1.5 rounded">
-                                    <span>물타기 후 예상 평단가:</span> <span id="simNewAvgPrice">-</span>
-                                </div>
-                                <div class="flex justify-between text-sm mt-1"><span class="text-slate-500">최종 보유 수량:</span> <span id="simTotalSharesAvg" class="font-bold text-slate-800">-</span></div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-3 flex flex-col justify-center">
-                            <div class="bg-rose-50 p-3 rounded-xl border border-rose-200">
-                                <h4 class="text-xs font-bold text-rose-800 mb-1">📈 AI 목표가 3분할 익절 성공 시</h4>
-                                <div class="flex justify-between items-end">
-                                    <span class="text-xs text-rose-600">예상 총 수익금</span>
-                                    <div class="text-right leading-none">
-                                        <span id="simProfitRate" class="font-extrabold text-lg text-rose-700">-</span><br>
-                                        <span id="simProfitMoney" class="text-[11px] bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">-</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-200">
-                                <h4 class="text-xs font-bold text-blue-800 mb-1">📉 지지선 이탈 3분할 방어 매도 시</h4>
-                                <div class="flex justify-between items-end">
-                                    <span class="text-xs text-blue-600">예상 최대 손실액</span>
-                                    <div class="text-right leading-none">
-                                        <span id="simLossRate" class="font-extrabold text-lg text-blue-700">-</span><br>
-                                        <span id="simLossMoney" class="text-[11px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">-</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 💧🔥 직관적인 물타기/불타기 계산기 (모바일 앱 스타일) -->
+                <!-- 💧🔥 직관적인 물타기/불타기 계산기 (모바일 앱 스타일) - 위로 올라옴 -->
                 <div id="waterSimulatorBox" class="hidden mb-4 bg-white border border-slate-300 rounded-xl shadow-md overflow-hidden">
                     <div id="wsHeader" class="bg-blue-600 px-5 py-3 flex justify-between items-center text-white transition-colors duration-300">
                         <h3 class="font-extrabold text-base flex items-center gap-2">
@@ -530,6 +481,56 @@
                         <div class="flex justify-between items-center pt-2 bg-blue-50 p-4 rounded-lg">
                             <span class="text-sm font-bold text-blue-800">총 추가 금액</span>
                             <span id="wsTotalCost" class="text-xl font-extrabold text-blue-900">0원</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💡 AI 트레이딩 실전 시뮬레이터 - 아래로 내려감 -->
+                <div id="expectedReturnBox" class="hidden mb-4 bg-white border border-slate-300 rounded-xl shadow-md overflow-hidden">
+                    <div class="bg-slate-800 px-4 py-2 flex justify-between items-center">
+                        <span class="font-bold text-white text-sm">💡 AI 트레이딩 실전 시뮬레이터</span>
+                        <span id="simModeBadge" class="text-xs bg-slate-600 text-white px-2 py-0.5 rounded font-semibold">-</span>
+                    </div>
+                    <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-1">📥 투입 및 매수 시뮬레이션</h4>
+                            <div id="simCurrentView" class="space-y-2">
+                                <div class="flex justify-between text-sm"><span class="text-slate-500">총 투입 자금:</span> <span id="simTotalInvestNew" class="font-bold text-slate-800">-</span></div>
+                                <div class="border-t border-slate-200 my-2"></div>
+                                <div class="flex justify-between text-sm"><span class="text-slate-500">예상 매수 수량:</span> <span id="simTotalSharesNew" class="font-bold text-rose-600">-</span></div>
+                            </div>
+                            <div id="simAverageView" class="hidden space-y-2">
+                                <div class="flex justify-between text-sm"><span class="text-slate-500">기존 평단가:</span> <span id="simOldAvgPrice" class="font-semibold text-slate-700">-</span></div>
+                                <div class="flex justify-between text-sm"><span class="text-slate-500">대기자금 투입:</span> <span id="simInvestedStandby" class="font-semibold text-blue-600">-</span></div>
+                                <div class="border-t border-slate-200 my-2"></div>
+                                <div class="flex justify-between text-[15px] font-bold text-rose-600 bg-rose-50 p-1.5 rounded">
+                                    <span>물타기 후 예상 평단가:</span> <span id="simNewAvgPrice">-</span>
+                                </div>
+                                <div class="flex justify-between text-sm mt-1"><span class="text-slate-500">최종 보유 수량:</span> <span id="simTotalSharesAvg" class="font-bold text-slate-800">-</span></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 flex flex-col justify-center">
+                            <div class="bg-rose-50 p-3 rounded-xl border border-rose-200">
+                                <h4 class="text-xs font-bold text-rose-800 mb-1">📈 AI 목표가 3분할 익절 성공 시</h4>
+                                <div class="flex justify-between items-end">
+                                    <span class="text-xs text-rose-600">예상 총 수익금</span>
+                                    <div class="text-right leading-none">
+                                        <span id="simProfitRate" class="font-extrabold text-lg text-rose-700">-</span><br>
+                                        <span id="simProfitMoney" class="text-[11px] bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 p-3 rounded-xl border border-blue-200">
+                                <h4 class="text-xs font-bold text-blue-800 mb-1">📉 지지선 이탈 3분할 방어 매도 시</h4>
+                                <div class="flex justify-between items-end">
+                                    <span class="text-xs text-blue-600">예상 최대 손실액</span>
+                                    <div class="text-right leading-none">
+                                        <span id="simLossRate" class="font-extrabold text-lg text-blue-700">-</span><br>
+                                        <span id="simLossMoney" class="text-[11px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-bold mt-1 inline-block">-</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1835,18 +1836,18 @@
                 let perHtml = '<span class="text-slate-400">-</span>';
                 let pbrHtml = '<span class="text-slate-400">-</span>';
                 
-                // 🌟 PER, PBR '배' 글자 추가
+                // 🌟 PER, PBR '배' 글자 추가 및 박스 크기 고정 (w-16)
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
                     if (!isNaN(perVal)) {
                         const evalPer = evaluateValuation(item.ticker, 'per', perVal);
-                        perHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold whitespace-nowrap ${evalPer.color}" title="${evalPer.text}">${perVal}배</span>`;
+                        perHtml = `<span class="inline-block w-16 text-center px-1 py-0.5 rounded border text-[11px] font-bold whitespace-nowrap ${evalPer.color}" title="${evalPer.text}">${perVal}배</span>`;
                     }
 
                     const pbrVal = parseFloat(globalQuantData[item.ticker].pbr);
                     if (!isNaN(pbrVal)) {
                         const evalPbr = evaluateValuation(item.ticker, 'pbr', pbrVal);
-                        pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold whitespace-nowrap ${evalPbr.color}" title="${evalPbr.text}">${pbrVal}배</span>`;
+                        pbrHtml = `<span class="inline-block w-16 text-center px-1 py-0.5 rounded border text-[11px] font-bold whitespace-nowrap ${evalPbr.color}" title="${evalPbr.text}">${pbrVal}배</span>`;
                     }
                 }
 
@@ -2858,12 +2859,13 @@ PRED_D5: [예상종가]원
             calculateWater();
         }
         
-        // 🌟 물타기 계산 전용 로직
+        // 🌟 물타기/불타기 계산 전용 로직
         function calculateWater() {
             const currentInvest = parseInt(document.getElementById('currentInvestInput').value) || 0;
             const myAvgPrice = parseInt(document.getElementById('myAvgPriceInput').value) || 0;
             if (myAvgPrice === 0 || currentInvest === 0 || !lastFetchedData) return;
 
+            const wsMode = document.getElementById('wsModeSelect') ? document.getElementById('wsModeSelect').value : 'down';
             const currentShares = currentInvest / myAvgPrice;
             const currentPrice = parseInt(String(lastFetchedData.price).replace(/,/g, '')) || 0;
             
@@ -2879,18 +2881,21 @@ PRED_D5: [예상종가]원
             const addAmount = buyPrice * buyQty;
             document.getElementById('wsTotalCost').textContent = addAmount.toLocaleString() + '원';
 
+            const erEl = document.getElementById('wsExpectedReturn');
             if (buyQty > 0 && buyPrice > 0) {
                 const totalInvest = currentInvest + addAmount;
                 const totalShares = currentShares + buyQty;
                 const newAvgPrice = totalInvest / totalShares;
                 const expectedReturn = ((currentPrice - newAvgPrice) / newAvgPrice) * 100;
 
-                const erEl = document.getElementById('wsExpectedReturn');
                 erEl.textContent = (expectedReturn > 0 ? '+' : '') + expectedReturn.toFixed(2) + '%';
-                erEl.className = `text-xl font-extrabold ${expectedReturn > 0 ? 'text-red-600' : 'text-blue-600'}`;
+                if (wsMode === 'up') {
+                    erEl.className = `text-xl font-extrabold ${expectedReturn >= 0 ? 'text-red-600' : 'text-rose-600'}`;
+                } else {
+                    erEl.className = `text-xl font-extrabold ${expectedReturn > 0 ? 'text-red-600' : 'text-blue-600'}`;
+                }
                 document.getElementById('wsExpectedAvg').textContent = Math.floor(newAvgPrice).toLocaleString() + '원';
             } else {
-                const erEl = document.getElementById('wsExpectedReturn');
                 erEl.textContent = '-';
                 erEl.className = 'text-xl font-extrabold text-slate-400';
                 document.getElementById('wsExpectedAvg').textContent = '-';
