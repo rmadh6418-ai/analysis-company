@@ -225,7 +225,6 @@
                             <th class="p-2 border text-left whitespace-nowrap">섹터 (분석기준)</th>
                             <th class="p-2 border text-left whitespace-nowrap">종목명 (코드)</th>
                             <th class="p-2 border text-right whitespace-nowrap">현재가 (등락률)</th>
-                            <th class="p-2 border text-right bg-blue-50 text-blue-800 whitespace-nowrap">총발행/유동주식수 (비율)</th>
                             <th class="p-2 border text-right bg-red-50 text-red-800 whitespace-nowrap">당일 거래량 (회전율)</th>
                             <th class="p-2 border text-center whitespace-nowrap">외국인 소진율 (증감)</th>
                             <th class="p-2 border text-center whitespace-nowrap">PER</th>
@@ -1776,11 +1775,10 @@
         function renderWatchlistTable() {
             const tbody = document.getElementById('watchlistTableBody');
             if (userWatchlist.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td></tr>`;
                 return;
             }
 
-            // 🌟 1. 섹터별로 관심종목 먼저 정렬 (이게 있어야 병합이 안 꼬입니다!)
             userWatchlist.forEach(item => {
                 item._sector = getSectorByTicker(item.ticker);
             });
@@ -1789,7 +1787,6 @@
                 return a.corpName.localeCompare(b.corpName, 'ko');
             });
 
-            // 🌟 2. 섹터별 종목 개수를 미리 카운트 (병합 rowspan 용도)
             const sectorCounts = {};
             userWatchlist.forEach(item => {
                 sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1;
@@ -1824,13 +1821,9 @@
                     else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
                 }
 
-                const sharesObj = getAccurateSharesData(item.ticker, currentPriceNum);
-                const totalShares = sharesObj.total;
+                // 🌟 주식수 데이터 삭제 (회전율 계산용 유동주식수만 남김)
+                const sharesObj = getAccurateSharesData(item.ticker, currentPriceNum); 
                 const floatingShares = sharesObj.floating;
-                const freeFloatRatio = sharesObj.ratio;
-                
-                let sharesHtml = `<div class="font-bold text-slate-800 text-right whitespace-nowrap">총 ${Math.floor(totalShares).toLocaleString()}주</div>
-                                  <div class="text-[11px] text-blue-700 font-semibold text-right mt-0.5 whitespace-nowrap">유동: ${Math.floor(floatingShares).toLocaleString()}주 (${freeFloatRatio.toFixed(1)}%)</div>`;
 
                 let volNum = 0;
                 if (livePortfolioVolumes[item.ticker] && livePortfolioVolumes[item.ticker] !== '-') {
@@ -1862,7 +1855,6 @@
                 let perHtml = '<span class="text-slate-400">-</span>';
                 let pbrHtml = '<span class="text-slate-400">-</span>';
                 
-                // 🌟 PER, PBR '배' 글자 삭제 및 줄바꿈 금지 적용
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
                     if (!isNaN(perVal)) {
@@ -1877,14 +1869,9 @@
                     }
                 }
 
-                // 🌟 섹터 병합 (하나로 합치기)
                 let sectorTdHtml = '';
+                // 🌟 그룹 헤더 가로줄 완전히 삭제
                 if (sector !== lastSector) {
-                    html += `<tr class="bg-amber-100/70 border-y border-amber-300">
-                        <td colspan="9" class="px-3 py-1.5 text-left text-xs font-extrabold text-amber-950">
-                            📂 [${sector}] 섹터 관심종목 그룹 <span class="text-[11px] font-semibold text-amber-800 ml-2">(기준: PER ${baseline.per}배↓ / PBR ${baseline.pbr}배↓ / 회전율 ${threshold}%↑)</span>
-                        </td>
-                    </tr>`;
                     sectorTdHtml = `<td rowspan="${sectorCounts[sector]}" class="p-2 text-left align-middle bg-amber-50/40 border-r border-slate-200 whitespace-nowrap">
                         ${buildSectorCellHtml(item.ticker)}
                     </td>`;
@@ -1903,7 +1890,6 @@
                         <div class="font-bold text-slate-800">${currentPriceStr}</div>
                         <div class="text-[11px] ${changeColor} mt-0.5">${changeText}</div>
                     </td>
-                    <td class="p-2 text-right align-middle">${sharesHtml}</td>
                     <td class="p-2 text-right align-middle">${volHtml}</td>
                     <td class="p-2 text-center align-middle">${foreignHtml}</td>
                     <td class="p-2 text-center align-middle">${perHtml}</td>
@@ -1916,7 +1902,7 @@
             });
             tbody.innerHTML = html;
         }
-
+        
         async function refreshWatchlistPrices(isSilent = false) {
             if (userWatchlist.length === 0) { 
                 if(!isSilent) notifyUser("등록된 관심종목이 없습니다."); 
@@ -2822,7 +2808,20 @@ PRED_D5: [예상종가]원
                 document.getElementById('simModeBadge').textContent = "신규 진입 시나리오"; simCurrentView.classList.remove('hidden'); simAverageView.classList.add('hidden');
                 document.getElementById('simTotalInvestNew').textContent = investAmt.toLocaleString() + '원'; document.getElementById('simTotalSharesNew').textContent = totalShares.toLocaleString() + '주 예상';
                 runSellSimulation(totalShares, investAmt); returnBox.classList.remove('hidden');
-                document.getElementById('waterSimulatorBox').classList.add('hidden');
+
+                // 🌟 신규 진입 모드에서도 물타기 위젯 켜기
+                document.getElementById('waterSimulatorBox').classList.remove('hidden');
+                if (lastFetchedData) {
+                    document.getElementById('wsCorpName').textContent = lastFetchedData.corpName;
+                    document.getElementById('wsBuyPrice').value = parseInt(String(lastFetchedData.price).replace(/,/g, '')) || 0;
+                    document.getElementById('wsCurrentReturn').textContent = '0.00%';
+                    document.getElementById('wsCurrentReturn').className = 'text-xl font-extrabold text-slate-800';
+                    document.getElementById('wsCurrentAvg').textContent = '신규 진입';
+                    document.getElementById('wsExpectedReturn').textContent = '-';
+                    document.getElementById('wsExpectedAvg').textContent = '-';
+                    document.getElementById('wsTotalCost').textContent = '0원';
+                }
+
             } else {
                 const avgPrice = parseInt(document.getElementById('myAvgPriceInput').value); const currentInvest = parseInt(document.getElementById('currentInvestInput').value); const standbyCash = parseInt(document.getElementById('standbyCashInput').value) || 0; 
                 if (isNaN(avgPrice) || isNaN(currentInvest) || avgPrice <= 0 || currentInvest <= 0) { returnBox.classList.add('hidden'); document.getElementById('waterSimulatorBox').classList.add('hidden'); return; }
@@ -2843,7 +2842,7 @@ PRED_D5: [예상종가]원
                 document.getElementById('simNewAvgPrice').textContent = Math.floor(newAvgPrice).toLocaleString() + '원'; document.getElementById('simTotalSharesAvg').textContent = Math.floor(newTotalShares).toLocaleString() + '주';
                 runSellSimulation(newTotalShares, newTotalInvest); returnBox.classList.remove('hidden');
 
-                // 🌟 직관적인 물타기 위젯 켜기
+                // 🌟 기존 보유 모드에서 물타기 위젯 켜기
                 document.getElementById('waterSimulatorBox').classList.remove('hidden');
                 if (lastFetchedData) {
                     document.getElementById('wsCorpName').textContent = lastFetchedData.corpName;
