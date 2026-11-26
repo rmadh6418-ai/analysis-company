@@ -48,33 +48,28 @@ for sector, companies in KOSDAQ150_SECTORS.items(): TARGET_STOCKS.update(compani
 
 # ================= 새로 추가된 함수: 한국거래소(KRX) 전체 주식수 한 번에 불러오기 ================= #
 def get_krx_df():
-    try:
-        today = datetime.today()
-        # 해당 월의 영업일 조회
-        b_days = stock.get_business_days_of_month(today.year, today.month)
-        if not b_days.empty:
-            past_b_days = [d for d in b_days if d <= today]
-            if past_b_days:
-                date_str = past_b_days[-1].strftime("%Y%m%d")
-            else:
-                raise ValueError("당월 과거 영업일 없음")
-        else:
-            raise ValueError("당월 영업일 없음")
-    except Exception:
-        # 연초나 월초 휴일 등으로 당월 조회가 실패하면 지난달 마지막 영업일 사용
-        today = datetime.today()
-        prev_month = today.month - 1 if today.month > 1 else 12
-        prev_year = today.year if today.month > 1 else today.year - 1
-        b_days_prev = stock.get_business_days_of_month(prev_year, prev_month)
-        date_str = b_days_prev[-1].strftime("%Y%m%d")
-        
-    print(f"📊 KRX 공식 데이터 기준일: {date_str}")
+    from pykrx import stock
+    import pandas as pd
+    from datetime import datetime, timedelta
+
+    print("📊 KRX 공식 데이터 수집 시작...")
     
-    # 코스피, 코스닥 전체 종목의 상장주식수 데이터를 다운로드
-    krx_kospi = stock.get_market_cap(date_str, market="KOSPI")
-    krx_kosdaq = stock.get_market_cap(date_str, market="KOSDAQ")
-    krx_all = pd.concat([krx_kospi, krx_kosdaq])
-    return krx_all
+    # 오늘부터 과거 7일 중 가장 최근 거래일(데이터가 있는 날)을 찾습니다.
+    for i in range(7):
+        target_date = (datetime.today() - timedelta(days=i)).strftime("%Y%m%d")
+        try:
+            # KOSPI 상장주식수 호출 시도
+            krx_kospi = stock.get_market_cap(target_date, market="KOSPI")
+            if not krx_kospi.empty:
+                print(f"✅ KRX 공식 데이터 기준일: {target_date}")
+                krx_kosdaq = stock.get_market_cap(target_date, market="KOSDAQ")
+                return pd.concat([krx_kospi, krx_kosdaq])
+        except Exception as e:
+            pass # 에러 발생 시 하루 전으로 넘어가서 다시 시도
+            
+    # 7일 내에 데이터를 못 찾은 경우 (이론상 발생하기 어려움)
+    print("⚠️ 최근 7일 내 KRX 데이터를 찾지 못했습니다. 빈 데이터프레임을 반환합니다.")
+    return pd.DataFrame()
 
 # ================= 개별 종목 정보 수집 메인 함수 ================= #
 def fetch_stock_data(name, ticker, krx_all):
