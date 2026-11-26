@@ -111,15 +111,15 @@
                 <table class="w-full text-sm border-collapse">
                     <thead>
                         <tr class="bg-slate-100 text-slate-700 text-xs">
-                            <th class="p-2 border text-left">섹터 (분석기준)</th>
-                            <th class="p-2 border text-left">종목명 (코드)</th>
-                            <th class="p-2 border text-right">현재가 (등락률)</th>
-                            <th class="p-2 border text-right">내 평단가</th>
-                            <th class="p-2 border text-right">수익률</th>
-                            <th class="p-2 border text-right">총 매수금액</th>
-                            <th class="p-2 border text-right">평가금액</th>
-                            <th class="p-2 border text-right bg-indigo-50 text-indigo-800">비중</th>
-                            <th class="p-2 border text-center">관리</th>
+                            <th class="p-2 border text-left whitespace-nowrap">섹터 (분석기준)</th>
+                            <th class="p-2 border text-left whitespace-nowrap">종목명 (코드)</th>
+                            <th class="p-2 border text-right whitespace-nowrap">현재가 (등락률)</th>
+                            <th class="p-2 border text-right bg-blue-50 text-blue-800 whitespace-nowrap">총발행/유동주식수 (비율)</th>
+                            <th class="p-2 border text-right bg-red-50 text-red-800 whitespace-nowrap">당일 거래량 (회전율)</th>
+                            <th class="p-2 border text-center whitespace-nowrap">외국인 소진율 (증감)</th>
+                            <th class="p-2 border text-center whitespace-nowrap">PER</th>
+                            <th class="p-2 border text-center whitespace-nowrap">PBR</th>
+                            <th class="p-2 border text-center whitespace-nowrap">관리 / 분석</th>
                         </tr>
                     </thead>
                     <tbody id="portfolioTableBody">
@@ -476,6 +476,56 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💧 직관적인 물타기 계산기 (모바일 앱 스타일) -->
+                <div id="waterSimulatorBox" class="hidden mb-4 bg-white border border-blue-200 rounded-xl shadow-md overflow-hidden w-full lg:w-2/3 mx-auto mt-4">
+                    <div class="bg-blue-600 px-5 py-3 flex justify-between items-center text-white">
+                        <h3 class="font-extrabold text-base flex items-center gap-2">💧 <span id="wsCorpName">종목명</span> 물타기 계산기</h3>
+                    </div>
+                    <div class="p-5 space-y-6">
+                        <!-- 수익률 비교 -->
+                        <div class="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div class="text-center w-5/12 flex flex-col items-center justify-center">
+                                <p class="text-[11px] font-bold text-slate-500 mb-1">현재 평균 수익률</p>
+                                <p id="wsCurrentReturn" class="text-xl font-extrabold text-slate-800">-</p>
+                                <p id="wsCurrentAvg" class="text-xs font-medium text-slate-500 mt-1">-</p>
+                            </div>
+                            <div class="w-2/12 flex justify-center text-slate-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                            </div>
+                            <div class="text-center w-5/12 flex flex-col items-center justify-center">
+                                <p class="text-[11px] font-bold text-blue-600 mb-1">물타기 후 예상 ⓘ</p>
+                                <p id="wsExpectedReturn" class="text-xl font-extrabold text-blue-600">-</p>
+                                <p id="wsExpectedAvg" class="text-xs font-medium text-slate-500 mt-1">-</p>
+                            </div>
+                        </div>
+
+                        <!-- 입력 폼 -->
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                                <label class="text-sm font-bold text-slate-700">사고 싶은 가격은?</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="wsBuyPrice" oninput="calculateWater()" class="w-28 text-right font-bold text-lg text-slate-900 focus:outline-none placeholder-slate-300 bg-transparent" placeholder="0">
+                                    <span class="text-sm font-bold text-slate-700">원 ✏️</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                                <label class="text-sm font-bold text-slate-700">몇 주 더 살까요?</label>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="wsBuyQty" oninput="calculateWater()" class="w-20 text-right font-bold text-lg text-slate-900 focus:outline-none placeholder-slate-300 bg-transparent" placeholder="0">
+                                    <span class="text-sm font-bold text-slate-700">주 ✏️</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 결과 -->
+                        <div class="flex justify-between items-center pt-2 bg-blue-50 p-4 rounded-lg">
+                            <span class="text-sm font-bold text-blue-800">총 추가 금액</span>
+                            <span id="wsTotalCost" class="text-xl font-extrabold text-blue-900">0원</span>
                         </div>
                     </div>
                 </div>
@@ -1695,21 +1745,19 @@
                 return a.corpName.localeCompare(b.corpName, 'ko');
             });
 
+            // 🌟 1. 섹터별 종목 개수를 미리 세어줍니다 (병합 rowspan 용도)
+            const sectorCounts = {};
+            userWatchlist.forEach(item => {
+                sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1;
+            });
+
             let html = '';
             let lastSector = null;
+            
             userWatchlist.forEach(item => {
                 const sector = item._sector;
                 const baseline = SECTOR_BASELINES[sector] || SECTOR_BASELINES["default"];
                 const threshold = getSectorTurnoverThreshold(sector);
-
-                if (sector !== lastSector) {
-                    html += `<tr class="bg-amber-100/70 border-y border-amber-300">
-                        <td colspan="9" class="px-3 py-1.5 text-left text-xs font-extrabold text-amber-950">
-                            📂 [${sector}] 섹터 관심종목 그룹 <span class="text-[11px] font-semibold text-amber-800 ml-2">(기준: PER ${baseline.per}배↓ / PBR ${baseline.pbr}배↓ / 회전율 ${threshold}%↑)</span>
-                        </td>
-                    </tr>`;
-                    lastSector = sector;
-                }
 
                 let currentPriceStr = '데이터연동중';
                 let currentPriceNum = 0;
@@ -1732,14 +1780,13 @@
                     else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
                 }
 
-                // 🌟 총발행주식수 및 유동주식수 정밀 데이터 추출
                 const sharesObj = getAccurateSharesData(item.ticker, currentPriceNum);
                 const totalShares = sharesObj.total;
                 const floatingShares = sharesObj.floating;
                 const freeFloatRatio = sharesObj.ratio;
                 
-                let sharesHtml = `<div class="font-bold text-slate-800 text-right">총 ${Math.floor(totalShares).toLocaleString()}주</div>
-                                  <div class="text-[11px] text-blue-700 font-semibold text-right mt-0.5">유동: ${Math.floor(floatingShares).toLocaleString()}주 (${freeFloatRatio.toFixed(1)}%)</div>`;
+                let sharesHtml = `<div class="font-bold text-slate-800 text-right whitespace-nowrap">총 ${Math.floor(totalShares).toLocaleString()}주</div>
+                                  <div class="text-[11px] text-blue-700 font-semibold text-right mt-0.5 whitespace-nowrap">유동: ${Math.floor(floatingShares).toLocaleString()}주 (${freeFloatRatio.toFixed(1)}%)</div>`;
 
                 let volNum = 0;
                 if (livePortfolioVolumes[item.ticker] && livePortfolioVolumes[item.ticker] !== '-') {
@@ -1755,55 +1802,65 @@
                     if (turnoverRate >= threshold) {
                         signalBadge = `<span class="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1 animate-pulse" title="섹터 기준치(${threshold}%) 돌파">상승신호🚀</span>`;
                     }
-                    volHtml = `<div class="font-bold text-slate-800 text-right">${volNum.toLocaleString()}주</div>
-                               <div class="text-[11px] text-slate-500 mt-0.5 text-right">회전율: ${turnoverRate.toFixed(2)}% ${signalBadge}</div>`;
+                    volHtml = `<div class="font-bold text-slate-800 text-right whitespace-nowrap">${volNum.toLocaleString()}주</div>
+                               <div class="text-[11px] text-slate-500 mt-0.5 text-right whitespace-nowrap">회전율: ${turnoverRate.toFixed(2)}% ${signalBadge}</div>`;
                 }
 
-                // 🌟 외국인 소진율 및 증감 정밀 표시
                 const fData = getAccurateForeignData(item.ticker);
                 const fRate = fData.rate;
                 const fChange = fData.change;
-                const fRateStr = `<div class="font-bold text-slate-800">${fRate.toFixed(2)}%</div>`;
+                const fRateStr = `<div class="font-bold text-slate-800 whitespace-nowrap">${fRate.toFixed(2)}%</div>`;
                 let fColor = fChange > 0 ? 'text-red-600 bg-red-50 border-red-200' : (fChange < 0 ? 'text-blue-600 bg-blue-50 border-blue-200' : 'text-slate-500 bg-slate-100 border-slate-200');
                 let fArrow = fChange > 0 ? '▲ +' : (fChange < 0 ? '▼ ' : '');
-                const fChangeHtml = `<div class="inline-block text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${fColor} mt-1">${fArrow}${fChange.toFixed(2)}%p</div>`;
+                const fChangeHtml = `<div class="inline-block text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${fColor} mt-1 whitespace-nowrap">${fArrow}${fChange.toFixed(2)}%p</div>`;
                 let foreignHtml = `${fRateStr}${fChangeHtml}`;
 
                 let perHtml = '<span class="text-slate-400">-</span>';
                 let pbrHtml = '<span class="text-slate-400">-</span>';
                 
+                // 🌟 PER, PBR '배' 글자 삭제 및 줄바꿈 금지(whitespace-nowrap) 적용
                 if (globalQuantData && globalQuantData[item.ticker]) {
                     const perVal = parseFloat(globalQuantData[item.ticker].per);
                     if (!isNaN(perVal)) {
                         const evalPer = evaluateValuation(item.ticker, 'per', perVal);
-                        perHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPer.color}" title="${evalPer.text}">${perVal}배</span>`;
+                        perHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold whitespace-nowrap ${evalPer.color}" title="${evalPer.text}">${perVal}</span>`;
                     }
 
                     const pbrVal = parseFloat(globalQuantData[item.ticker].pbr);
                     if (!isNaN(pbrVal)) {
                         const evalPbr = evaluateValuation(item.ticker, 'pbr', pbrVal);
-                        pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold ${evalPbr.color}" title="${evalPbr.text}">${pbrVal}배</span>`;
+                        pbrHtml = `<span class="px-2 py-0.5 rounded border text-[11px] font-bold whitespace-nowrap ${evalPbr.color}" title="${evalPbr.text}">${pbrVal}</span>`;
                     }
                 }
 
-                html += `<tr class="hover:bg-amber-50/30 transition border-b">
-                    <td class="p-2 text-left align-middle bg-amber-50/40 border-r border-slate-200">
+                // 🌟 섹터 병합 (하나로 합치기) 로직
+                let sectorTdHtml = '';
+                if (sector !== lastSector) {
+                    html += `<tr class="bg-amber-100/70 border-y border-amber-300">
+                        <td colspan="9" class="px-3 py-1.5 text-left text-xs font-extrabold text-amber-950">
+                            📂 [${sector}] 섹터 관심종목 그룹 <span class="text-[11px] font-semibold text-amber-800 ml-2">(기준: PER ${baseline.per}배↓ / PBR ${baseline.pbr}배↓ / 회전율 ${threshold}%↑)</span>
+                        </td>
+                    </tr>`;
+                    sectorTdHtml = `<td rowspan="${sectorCounts[sector]}" class="p-2 text-left align-middle bg-amber-50/40 border-r border-slate-200 whitespace-nowrap">
                         ${buildSectorCellHtml(item.ticker)}
-                    </td>
-                    <td class="p-2 text-left align-middle">
+                    </td>`;
+                    lastSector = sector;
+                } else {
+                    sectorTdHtml = '';
+                }
+
+                html += `<tr class="hover:bg-amber-50/30 transition border-b">
+                    ${sectorTdHtml}
+                    <td class="p-2 text-left align-middle whitespace-nowrap">
                         <button onclick="selectCompany('${item.corpName}', '${item.ticker}')" class="font-bold text-slate-800 hover:text-amber-600 text-left underline underline-offset-2 block">${item.corpName}</button>
                         <span class="text-[11px] font-mono text-slate-400 bg-slate-50 px-1 rounded border border-slate-100 inline-block mt-0.5">${item.ticker}</span>
                     </td>
-                    <td class="p-2 text-right align-middle">
+                    <td class="p-2 text-right align-middle whitespace-nowrap">
                         <div class="font-bold text-slate-800">${currentPriceStr}</div>
                         <div class="text-[11px] ${changeColor} mt-0.5">${changeText}</div>
                     </td>
-                    <td class="p-2 text-right align-middle">
-                        ${sharesHtml}
-                    </td>
-                    <td class="p-2 text-right align-middle">
-                        ${volHtml}
-                    </td>
+                    <td class="p-2 text-right align-middle">${sharesHtml}</td>
+                    <td class="p-2 text-right align-middle">${volHtml}</td>
                     <td class="p-2 text-center align-middle">${foreignHtml}</td>
                     <td class="p-2 text-center align-middle">${perHtml}</td>
                     <td class="p-2 text-center align-middle">${pbrHtml}</td>
@@ -2739,6 +2796,61 @@ PRED_D5: [예상종가]원
                 document.getElementById('simOldAvgPrice').textContent = avgPrice.toLocaleString() + '원'; document.getElementById('simInvestedStandby').textContent = standbyCash > 0 ? `+${actualStandbyUsed.toLocaleString()}원` : '0원 (대기금 없음)';
                 document.getElementById('simNewAvgPrice').textContent = Math.floor(newAvgPrice).toLocaleString() + '원'; document.getElementById('simTotalSharesAvg').textContent = Math.floor(newTotalShares).toLocaleString() + '주';
                 runSellSimulation(newTotalShares, newTotalInvest); returnBox.classList.remove('hidden');
+            }
+
+            // 🌟 2-1. 기존 보유 모드일 때만 직관적인 물타기 위젯 켜기
+            if (mode === 'average') {
+                document.getElementById('waterSimulatorBox').classList.remove('hidden');
+                if (lastFetchedData) {
+                    document.getElementById('wsCorpName').textContent = lastFetchedData.corpName;
+                    document.getElementById('wsBuyPrice').value = parseInt(String(lastFetchedData.price).replace(/,/g, '')) || 0;
+                    calculateWater();
+                }
+            } else {
+                document.getElementById('waterSimulatorBox').classList.add('hidden');
+            }
+        }
+
+        // 🌟 2-2. 물타기 계산 전용 로직
+        function calculateWater() {
+            const currentInvest = parseInt(document.getElementById('currentInvestInput').value) || 0;
+            const myAvgPrice = parseInt(document.getElementById('myAvgPriceInput').value) || 0;
+            if (myAvgPrice === 0 || currentInvest === 0 || !lastFetchedData) return;
+
+            const currentShares = currentInvest / myAvgPrice;
+            const currentPrice = parseInt(String(lastFetchedData.price).replace(/,/g, '')) || 0;
+            
+            // 1) 기존 수익률 세팅
+            const currentReturn = ((currentPrice - myAvgPrice) / myAvgPrice) * 100;
+            const crEl = document.getElementById('wsCurrentReturn');
+            crEl.textContent = (currentReturn > 0 ? '+' : '') + currentReturn.toFixed(2) + '%';
+            crEl.className = `text-xl font-extrabold ${currentReturn > 0 ? 'text-red-600' : 'text-blue-600'}`;
+            document.getElementById('wsCurrentAvg').textContent = myAvgPrice.toLocaleString() + '원';
+
+            // 2) 입력값 수집
+            const buyPrice = parseInt(document.getElementById('wsBuyPrice').value) || 0;
+            const buyQty = parseInt(document.getElementById('wsBuyQty').value) || 0;
+
+            // 3) 총 추가 금액 세팅
+            const addAmount = buyPrice * buyQty;
+            document.getElementById('wsTotalCost').textContent = addAmount.toLocaleString() + '원';
+
+            // 4) 물타기 결과 계산
+            if (buyQty > 0 && buyPrice > 0) {
+                const totalInvest = currentInvest + addAmount;
+                const totalShares = currentShares + buyQty;
+                const newAvgPrice = totalInvest / totalShares;
+                const expectedReturn = ((currentPrice - newAvgPrice) / newAvgPrice) * 100;
+
+                const erEl = document.getElementById('wsExpectedReturn');
+                erEl.textContent = (expectedReturn > 0 ? '+' : '') + expectedReturn.toFixed(2) + '%';
+                erEl.className = `text-xl font-extrabold ${expectedReturn > 0 ? 'text-red-600' : 'text-blue-600'}`;
+                document.getElementById('wsExpectedAvg').textContent = Math.floor(newAvgPrice).toLocaleString() + '원';
+            } else {
+                const erEl = document.getElementById('wsExpectedReturn');
+                erEl.textContent = '-';
+                erEl.className = 'text-xl font-extrabold text-slate-400';
+                document.getElementById('wsExpectedAvg').textContent = '-';
             }
         }
 
