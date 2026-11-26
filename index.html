@@ -114,12 +114,12 @@
                             <th class="p-2 border text-left whitespace-nowrap">섹터 (분석기준)</th>
                             <th class="p-2 border text-left whitespace-nowrap">종목명 (코드)</th>
                             <th class="p-2 border text-right whitespace-nowrap">현재가 (등락률)</th>
-                            <th class="p-2 border text-right bg-blue-50 text-blue-800 whitespace-nowrap">총발행/유동주식수 (비율)</th>
-                            <th class="p-2 border text-right bg-red-50 text-red-800 whitespace-nowrap">당일 거래량 (회전율)</th>
-                            <th class="p-2 border text-center whitespace-nowrap">외국인 소진율 (증감)</th>
-                            <th class="p-2 border text-center whitespace-nowrap">PER</th>
-                            <th class="p-2 border text-center whitespace-nowrap">PBR</th>
-                            <th class="p-2 border text-center whitespace-nowrap">관리 / 분석</th>
+                            <th class="p-2 border text-right whitespace-nowrap">내 평단가</th>
+                            <th class="p-2 border text-right whitespace-nowrap">수익률</th>
+                            <th class="p-2 border text-right whitespace-nowrap">총 매수금액</th>
+                            <th class="p-2 border text-right whitespace-nowrap">평가금액</th>
+                            <th class="p-2 border text-right bg-indigo-50 text-indigo-800 whitespace-nowrap">비중</th>
+                            <th class="p-2 border text-center whitespace-nowrap">관리</th>
                         </tr>
                     </thead>
                     <tbody id="portfolioTableBody">
@@ -1505,13 +1505,13 @@
                 item._sector = getSectorByTicker(item.ticker);
             });
 
-            // 🌟 포트폴리오 종목 정렬 (섹터별 -> 평가금액 순)
+            // 포트폴리오 종목 정렬 (섹터별 -> 평가금액 순)
             userPortfolio.sort((a, b) => {
                 if (a._sector !== b._sector) return a._sector.localeCompare(b._sector, 'ko');
                 return b._evalValue - a._evalValue;
             });
 
-            // 🌟 병합을 위한 섹터 카운트
+            // 병합을 위한 섹터 카운트
             const sectorCounts = {};
             userPortfolio.forEach(item => {
                 sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1;
@@ -1540,7 +1540,7 @@
                     else if (changeText.startsWith('-')) changeColor = 'text-blue-500 font-bold';
                 }
 
-                // 🌟 섹터 병합 처리 (가로줄 삭제됨)
+                // 🌟 섹터 병합 처리 (가로줄 그룹 타이틀 삭제)
                 let sectorTdHtml = '';
                 if (item._sector !== lastSector) {
                     sectorTdHtml = `<td rowspan="${sectorCounts[item._sector]}" class="p-2 text-left align-middle bg-slate-50/60 border-r border-slate-200 whitespace-nowrap">
@@ -1574,6 +1574,7 @@
             });
             tbody.innerHTML = html; updatePortfolioSummary(); renderPortfolioPieChart();
         }
+        
         function updatePortfolioSummary() {
             let totalInvest = 0, totalValue = 0;
             userPortfolio.forEach(item => {
