@@ -190,6 +190,10 @@ def fetch_stock_data(name, ticker, krx_all):
             
             if any(x in comb for x in ["marketvalue", "marketsum", "시가총액", "시총"]) and stock_info["marketCap"] == "-":
                 stock_info["marketCap"] = val
+            elif any(x in comb for x in ["상장주식수", "주식수"]) and stock_info["totalShares"] == 0:
+                digits = "".join(filter(str.isdigit, val.split('/')[0]))
+                if digits and int(digits) > 0:
+                    stock_info["totalShares"] = int(digits)
             elif any(x in comb for x in ["foreign", "외국인", "외인"]) and stock_info["foreignRate"] == "-":
                 stock_info["foreignRate"] = val
             elif any(x in comb for x in ["cnsper", "추정per"]):
