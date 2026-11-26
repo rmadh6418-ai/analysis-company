@@ -491,6 +491,11 @@ if __name__ == "__main__":
     failed_count = len(float_rows) - ok_count
     print(f"📊 유동비율 실제 수집: {ok_count}/{len(float_rows)}개 (미수집/오류 {failed_count}개)")
     print("📁 free_float_report.csv 저장 완료")
-
+    
+    failed_rows = [row for row in float_rows if row["freeFloatStatus"] != "OK"]
+    print(f"🔍 미수집/오류 종목 ({len(failed_rows)}개):")
+    for r in failed_rows:
+        print(f" - {r['ticker']} ({r['name']}) | status={r['freeFloatStatus']} | source={r['freeFloatSource']} | url={r['freeFloatUrl']}")
+    
     end_time = time.time()
     print(f"✅ 데이터 수집 및 연산 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
