@@ -99,11 +99,11 @@
 
             <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-2">
                 <div class="relative">
-                    <input type="text" id="portSearchInput" oninput="showPortSuggestions()" placeholder="종목명(예: 삼성전자)" class="w-full border p-2 rounded text-sm font-medium focus:outline-none" autocomplete="off">
+                    <input type="text" id="portSearchInput" oninput="showPortSuggestions()" onkeypress="if(event.key==='Enter') { document.getElementById('portAvgPriceInput').focus(); }" placeholder="종목명(예: 삼성전자)" class="w-full border p-2 rounded text-sm font-medium focus:outline-none" autocomplete="off">
                     <div id="portSuggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-48 overflow-y-auto text-left"></div>
                 </div>
-                <input type="number" id="portAvgPriceInput" placeholder="내 평단가 (원)" class="border p-2 rounded text-sm font-medium text-right focus:outline-none">
-                <input type="number" id="portInvestAmountInput" placeholder="총 매수금액 (원)" class="border p-2 rounded text-sm font-medium text-right focus:outline-none">
+                <input type="number" id="portAvgPriceInput" onkeypress="if(event.key==='Enter') { document.getElementById('portInvestAmountInput').focus(); }" placeholder="내 평단가 (원)" class="border p-2 rounded text-sm font-medium text-right focus:outline-none">
+                <input type="number" id="portInvestAmountInput" onkeypress="if(event.key==='Enter') { addPortfolioItem(); }" placeholder="총 매수금액 (원)" class="border p-2 rounded text-sm font-medium text-right focus:outline-none">
                 <button onclick="addPortfolioItem()" class="bg-emerald-600 text-white font-bold py-2 rounded text-sm hover:bg-emerald-700 transition shadow-sm">+ 종목 등록</button>
             </div>
 
@@ -210,12 +210,18 @@
                 <p>• 총발행주식수 및 유동주식수는 KRX/DART 기준 실제 발행주식수 및 유동비율 데이터와 실시간 시가총액을 연동하여 정확하게 산출됩니다.</p>
             </div>
 
-            <div class="bg-amber-50/50 p-3 rounded-lg border border-amber-100 flex gap-2">
-                <div class="relative flex-1">
-                    <input type="text" id="watchSearchInput" oninput="showWatchSuggestions()" placeholder="관심종목 검색 (예: 삼성전자)" class="w-full border border-amber-200 p-2 rounded text-sm font-medium focus:outline-none focus:border-amber-400" autocomplete="off">
-                    <div id="watchSuggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-48 overflow-y-auto text-left"></div>
+            <!-- 🌟 관심종목 등록 및 섹터 필터 영역 -->
+            <div class="bg-amber-50/50 p-3 rounded-lg border border-amber-100 flex flex-col gap-3">
+                <div class="flex gap-2 w-full">
+                    <div class="relative flex-1">
+                        <input type="text" id="watchSearchInput" oninput="showWatchSuggestions()" onkeypress="if(event.key==='Enter') { addWatchlistItem(); }" placeholder="관심종목 검색 (예: 삼성전자)" class="w-full border border-amber-200 p-2 rounded text-sm font-medium focus:outline-none focus:border-amber-400" autocomplete="off">
+                        <div id="watchSuggestionBox" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl hidden z-50 max-h-48 overflow-y-auto text-left"></div>
+                    </div>
+                    <button onclick="addWatchlistItem()" class="bg-amber-500 text-white font-bold py-2 px-4 rounded text-sm hover:bg-amber-600 transition shadow-sm shrink-0">+ 관심종목 등록</button>
                 </div>
-                <button onclick="addWatchlistItem()" class="bg-amber-500 text-white font-bold py-2 px-4 rounded text-sm hover:bg-amber-600 transition shadow-sm shrink-0">+ 관심종목 등록</button>
+                <!-- 섹터 필터 동적 생성 영역 -->
+                <div id="watchSectorFilters" class="flex flex-wrap gap-2 pt-1 border-t border-amber-200/50">
+                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -764,6 +770,8 @@
         // 관심종목 변수
         let userWatchlist = [];
         let selectedWatchCode = '';
+        let currentWatchSectorFilter = '전체'; // 관심종목 섹터 필터 상태
+        const sharesCache = {}; // 주식수 실시간 변동 방지용 캐시 메모리
 
         // config.json 파일에서 불러올 구글 Apps Script URL 변수
         let GAS_URL = "";
@@ -1040,45 +1048,34 @@
             return totalWon;
         }
         
-        // 🌟 총발행주식수 및 유동주식수 정밀 추출 함수
+        // 🌟 총발행주식수 및 유동주식수 정밀 추출 함수 (캐싱 적용)
         function getAccurateSharesData(ticker, currentPriceNum) {
-            const qData = (globalQuantData && globalQuantData[ticker]) ? globalQuantData[ticker] : null;
-            let totalShares = 0;
-            let floatingShares = 0;
+            if (sharesCache[ticker]) return sharesCache[ticker];
 
-            // 1순위: quant_data.json 내부에 실제 숫자 데이터가 있는 경우
+            const qData = (globalQuantData && globalQuantData[ticker]) ? globalQuantData[ticker] : null;
+            let totalShares = 0; let floatingShares = 0;
+
             if (qData) {
                 const rawTotal = parseInt(String(qData.totalShares || qData.listedShares || qData.shares || '').replace(/,/g, ''), 10);
                 const rawFloat = parseInt(String(qData.floatingShares || qData.freeFloatShares || '').replace(/,/g, ''), 10);
                 const rawFloatRate = parseFloat(String(qData.freeFloatRate || qData.floatingRate || '').replace(/%/g, ''));
-
-                if (!isNaN(rawTotal) && rawTotal > 100000) {
-                    totalShares = rawTotal;
-                }
-                if (!isNaN(rawFloat) && rawFloat > 50000) {
-                    floatingShares = rawFloat;
-                } else if (totalShares > 0 && !isNaN(rawFloatRate) && rawFloatRate > 0) {
-                    floatingShares = Math.floor(totalShares * (rawFloatRate / 100));
-                }
+                if (!isNaN(rawTotal) && rawTotal > 100000) totalShares = rawTotal;
+                if (!isNaN(rawFloat) && rawFloat > 50000) floatingShares = rawFloat; 
+                else if (totalShares > 0 && !isNaN(rawFloatRate) && rawFloatRate > 0) floatingShares = Math.floor(totalShares * (rawFloatRate / 100));
             }
 
-            // 2순위: KRX_ACCURATE_SHARES_DB 정밀 데이터베이스 매칭
             if ((!totalShares || !floatingShares) && KRX_ACCURATE_SHARES_DB[ticker]) {
                 const dbEntry = KRX_ACCURATE_SHARES_DB[ticker];
                 if (!totalShares) totalShares = dbEntry.total;
                 if (!floatingShares) floatingShares = Math.floor(totalShares * dbEntry.floatRatio);
             }
 
-            // 3순위: 시가총액(marketCap) 및 현재가 기반 역산
             if (!totalShares && qData && qData.marketCap) {
                 const mcWon = parseMarketCapToWon(String(qData.marketCap));
-                const priceNum = currentPriceNum || parseInt(String(qData.price || '').replace(/,/g, ''), 10) || 0;
-                if (mcWon > 0 && priceNum > 0) {
-                    totalShares = Math.round(mcWon / priceNum);
-                }
+                const priceNum = parseInt(String(qData.price || '').replace(/,/g, ''), 10) || currentPriceNum || 0;
+                if (mcWon > 0 && priceNum > 0) totalShares = Math.round(mcWon / priceNum);
             }
 
-            // 4순위: 티커 기반 결정론적 보정 (데이터가 전혀 없는 종목용)
             if (!totalShares || isNaN(totalShares)) {
                 const num = parseInt(ticker.replace(/\D/g, '') || '100000', 10);
                 totalShares = ((num % 850) + 150) * 100000;
@@ -1093,7 +1090,8 @@
             }
 
             const freeFloatRatio = totalShares > 0 ? (floatingShares / totalShares) * 100 : 0;
-            return { total: totalShares, floating: floatingShares, ratio: freeFloatRatio };
+            sharesCache[ticker] = { total: totalShares, floating: floatingShares, ratio: freeFloatRatio };
+            return sharesCache[ticker];
         }
 
         // 🌟 외국인 소진율 및 증감 정밀 추출 함수
@@ -1304,7 +1302,7 @@
                     document.getElementById('autoRefreshStatusPort').classList.add('hidden');
                     document.getElementById('autoRefreshStatusWatch').classList.add('hidden');
                 }
-            }, 60000); 
+            }, 30000); 
         }
         // =========================================================================
 
@@ -1754,30 +1752,56 @@
             saveToGoogleCloud();
         }
 
+        function setWatchSector(sector) {
+            currentWatchSectorFilter = sector;
+            renderWatchlistTable();
+        }
+
         function renderWatchlistTable() {
             const tbody = document.getElementById('watchlistTableBody');
-            if (userWatchlist.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-xs text-slate-400">등록된 관심종목이 없습니다.</td></tr>`;
+            
+            // 🌟 1. 섹터 탭 버튼 그리기
+            const filterContainer = document.getElementById('watchSectorFilters');
+            if (filterContainer && userWatchlist.length > 0) {
+                const sectors = ['전체', ...new Set(userWatchlist.map(item => getSectorByTicker(item.ticker)))];
+                filterContainer.innerHTML = sectors.map(sec => {
+                    const activeCls = sec === currentWatchSectorFilter ? 'bg-amber-500 text-white font-bold border-amber-600 shadow-md' : 'bg-white text-slate-600 border-amber-200 hover:bg-amber-50';
+                    return `<button onclick="setWatchSector('${sec}')" class="px-3 py-1.5 text-[11px] border rounded-full transition ${activeCls}">${sec}</button>`;
+                }).join('');
+            } else if (filterContainer) {
+                filterContainer.innerHTML = '';
+            }
+
+            // 🌟 2. 선택된 섹터만 필터링하기
+            let filteredWatchlist = userWatchlist;
+            if (currentWatchSectorFilter !== '전체') {
+                filteredWatchlist = userWatchlist.filter(item => getSectorByTicker(item.ticker) === currentWatchSectorFilter);
+            }
+
+            if (filteredWatchlist.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center p-4 text-xs text-slate-400">해당 섹터에 등록된 관심종목이 없습니다.</td></tr>`;
                 return;
             }
 
-            userWatchlist.forEach(item => {
+            filteredWatchlist.forEach(item => {
+
+            filteredWatchlist.forEach(item => {
                 item._sector = getSectorByTicker(item.ticker);
             });
-            userWatchlist.sort((a, b) => {
+            filteredWatchlist.sort((a, b) => {
                 if (a._sector !== b._sector) return a._sector.localeCompare(b._sector, 'ko');
                 return a.corpName.localeCompare(b.corpName, 'ko');
             });
 
             const sectorCounts = {};
-            userWatchlist.forEach(item => {
+            filteredWatchlist.forEach(item => {
                 sectorCounts[item._sector] = (sectorCounts[item._sector] || 0) + 1;
             });
 
             let html = '';
             let lastSector = null;
             
-            userWatchlist.forEach(item => {
+            filteredWatchlist.forEach(item => {
                 const sector = item._sector;
                 const baseline = SECTOR_BASELINES[sector] || SECTOR_BASELINES["default"];
                 const threshold = getSectorTurnoverThreshold(sector);
