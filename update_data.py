@@ -72,25 +72,457 @@ def get_krx_df():
     return pd.DataFrame()
 
 
-# ================= 유동비율 전용 파서 ================= #
-def parse_free_float_rate(html):
-    """
-    네이버 금융 종목 페이지에서 '유동비율'을 명시한 값만 추출.
-    임의 기본값/업종 평균값은 사용하지 않는다.
-    반환: (비율(float), 출처(str)) 또는 (None, None)
+# ================= 유동주식비율 전용 파서 ================= #
+def parse_free_float_data(html):
+    """WiseReport/FnGuide 회사현황 HTML에서 유동주식비율을 라벨 기준으로 추출한다.
+
+    반환값: (비율(float) 또는 None, 유동주식수(int) 또는 None)
+    주의: 페이지 안의 아무 퍼센트나 가져오지 않고, 반드시 유동비율 라벨에
+          붙어 있는 값만 읽는다.
     """
     if not html:
         return None, None
 
     soup = BeautifulSoup(html, "html.parser")
+    labels = (
+        "유동주식수/비율",
+        "유동주식수 / 비율",
+        "발행주식수/유동비율",
+        "발행주식수 / 유동비율",
+        "유동주식비율",
+        "유동비율",
+    )
 
-    def valid_percent(text):
-        # 행 안에 있는 퍼센트 중 유효한 0~100 값만 반환
-        values = re.findall(r"(?<![\d.])(\d{1,3}(?:\.\d+)?)\s*%", text)
-        for value in reversed(values):
-            try:
-                rate = float(value)
-                if 0 < rate <= 100:
-                    return rate
-            except (TypeError, ValueError):
-                continue
+    def clean_number(text):
+        text = str(text).replace(",", "").replace("주", "").replace("%", "").strip()
+        try:
+            return float(text)
+        except (TypeError, ValueError):
+            return None
+
+    def parse_value(value_text, label):
+        value_text = " ".join(str(value_text).split())
+        if not value_text:
+            return None, None
+
+        # '유동주식수/비율'은 '유동주식수 / 유동비율' 두 값이 함께 있는 경우가 많다.
+        if "유동주식수" in label and "/" in value_text:
+            pair = re.search(
+                r"(?P<shares>[\d,]+)\s*주?\s*/\s*(?P<rate>\d{1,3}(?:\.\d+)?)\s*%?",
+                value_text,
+            )
+            if pair:
+                shares = int(pair.group("shares").replace(",", ""))
+                rate = clean_number(pair.group("rate"))
+                if shares > 0 and rate is not None and 0 < rate <= 100:
+                    return rate, shares
+
+        # 비율 라벨 뒤의 값 구간만 사용한다. 슬래시가 있으면 마지막 항목이 비율이다.
+        ratio_text = value_text.rsplit("/", 1)[-1] if "/" in value_text else value_text
+        match = re.search(r"(?<![\d.])(\d{1,3}(?:\.\d+)?)\s*%?", ratio_text)
+        if match:
+            rate = clean_number(match.group(1))
+            if rate is not None and 0 < rate <= 100:
+                return rate, None
+        return None, None
+
+    # 1) 표 행 단위로 라벨 셀과 그 오른쪽 값 셀만 연결한다.
+    for tr in soup.find_all("tr"):
+        cells = tr.find_all(["th", "td"], recursive=False)
+        cell_texts = [" ".join(cell.stripped_strings) for cell in cells]
+        row_text = " ".join(cell_texts)
+
+        selected_label = next((label for label in labels if label in row_text), None)
+        if not selected_label:
+            continue
+
+        label_index = next(
+            (i for i, value in enumerate(cell_texts) if selected_label in value),
+            None,
+        )
+        if label_index is not None and label_index + 1 < len(cell_texts):
+            value_text = " ".join(cell_texts[label_index + 1:])
+        else:
+            # label과 값이 같은 셀/텍스트 노드에 들어 있는 구조 대응
+            pos = row_text.find(selected_label)
+            value_text = row_text[pos + len(selected_label):] if pos >= 0 else ""
+
+        rate, float_shares = parse_value(value_text, selected_label)
+        if rate is not None:
+            return rate, float_shares
+
+    # 2) 표가 아닌 레이아웃 대응. label 이후 120자만 확인한다.
+    plain = " ".join(soup.get_text(" ", strip=True).split())
+    for label in labels:
+        for match in re.finditer(re.escape(label), plain):
+            value_text = plain[match.end():match.end() + 120]
+            rate, float_shares = parse_value(value_text, label)
+            if rate is not None:
+                return rate, float_shares
+
+    return None, None
+
+
+def fetch_free_float_from_wisereport(session, ticker):
+    """WiseReport/FnGuide 회사현황 페이지에서 실제 유동주식비율을 가져온다.
+
+    네이버 구형 finance.naver.com URL은 현재 새 stock.naver.com 화면으로
+    리다이렉트될 수 있어 유동비율 수집원으로 사용하지 않는다.
+    """
+    urls = [
+        f"https://navercomp2.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={ticker}",
+        f"https://comp.wisereport.co.kr/wisefn/company/c1010001.aspx?cmp_cd={ticker}&cn=",
+    ]
+    last_error = None
+
+    for url in urls:
+        try:
+            response = session.get(url, timeout=12, allow_redirects=True)
+            response.raise_for_status()
+            rate, floating_shares = parse_free_float_data(response.text)
+            if rate is not None:
+                source = "WiseReport company overview"
+                return rate, floating_shares, source, response.url
+        except Exception as exc:
+            last_error = exc
+
+    if last_error:
+        return None, None, f"REQUEST_ERROR: {last_error.__class__.__name__}", None
+    return None, None, "LABEL_NOT_FOUND", None
+
+
+# ================= 개별 종목 정보 수집 메인 함수 ================= #
+def fetch_stock_data(name, ticker, krx_all):
+    # 기술적 지표 저장 공간 확보 (새로 추가된 주식수 필드 포함)
+    stock_info = {
+        "name": name, "price": "N/A", "targetPrice": "-", "changeRate": "0.00%", "direction": "FLAT", "rawPrice": 0,
+        "marketCap": "-", "foreignRate": "-", "per": "-", "fwdPer": "-", "pbr": "-", "dividend": "-",
+        "totalShares": 0, "floatingShares": 0, "freeFloatRate": "-",
+        "freeFloatSource": None, "freeFloatStatus": "NOT_COLLECTED",
+        "freeFloatUpdatedAt": None, "floatingSharesMethod": None, "freeFloatUrl": None,
+        "peg": "N/A", "pegDesc": "EPS 부족",
+        "tech": {"ma5": "-", "ma20": "-", "ma33": "-", "ma60": "-", "ma120": "-", "rsi": "-", "macd": "-"},
+        "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
+    }
+    
+    # 🌟 [신규 추가] 1. KRX 데이터베이스에서 공식 총발행주식수 가져오기
+    if ticker in krx_all.index:
+        try:
+            stock_info["totalShares"] = int(krx_all.loc[ticker, "상장주식수"])
+        except: pass
+    
+    session = requests.Session()
+    # 🌟 [우회 로직] GitHub Actions IP 차단을 강력하게 방어하는 브라우저 위장 헤더
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Referer": "https://finance.naver.com/",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
+    })
+    
+    # API 데이터 요청 (에러 방어)
+    try: res_basic = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/basic", timeout=5).json()
+    except: res_basic = {}
+    try: res_integ = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/integration", timeout=5).json()
+    except: res_integ = {}
+    try: res_fin = session.get(f"https://m.stock.naver.com/api/stock/{ticker}/finance/annual", timeout=5).json()
+    except: res_fin = {}
+
+    # 기본 주가 데이터
+    try:
+        raw_price_str = "".join(filter(str.isdigit, str(res_basic.get("closePrice", "0"))))
+        stock_info["rawPrice"] = int(raw_price_str) if raw_price_str else 0
+        stock_info["price"] = res_basic.get("closePrice", "N/A")
+        
+        fluctuation = float(res_basic.get("fluctuationsRatio", 0))
+        if fluctuation > 0: stock_info["direction"], stock_info["changeRate"] = "UP", f"▲ +{fluctuation}%"
+        elif fluctuation < 0: stock_info["direction"], stock_info["changeRate"] = "DOWN", f"▼ {abs(fluctuation)}%"
+    except: pass
+
+    # 차트 데이터(fchart) 파싱 및 기술적 지표 계산
+    try:
+        chart_url = f"https://fchart.stock.naver.com/sise.nhn?symbol={ticker}&timeframe=day&count=150&requestType=0"
+        chart_res = session.get(chart_url, timeout=5).text
+        
+        closes = []
+        for line in chart_res.split('\n'):
+            if '<item data=' in line:
+                data_str = line.split('"')[1]
+                close_price = float(data_str.split('|')[4])
+                closes.append(close_price)
+        
+        if len(closes) > 0:
+            if len(closes) >= 5: stock_info["tech"]["ma5"] = f"{int(sum(closes[-5:]) / 5):,}"
+            if len(closes) >= 20: stock_info["tech"]["ma20"] = f"{int(sum(closes[-20:]) / 20):,}"
+            if len(closes) >= 33: stock_info["tech"]["ma33"] = f"{int(sum(closes[-33:]) / 33):,}"
+            if len(closes) >= 60: stock_info["tech"]["ma60"] = f"{int(sum(closes[-60:]) / 60):,}"
+            if len(closes) >= 120: stock_info["tech"]["ma120"] = f"{int(sum(closes[-120:]) / 120):,}"
+
+            if len(closes) >= 15:
+                deltas = [closes[i] - closes[i-1] for i in range(1, len(closes))]
+                gains = [d if d > 0 else 0 for d in deltas]
+                losses = [-d if d < 0 else 0 for d in deltas]
+                
+                avg_gain = sum(gains[:14]) / 14
+                avg_loss = sum(losses[:14]) / 14
+                
+                for i in range(14, len(deltas)):
+                    avg_gain = (avg_gain * 13 + gains[i]) / 14
+                    avg_loss = (avg_loss * 13 + losses[i]) / 14
+                    
+                if avg_loss == 0: stock_info["tech"]["rsi"] = "100.0"
+                else:
+                    rs = avg_gain / avg_loss
+                    stock_info["tech"]["rsi"] = f"{100 - (100 / (1 + rs)):.1f}"
+
+            if len(closes) >= 26:
+                def get_ema(data, period):
+                    k = 2 / (period + 1)
+                    ema_val = sum(data[:period]) / period
+                    for p in data[period:]:
+                        ema_val = (p - ema_val) * k + ema_val
+                    return ema_val
+                    
+                ema12 = get_ema(closes, 12)
+                ema26 = get_ema(closes, 26)
+                macd_val = ema12 - ema26
+                stock_info["tech"]["macd"] = f"{macd_val:,.1f}"
+    except Exception as e: 
+        print(f"[{ticker}] 기술적 지표 연산 중 오류 발생: {e}")
+
+    # 목표주가 및 지표 1차 추출 (모바일 API)
+    try:
+        if res_basic.get("cnsTargetPrice"):
+            digits = "".join(filter(str.isdigit, str(res_basic["cnsTargetPrice"])))
+            if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
+            
+        opinion = res_integ.get("opinion")
+        if isinstance(opinion, dict) and stock_info["targetPrice"] == "-":
+            tp_val = str(opinion.get("targetPrice", ""))
+            digits = "".join(filter(str.isdigit, tp_val))
+            if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
+
+        for info in res_integ.get("totalInfos", []):
+            k, c = str(info.get("key", "")).lower(), str(info.get("code", "")).lower()
+            n, t = str(info.get("name", "")).lower(), str(info.get("title", "")).lower()
+            val = str(info.get("value", "-")).strip()
+            
+            if val == "-" or not val: continue
+            comb = f"{k} {c} {n} {t}"
+            
+            if any(x in comb for x in ["marketvalue", "marketsum", "시가총액", "시총"]) and stock_info["marketCap"] == "-":
+                stock_info["marketCap"] = val
+            elif any(x in comb for x in ["상장주식수", "주식수"]) and stock_info["totalShares"] == 0:
+                digits = "".join(filter(str.isdigit, val.split('/')[0]))
+                if digits and int(digits) > 0:
+                    stock_info["totalShares"] = int(digits)
+            elif any(x in comb for x in ["foreign", "외국인", "외인"]) and stock_info["foreignRate"] == "-":
+                stock_info["foreignRate"] = val
+            elif any(x in comb for x in ["cnsper", "추정per"]):
+                stock_info["fwdPer"] = val.replace("배", "")
+            elif "per" in comb and not any(x in comb for x in ["cns", "추정", "fwd"]) and stock_info["per"] == "-":
+                stock_info["per"] = val.replace("배", "")
+            elif "pbr" in comb and stock_info["pbr"] == "-":
+                stock_info["pbr"] = val.replace("배", "")
+            elif ("dividend" in comb or "배당" in comb) and stock_info["dividend"] == "-":
+                stock_info["dividend"] = val if "%" in val else f"{val}%"
+            elif ("target" in comb or "목표" in comb) and stock_info["targetPrice"] == "-":
+                digits = "".join(filter(str.isdigit, val))
+                if digits and int(digits) > 0: stock_info["targetPrice"] = f"{int(digits):,}"
+    except: pass
+
+    # 유동주식비율은 WiseReport 회사현황에서 별도로 수집한다.
+    try:
+        found_rate, found_float_shares, found_source, found_url = fetch_free_float_from_wisereport(
+            session, ticker
+        )
+        if found_rate is not None:
+            stock_info["freeFloatRate"] = f"{found_rate:.2f}%"
+            stock_info["freeFloatSource"] = found_source
+            stock_info["freeFloatStatus"] = "OK"
+            stock_info["freeFloatUpdatedAt"] = datetime.now().isoformat(timespec="seconds")
+            stock_info["freeFloatUrl"] = found_url
+
+            # 원천 페이지가 유동주식수를 함께 제공하면 그 수치를 우선 사용한다.
+            if found_float_shares is not None and found_float_shares > 0:
+                stock_info["floatingShares"] = int(found_float_shares)
+                stock_info["floatingSharesMethod"] = "SOURCE_DIRECT"
+            elif stock_info["totalShares"] > 0:
+                stock_info["floatingShares"] = round(
+                    stock_info["totalShares"] * found_rate / 100
+                )
+                stock_info["floatingSharesMethod"] = "TOTAL_SHARES_X_RATE"
+        else:
+            stock_info["freeFloatStatus"] = (
+                "REQUEST_ERROR" if str(found_source).startswith("REQUEST_ERROR") else "UNAVAILABLE"
+            )
+            stock_info["freeFloatSource"] = found_source
+            stock_info["freeFloatUrl"] = found_url
+    except Exception as e:
+        stock_info["freeFloatStatus"] = "ERROR"
+        stock_info["freeFloatSource"] = f"{e.__class__.__name__}: {e}"
+        print(f"[{ticker}] 유동비율 수집 오류: {e}")
+
+    # 기존 네이버 HTML 백업은 목표주가/배당/PER/PBR에만 사용한다.
+    # 현재 finance.naver.com 구형 주소는 새 증권 페이지로 이동하므로 유동비율 파싱에는 쓰지 않는다.
+    try:
+        naver_html_response = session.get(
+            f"https://finance.naver.com/item/main.naver?code={ticker}",
+            timeout=10,
+            allow_redirects=True,
+        )
+        html = naver_html_response.text
+
+        if stock_info["targetPrice"] == "-":
+            idx = html.find("목표주가")
+            if idx != -1:
+                nums = re.findall(r"[\d,]{4,}", html[idx:idx + 200])
+                for n in nums:
+                    clean_n = n.replace(",", "").strip()
+                    if clean_n.isdigit() and int(clean_n) > 0:
+                        stock_info["targetPrice"] = f"{int(clean_n):,}"
+                        break
+
+        if stock_info["dividend"] == "-":
+            idx = html.find("배당수익률")
+            if idx != -1:
+                nums = re.findall(r">\s*([\d.]+)\s*<", html[idx:idx + 200])
+                for n in nums:
+                    if n.replace(".", "", 1).isdigit():
+                        stock_info["dividend"] = n + "%"
+                        break
+
+        if stock_info["per"] == "-":
+            idx = html.find("PER")
+            if idx != -1:
+                match = re.search(r"<em[^>]*>([\d.]+)</em>", html[idx:idx + 200])
+                if match:
+                    stock_info["per"] = match.group(1)
+
+        if stock_info["pbr"] == "-":
+            idx = html.find("PBR")
+            if idx != -1:
+                match = re.search(r"<em[^>]*>([\d.]+)</em>", html[idx:idx + 200])
+                if match:
+                    stock_info["pbr"] = match.group(1)
+    except Exception as e:
+        print(f"[{ticker}] 네이버 보조 HTML 요청 실패: {e}")
+
+    # 재무제표 
+    try:
+        fin_info = res_fin.get("financeInfo", {})
+        if fin_info and "trTitleList" in fin_info and "rowList" in fin_info:
+            tr_list, r_list = fin_info["trTitleList"], fin_info["rowList"]
+            valid_cols = tr_list[-5:]
+            keys = [item.get("key", "") for item in valid_cols]
+            years = []
+            for item in valid_cols:
+                y_text = item.get("title", "")
+                if item.get("isConsensus") == "Y" and "(E)" not in y_text: y_text += "(E)"
+                years.append(y_text)
+            stock_info["finance"]["years"] = years
+            
+            def get_fin_valid(keyword):
+                for row in r_list:
+                    if keyword in row.get("title", ""):
+                        return [str(row.get("columns", {}).get(k, {}).get("value", "-")) for k in keys]
+                return ["-"] * len(keys)
+
+            stock_info["finance"]["revs"] = get_fin_valid("매출액")
+            stock_info["finance"]["ops"] = get_fin_valid("영업이익")
+            stock_info["finance"]["opMs"] = get_fin_valid("영업이익률")
+            stock_info["finance"]["npMs"] = get_fin_valid("순이익률")
+            stock_info["finance"]["debts"] = get_fin_valid("부채비율")
+            stock_info["finance"]["epss"] = get_fin_valid("EPS")
+    except: pass
+
+    # PEG 계산
+    try:
+        target_per = stock_info["fwdPer"] if stock_info["fwdPer"] != "-" else stock_info["per"]
+        per_float = float(str(target_per).replace(',', ''))
+        eps_valid = []
+        for e in stock_info["finance"]["epss"]:
+            clean_e = str(e).replace(',', '').strip()
+            if clean_e and clean_e != "-":
+                try: eps_valid.append(float(clean_e))
+                except: pass
+            
+        if per_float > 0 and len(eps_valid) >= 2:
+            eps_current, eps_prev = eps_valid[-1], eps_valid[-2]
+            if eps_current > 0 and eps_prev > 0:
+                growth = ((eps_current - eps_prev) / eps_prev) * 100
+                if growth > 0:
+                    stock_info["peg"] = f"{per_float / growth:.2f}배"
+                    stock_info["pegDesc"] = f"EPS 성장률(+{growth:.1f}%) 반영"
+                else: stock_info["pegDesc"] = "EPS 역성장"
+            else: stock_info["pegDesc"] = "적자지속/흑자전환"
+    except: pass
+
+    # 🌟 [최후 방어선] 시가총액과 현재가 기반 주식수 역산 (크롤링 실패 대비)
+    if stock_info["totalShares"] == 0 and stock_info["marketCap"] != "-" and stock_info["rawPrice"] > 0:
+        try:
+            mc_str = stock_info["marketCap"].replace(',', '').replace(' ', '')
+            mc_won = 0
+            if '조' in mc_str:
+                parts = mc_str.split('조')
+                mc_won += int(parts[0]) * 1000000000000
+                if '억' in parts[1]: mc_won += int(parts[1].replace('억', '')) * 100000000
+            elif '억' in mc_str:
+                mc_won += int(mc_str.replace('억', '')) * 100000000
+            
+            if mc_won > 0:
+                stock_info["totalShares"] = round(mc_won / stock_info["rawPrice"])
+                if stock_info["freeFloatRate"] != "-":
+                    fr_rate = float(stock_info["freeFloatRate"].replace("%", ""))
+                    stock_info["floatingShares"] = round(
+                        stock_info["totalShares"] * fr_rate / 100
+                    )
+        except Exception as e:
+            print(f"[{ticker}] 역산 실패: {e}")
+
+    return ticker, stock_info
+
+# ================= 스크립트 실행 진입점 ================= #
+if __name__ == "__main__":
+    quant_data = {}
+    print(f"🚀 총 {len(TARGET_STOCKS)}개 주식 데이터 초고속 수집 및 퀀트 지표(MA, RSI, MACD, 주식수) 연산 시작...")
+    start_time = time.time()
+    
+    # 🌟 스레드 시작 전 1회만 호출하여 전체 주식수를 로드해옵니다 (엄청나게 빠름)
+    krx_all_data = get_krx_df()
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # fetch_stock_data 함수에 krx_all_data를 파라미터로 추가 전달
+        futures = {executor.submit(fetch_stock_data, name, ticker, krx_all_data): ticker for name, ticker in TARGET_STOCKS.items()}
+        for future in futures:
+            ticker, data = future.result()
+            quant_data[ticker] = data
+
+    with open("quant_data.json", "w", encoding="utf-8") as f:
+        json.dump(quant_data, f, ensure_ascii=False, indent=2)
+
+    # 유동비율 수집 현황 별도 저장(실제 수집/미수집 종목 확인용)
+    float_rows = []
+    for ticker, item in quant_data.items():
+        float_rows.append({
+            "ticker": ticker,
+            "name": item.get("name"),
+            "totalShares": item.get("totalShares", 0),
+            "freeFloatRate": item.get("freeFloatRate", "-"),
+            "floatingShares": item.get("floatingShares", 0),
+            "freeFloatStatus": item.get("freeFloatStatus", "UNKNOWN"),
+            "freeFloatSource": item.get("freeFloatSource"),
+            "freeFloatUpdatedAt": item.get("freeFloatUpdatedAt"),
+            "floatingSharesMethod": item.get("floatingSharesMethod"),
+            "freeFloatUrl": item.get("freeFloatUrl"),
+        })
+    pd.DataFrame(float_rows).to_csv(
+        "free_float_report.csv", index=False, encoding="utf-8-sig"
+    )
+    ok_count = sum(1 for row in float_rows if row["freeFloatStatus"] == "OK")
+    failed_count = len(float_rows) - ok_count
+    print(f"📊 유동비율 실제 수집: {ok_count}/{len(float_rows)}개 (미수집/오류 {failed_count}개)")
+    print("📁 free_float_report.csv 저장 완료")
+
+    end_time = time.time()
+    print(f"✅ 데이터 수집 및 연산 완료! (소요 시간: {end_time - start_time:.2f}초) quant_data.json 저장됨.")
