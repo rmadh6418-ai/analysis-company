@@ -3569,12 +3569,12 @@ ${text}`;
         }
 
         // ==============================================================
-        // 2. 실시간 전광판 (지수 실시간 + 글로벌 매크로 연동)
+        // 2. 실시간 전광판 (지수 실시간 + 글로벌 매크로 연동 + 미국증시)
         // ==============================================================
         async function updateRealtimeMacro() {
             let tickerHtml = '';
             
-            // 코스피/코스닥 네이버 1초 단위 실시간 데이터
+            // 1. 코스피/코스닥 네이버 1초 단위 실시간 데이터
             const indexAreas = await fetchNaverDirectJsonp("SERVICE_INDEX:KOSPI,KOSDAQ");
             if (indexAreas) {
                 for (const area of indexAreas) {
@@ -3600,7 +3600,7 @@ ${text}`;
 
             tickerHtml += `<span class="text-slate-600 px-2">|</span>`;
 
-            // 매크로 지표는 국내 대시보드(HTML) 화면 스크래핑
+            // 2. 국내 매크로 지표 스크래핑 (stock-dashboard - 기존 ID 방식 유지)
             try {
                 const targetUrl = `https://rmadh6418-ai.github.io/stock-dashboard/index.html?_=${Date.now()}`;
                 const res = await fetch(targetUrl, { cache: 'no-store' });
@@ -3617,10 +3617,10 @@ ${text}`;
                         const badgeText = badgeEl.innerText.trim(); 
                         
                         let colorClass = 'ticker-flat';
-                        if (badgeText.includes('▲')) colorClass = 'ticker-up';
-                        if (badgeText.includes('▼')) colorClass = 'ticker-down';
+                        if (badgeText.includes('▲') || badgeText.includes('+')) colorClass = 'ticker-up';
+                        if (badgeText.includes('▼') || badgeText.includes('-')) colorClass = 'ticker-down';
                         
-                        const match = badgeText.match(/([▲▼―]\s*[+-]?[\d.]+%)/);
+                        const match = badgeText.match(/([▲▼+―-]\s*[\d.]+%?)/);
                         const rateStr = match ? match[1] : badgeText.split('(')[0].trim();
 
                         return `
@@ -3646,7 +3646,71 @@ ${text}`;
                     `;
                 }
             } catch (e) {
-                console.error("대시보드 스크래핑 실패:", e);
+                console.error("국내 대시보드 스크래핑 실패:", e);
+            }
+
+            // 3. 미국증시 지표 스크래핑 (us-stock-dashboard - HTML 클래스 탐색 방식)
+            try {
+                const usTargetUrl = `https://rmadh6418-ai.github.io/us-stock-dashboard/index.html?_=${Date.now()}`;
+                const usRes = await fetch(usTargetUrl, { cache: 'no-store' });
+                if (usRes.ok) {
+                    const usHtmlText = await usRes.text();
+                    const usDoc = new DOMParser().parseFromString(usHtmlText, "text/html");
+
+                    // 고유 ID가 없으므로 card-label의 텍스트를 찾아 데이터를 추출하는 함수
+                    const extractUsMacroByText = (keyword, displayLabel) => {
+                        const cards = Array.from(usDoc.querySelectorAll('.card'));
+                        const targetCard = cards.find(c => {
+                            const labelEl = c.querySelector('.card-label');
+                            return labelEl && labelEl.textContent.includes(keyword);
+                        });
+                        
+                        if (!targetCard) return '';
+                        
+                        const valEl = targetCard.querySelector('.card-value');
+                        const deltaEl = targetCard.querySelector('.card-delta');
+                        
+                        if (!valEl || !deltaEl) return '';
+                        
+                        // "14 \n (extreme fear)" 처럼 줄바꿈이 있는 경우 첫 줄의 숫자만 가져옴
+                        const val = valEl.textContent.trim().split('\n')[0]; 
+                        const deltaText = deltaEl.textContent.trim();
+                        
+                        let colorClass = 'ticker-flat';
+                        if (deltaText.includes('▲') || deltaText.includes('+')) colorClass = 'ticker-up';
+                        if (deltaText.includes('▼') || deltaText.includes('-')) colorClass = 'ticker-down';
+                        
+                        // "▼ 167.27 (0.64%)" 형식에서 "(0.64%)" 안의 숫자만 빼서 기호를 붙여 깔끔하게 포맷팅
+                        let rateStr = deltaText;
+                        const pctMatch = deltaText.match(/\((.*?)\)/);
+                        if (pctMatch) {
+                            rateStr = (colorClass === 'ticker-up' ? '▲ +' : (colorClass === 'ticker-down' ? '▼ -' : '')) + pctMatch[1];
+                        }
+
+                        return `
+                            <div class="ticker-item">
+                                <span class="text-slate-400">${displayLabel}</span>
+                                <span class="ticker-val ${colorClass}">${val}</span>
+                                <span class="${colorClass} text-[11px] ml-1">${rateStr}</span>
+                            </div>
+                        `;
+                    };
+
+                    tickerHtml += `
+                        <span class="text-slate-600 px-2">|</span>
+                        <span class="bg-purple-900/50 text-purple-300 font-extrabold text-[10px] px-1.5 py-0.5 rounded border border-purple-500/30">🇺🇸 미국증시</span>
+                        ${extractUsMacroByText('나스닥 100', '나스닥')}
+                        ${extractUsMacroByText('S&P 500', 'S&P 500')}
+                        ${extractUsMacroByText('다우존스', '다우존스')}
+                        <span class="text-slate-600 px-2">|</span>
+                        ${extractUsMacroByText('반도체', '필라델피아 반도체')}
+                        <span class="text-slate-600 px-2">|</span>
+                        ${extractUsMacroByText('빅스', 'VIX 지수')}
+                        ${extractUsMacroByText('공포지수', 'Fear & Greed')}
+                    `;
+                }
+            } catch (e) {
+                console.error("미국증시 대시보드 스크래핑 실패:", e);
             }
 
             // 애니메이션이 끊기지 않게 2번 반복
