@@ -1287,6 +1287,21 @@
                         isDown: isDown
                     };
 
+                    // 👇 아래 로직을 바로 밑에 추가하세요. 👇
+                    // 🌟 외국인 소진율 실시간 추출 및 증감 계산 로직
+                    let rtFr = parseFloat(st.frs || st.fr || st.fr_rt);
+                    if (!isNaN(rtFr)) {
+                        liveForeignRates[ticker] = rtFr;
+    
+                        // 서버(로컬)의 어제자 데이터와 비교하여 정확한 당일 증감(%p) 산출
+                        if (globalQuantData && globalQuantData[ticker]) {
+                            let prev = parseFloat(String(globalQuantData[ticker].prevForeignRate || globalQuantData[ticker].foreignRate || '').replace(/%/g, ''));
+                            if (!isNaN(prev)) {
+                                liveForeignChanges[ticker] = parseFloat((rtFr - prev).toFixed(2));
+                            }
+                        }
+                    }
+
                     const fData = getAccurateForeignData(ticker);
                     lastFetchedData.foreignRate = fData.rate.toFixed(2) + "%";
                     lastFetchedData.foreignRateChange = fData.change;
@@ -1345,6 +1360,21 @@
                                         isUp: isUp,
                                         isDown: isDown
                                     };
+
+                                    // 👇 아래 로직을 바로 밑에 추가하세요. (st.cd 사용) 👇
+                                    // 🌟 외국인 소진율 실시간 추출 및 증감 계산 로직
+                                    let rtFr = parseFloat(st.frs || st.fr || st.fr_rt);
+                                    if (!isNaN(rtFr)) {
+                                        liveForeignRates[st.cd] = rtFr;
+                                        
+                                        // 서버(로컬)의 어제자 데이터와 비교하여 정확한 당일 증감(%p) 산출
+                                        if (globalQuantData && globalQuantData[st.cd]) {
+                                            let prev = parseFloat(String(globalQuantData[st.cd].prevForeignRate || globalQuantData[st.cd].foreignRate || '').replace(/%/g, ''));
+                                            if (!isNaN(prev)) {
+                                                liveForeignChanges[st.cd] = parseFloat((rtFr - prev).toFixed(2));
+                                            }
+                                        }
+                                    }  
                                 }
                             }
                         }
@@ -1980,6 +2010,21 @@
                                         isUp: isUp,
                                         isDown: isDown
                                     };
+
+                                    // 👇 아래 로직을 바로 밑에 추가하세요. (st.cd 사용) 👇
+                                    // 🌟 외국인 소진율 실시간 추출 및 증감 계산 로직
+                                    let rtFr = parseFloat(st.frs || st.fr || st.fr_rt);
+                                    if (!isNaN(rtFr)) {
+                                        liveForeignRates[st.cd] = rtFr;
+                                        
+                                        // 서버(로컬)의 어제자 데이터와 비교하여 정확한 당일 증감(%p) 산출
+                                        if (globalQuantData && globalQuantData[st.cd]) {
+                                            let prev = parseFloat(String(globalQuantData[st.cd].prevForeignRate || globalQuantData[st.cd].foreignRate || '').replace(/%/g, ''));
+                                            if (!isNaN(prev)) {
+                                                liveForeignChanges[st.cd] = parseFloat((rtFr - prev).toFixed(2));
+                                            }
+                                        }
+                                    }  
                                 }
                             }
                         }
@@ -2385,14 +2430,21 @@
                     lastFetchedData.direction = isUp ? 'UP' : (isDown ? 'DOWN' : 'FLAT');
                     lastFetchedData.volume = st.aq ? Number(st.aq).toLocaleString('ko-KR') : "-";
                     
-                    livePortfolioPrices[ticker] = lastFetchedData.price;
-                    livePortfolioVolumes[ticker] = lastFetchedData.volume;
-                    livePortfolioChanges[ticker] = {
-                        text: lastFetchedData.changeRate,
-                        isUp: isUp,
-                        isDown: isDown
-                    };
-
+                    // 👇 아래 로직을 바로 밑에 추가하세요. 👇
+                    // 🌟 외국인 소진율 실시간 추출 및 증감 계산 로직
+                    let rtFr = parseFloat(st.frs || st.fr || st.fr_rt);
+                    if (!isNaN(rtFr)) {
+                        liveForeignRates[ticker] = rtFr;
+    
+                        // 서버(로컬)의 어제자 데이터와 비교하여 정확한 당일 증감(%p) 산출
+                        if (globalQuantData && globalQuantData[ticker]) {
+                            let prev = parseFloat(String(globalQuantData[ticker].prevForeignRate || globalQuantData[ticker].foreignRate || '').replace(/%/g, ''));
+                            if (!isNaN(prev)) {
+                                liveForeignChanges[ticker] = parseFloat((rtFr - prev).toFixed(2));
+                            }
+                        }
+                    }
+                    
                     const updatedForeign = getAccurateForeignData(ticker);
                     lastFetchedData.foreignRate = updatedForeign.rate.toFixed(2) + "%";
                     lastFetchedData.foreignRateChange = updatedForeign.change;
