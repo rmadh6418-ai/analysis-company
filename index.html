@@ -36,6 +36,20 @@
         /* 자동갱신 표시기용 애니메이션 */
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
         .auto-refresh-indicator { display: inline-block; width: 6px; height: 6px; background-color: #10b981; border-radius: 50%; animation: blink 2s infinite; margin-right: 4px; }
+
+        /* 실시간 전광판(티커) 스타일 */
+        .ticker-wrap { width: 100%; overflow: hidden; background-color: #0f172a; color: #fff; position: fixed; bottom: 0; left: 0; z-index: 10000; height: 44px; display: flex; align-items: center; border-top: 2px solid #3b82f6; box-shadow: 0 -4px 15px rgba(0,0,0,0.3); }
+        .ticker-content { display: inline-flex; white-space: nowrap; animation: ticker 50s linear infinite; padding-left: 100%; gap: 3rem; }
+        .ticker-content:hover { animation-play-state: paused; }
+        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        .ticker-item { font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 0.5rem; letter-spacing: 0.5px; }
+        .ticker-val { font-weight: 900; }
+        .ticker-up { color: #f87171; }
+        .ticker-down { color: #60a5fa; }
+        .ticker-flat { color: #cbd5e1; }
+        
+        /* 섹터 모달 스타일 */
+        #sectorModal { transition: opacity 0.3s ease; }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans relative">
@@ -77,6 +91,54 @@
             </div>
         </div>
 
+        <!-- 📊 강세/약세 섹터 TOP 5 현황판 -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-6">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-lg font-bold text-slate-800 border-l-4 border-rose-500 pl-3">🔥 실시간 섹터 주도주 흐름 (TOP & BOTTOM)</h2>
+                <button onclick="renderSectorTrends()" class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-200 font-bold transition flex items-center gap-1">
+                    <span>🔄 섹터 갱신</span>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 강세 섹터 -->
+                <div>
+                    <h3 class="text-sm font-extrabold text-rose-700 mb-2 bg-rose-50 p-2 rounded flex justify-between"><span>📈 강세 섹터 TOP 5</span><span class="text-[11px] font-normal text-rose-500">클릭하여 관련주 확인</span></h3>
+                    <div id="topSectors" class="space-y-2">
+                        <div class="text-xs text-slate-400 text-center py-4">실시간 주가를 수집 중입니다...</div>
+                    </div>
+                </div>
+                <!-- 약세 섹터 -->
+                <div>
+                    <h3 class="text-sm font-extrabold text-blue-700 mb-2 bg-blue-50 p-2 rounded flex justify-between"><span>📉 약세 섹터 BOTTOM 5</span><span class="text-[11px] font-normal text-blue-500">클릭하여 관련주 확인</span></h3>
+                    <div id="bottomSectors" class="space-y-2">
+                        <div class="text-xs text-slate-400 text-center py-4">실시간 주가를 수집 중입니다...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 🔍 섹터 상세 종목 모달창 (숨김 상태) -->
+        <div id="sectorModal" class="fixed inset-0 bg-black/60 z-[10001] hidden flex justify-center items-center opacity-0">
+            <div class="bg-white rounded-2xl w-[90%] md:w-[500px] max-h-[80vh] flex flex-col shadow-2xl">
+                <div class="bg-slate-800 text-white p-4 rounded-t-2xl flex justify-between items-center">
+                    <h3 id="modalSectorTitle" class="font-extrabold text-lg">섹터 상세</h3>
+                    <button onclick="closeSectorModal()" class="text-slate-300 hover:text-white transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div class="p-4 flex-1 overflow-y-auto bg-slate-50">
+                    <div id="modalSectorList" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 🌐 실시간 거시경제 지표 전광판 (하단 고정) -->
+        <div class="ticker-wrap">
+            <div id="macroTicker" class="ticker-content">
+                <div class="ticker-item text-slate-400">🌐 실시간 글로벌 매크로 데이터를 불러오는 중입니다...</div>
+            </div>
+        </div>
+        
         <!-- ============================================================== -->
         <!-- 🚀 1. 다종목 보유 포트폴리오 & 투입대기자금 통합 관리 영역 -->
         <!-- ============================================================== -->
@@ -3362,6 +3424,191 @@ ${text}`;
                 chatHistory.pop();
             }
         }
+
+        // ==============================================================
+        // 1. 강세/약세 섹터 TOP5 분석 및 렌더링 로직
+        // ==============================================================
+        let sectorCompaniesCache = {};
+        
+        function renderSectorTrends() {
+            const sectorStats = {};
+            const ALL_SECTORS = { ...KOSPI200_COMPANIES };
+            for (const [sec, comps] of Object.entries(KOSDAQ150_COMPANIES)) {
+                if (!ALL_SECTORS[sec]) ALL_SECTORS[sec] = {};
+                Object.assign(ALL_SECTORS[sec], comps);
+            }
+        
+            for (const [sector, companies] of Object.entries(ALL_SECTORS)) {
+                if (!sectorStats[sector]) sectorStats[sector] = { total: 0, count: 0, list: [] };
+                
+                for (const [name, code] of Object.entries(companies)) {
+                    let cr = 0;
+                    // 실시간 주가가 최우선, 없으면 quant_data.json 의 어제 종가 사용
+                    if (livePortfolioChanges[code]) {
+                        cr = parseFloat(livePortfolioChanges[code].text.replace(/%/g, ''));
+                        if (livePortfolioChanges[code].isDown) cr = -Math.abs(cr);
+                    } else if (globalQuantData && globalQuantData[code]) {
+                        let cStr = globalQuantData[code].changeRate || '0%';
+                        cr = parseFloat(cStr.replace(/%/g, '').replace(/\+/g, ''));
+                        if (cStr.includes('-')) cr = -Math.abs(cr);
+                    }
+                    sectorStats[sector].total += cr;
+                    sectorStats[sector].count += 1;
+                    sectorStats[sector].list.push({ name, code, cr });
+                }
+            }
+        
+            const sectorList = [];
+            for (const [sector, stat] of Object.entries(sectorStats)) {
+                const avg = stat.count > 0 ? (stat.total / stat.count) : 0;
+                stat.list.sort((a, b) => b.cr - a.cr); // 섹터 내 종목 강한 순 정렬
+                sectorList.push({ sector, avg, companies: stat.list });
+                sectorCompaniesCache[sector] = stat.list;
+            }
+            sectorList.sort((a, b) => b.avg - a.avg);
+        
+            const top5 = sectorList.slice(0, 5);
+            const bottom5 = sectorList.slice(-5).reverse();
+        
+            const buildHtml = (arr, isTop) => arr.map((s, idx) => {
+                const color = s.avg > 0 ? 'text-rose-600' : (s.avg < 0 ? 'text-blue-600' : 'text-slate-600');
+                const sign = s.avg > 0 ? '+' : '';
+                const bg = isTop ? 'hover:bg-rose-50 border-rose-100' : 'hover:bg-blue-50 border-blue-100';
+                return `
+                    <div onclick="openSectorModal('${s.sector}')" class="flex justify-between items-center bg-white p-3 rounded-lg border shadow-sm cursor-pointer transition ${bg}">
+                        <span class="text-sm font-extrabold text-slate-800"><span class="text-slate-400 mr-2">${idx + 1}</span>${s.sector}</span>
+                        <span class="text-sm font-black ${color}">${sign}${s.avg.toFixed(2)}%</span>
+                    </div>
+                `;
+            }).join('');
+        
+            if (top5.length > 0) document.getElementById('topSectors').innerHTML = buildHtml(top5, true);
+            if (bottom5.length > 0) document.getElementById('bottomSectors').innerHTML = buildHtml(bottom5, false);
+        }
+        
+        function openSectorModal(sector) {
+            const companies = sectorCompaniesCache[sector] || [];
+            document.getElementById('modalSectorTitle').textContent = `📂 ${sector} 관련주 현황`;
+            
+            const html = companies.map(c => {
+                const color = c.cr > 0 ? 'text-rose-600' : (c.cr < 0 ? 'text-blue-600' : 'text-slate-600');
+                const sign = c.cr > 0 ? '+' : '';
+                return `
+                    <div class="flex justify-between items-center bg-white p-3 rounded border border-slate-200">
+                        <button onclick="selectCompany('${c.name}', '${c.code}'); closeSectorModal();" class="text-sm font-bold text-slate-800 hover:text-indigo-600 hover:underline transition">${c.name} <span class="text-[10px] text-slate-400 font-normal">(${c.code})</span></button>
+                        <span class="text-sm font-extrabold ${color}">${sign}${c.cr.toFixed(2)}%</span>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('modalSectorList').innerHTML = html;
+            const modal = document.getElementById('sectorModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+        
+        function closeSectorModal() {
+            const modal = document.getElementById('sectorModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+        
+        
+        // ==============================================================
+        // 2. 실시간 거시경제 지표 전광판 (Naver API 우회 Fetch)
+        // ==============================================================
+        async function fetchRealTimeMacro() {
+            const proxyUrl = "https://api.allorigins.win/get?url=";
+            const endpoints = {
+                "KOSPI": "https://m.stock.naver.com/api/index/KOSPI/basic",
+                "KOSDAQ": "https://m.stock.naver.com/api/index/KOSDAQ/basic",
+                "USD": "https://m.stock.naver.com/api/marketIndex/exchange/FX_USDKRW/basic",
+                "JPY": "https://m.stock.naver.com/api/marketIndex/exchange/FX_JPYKRW/basic",
+                "US10Y": "https://m.stock.naver.com/api/marketIndex/worldIndex/TREASURY_10Y/basic",
+                "US30Y": "https://m.stock.naver.com/api/marketIndex/worldIndex/TREASURY_30Y/basic",
+                "WTI": "https://m.stock.naver.com/api/marketIndex/worldCommodity/OIL_CL/basic",
+                "GOLD": "https://m.stock.naver.com/api/marketIndex/material/CMDT_KOREAGOLD/basic", // 한국금(g당 원화)
+                "SILVER": "https://m.stock.naver.com/api/marketIndex/worldCommodity/CMDT_SI/basic" // 국제은(oz당 달러)
+            };
+        
+            const macroData = {};
+            
+            // 비동기 병렬 요청 처리 (속도 최적화)
+            await Promise.all(Object.entries(endpoints).map(async ([key, url]) => {
+                try {
+                    const res = await fetch(proxyUrl + encodeURIComponent(url));
+                    const data = await res.json();
+                    macroData[key] = JSON.parse(data.contents);
+                } catch(e) { console.error(`[Macro] ${key} Fetch Error`, e); }
+            }));
+        
+            if (!macroData.KOSPI) return; // 통신 실패 시 종료
+        
+            // 금/은 1돈(3.75g) 가격 정밀 환산
+            const usdkrw = parseFloat(macroData.USD.closePrice.replace(/,/g, ''));
+            
+            // 국내 금(g) -> 금 1돈(3.75g) 원화/달러
+            const goldPerG = parseFloat(macroData.GOLD.closePrice.replace(/,/g, ''));
+            const gold1DonKRW = goldPerG * 3.75;
+            const gold1DonUSD = gold1DonKRW / usdkrw;
+        
+            // 국제 은(oz) -> 은 1돈(3.75g) 달러/원화 (1 troy oz = 31.1034768g)
+            const silverPerOz = parseFloat(macroData.SILVER.closePrice.replace(/,/g, ''));
+            const silver1DonUSD = (silverPerOz / 31.1034768) * 3.75;
+            const silver1DonKRW = silver1DonUSD * usdkrw;
+        
+            const buildTickerItem = (label, obj, customVal, customChange) => {
+                if(!obj && !customVal) return '';
+                const price = customVal || obj.closePrice;
+                const change = customChange !== undefined ? customChange : parseFloat(obj.fluctuationsRatio);
+                const sign = change > 0 ? '▲ +' : (change < 0 ? '▼ ' : '');
+                const color = change > 0 ? 'ticker-up' : (change < 0 ? 'ticker-down' : 'ticker-flat');
+                return `
+                    <div class="ticker-item">
+                        <span class="text-slate-400">${label}</span>
+                        <span class="ticker-val ${color}">${price}</span>
+                        <span class="${color} text-[11px] ml-1">${sign}${Math.abs(change).toFixed(2)}%</span>
+                    </div>
+                `;
+            };
+        
+            // 티커 HTML 조립
+            let html = `
+                ${buildTickerItem('KOSPI', macroData.KOSPI)}
+                ${buildTickerItem('KOSDAQ', macroData.KOSDAQ)}
+                <span class="text-slate-600 px-2">|</span>
+                ${buildTickerItem('원/달러', macroData.USD)}
+                ${buildTickerItem('엔/원(100)', macroData.JPY)}
+                <span class="text-slate-600 px-2">|</span>
+                ${buildTickerItem('미국채 10년', macroData.US10Y)}
+                ${buildTickerItem('미국채 30년', macroData.US30Y)}
+                <span class="text-slate-600 px-2">|</span>
+                ${buildTickerItem('WTI 국제유가', macroData.WTI)}
+                <span class="text-slate-600 px-2">|</span>
+                ${buildTickerItem('순금 1돈', macroData.GOLD, `${Math.round(gold1DonKRW).toLocaleString()}원 ($${gold1DonUSD.toFixed(2)})`)}
+                ${buildTickerItem('은 1돈', macroData.SILVER, `${Math.round(silver1DonKRW).toLocaleString()}원 ($${silver1DonUSD.toFixed(2)})`)}
+            `;
+        
+            // 스크롤 끊김 방지를 위해 티커를 두 번 반복해서 붙임
+            document.getElementById('macroTicker').innerHTML = html + '<span class="px-8"></span>' + html;
+        }
+        
+        // 🚀 기존 window.onload 끝부분에 섹터 및 티커 자동 실행 훅(Hook) 추가
+        const originalOnload = window.onload;
+        window.onload = async () => {
+            if (originalOnload) await originalOnload();
+            
+            // 초기 로딩 후 1.5초 뒤 섹터 분석 및 티커 실행
+            setTimeout(() => {
+                renderSectorTrends();
+                fetchRealTimeMacro();
+            }, 1500);
+        
+            // 1분(60초)마다 티커 최신화
+            setInterval(fetchRealTimeMacro, 60000);
+            // 30초마다 섹터 현황 최신화
+            setInterval(renderSectorTrends, 30000);
+        };
     </script>
 </body>
 </html>
