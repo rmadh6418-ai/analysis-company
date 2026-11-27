@@ -3569,7 +3569,7 @@ ${text}`;
         }
 
         // ==============================================================
-        // 2. 실시간 전광판 (지수 실시간 + 글로벌 매크로 연동 + 미국증시)
+        // 2. 실시간 전광판 (지수 실시간 + 글로벌 매크로 연동 + 미국/아시아 증시)
         // ==============================================================
         async function updateRealtimeMacro() {
             let tickerHtml = '';
@@ -3600,7 +3600,7 @@ ${text}`;
 
             tickerHtml += `<span class="text-slate-600 px-2">|</span>`;
 
-            // 2. 국내 매크로 지표 스크래핑 (stock-dashboard - 기존 ID 방식 유지)
+            // 2. 국내 매크로 지표 스크래핑
             try {
                 const targetUrl = `https://rmadh6418-ai.github.io/stock-dashboard/index.html?_=${Date.now()}`;
                 const res = await fetch(targetUrl, { cache: 'no-store' });
@@ -3649,7 +3649,7 @@ ${text}`;
                 console.error("국내 대시보드 스크래핑 실패:", e);
             }
 
-            // 3. 미국증시 지표 스크래핑 (us-stock-dashboard - HTML 클래스 탐색 방식)
+            // 3. 미국 및 아시아 증시 지표 스크래핑
             try {
                 const usTargetUrl = `https://rmadh6418-ai.github.io/us-stock-dashboard/index.html?_=${Date.now()}`;
                 const usRes = await fetch(usTargetUrl, { cache: 'no-store' });
@@ -3657,7 +3657,6 @@ ${text}`;
                     const usHtmlText = await usRes.text();
                     const usDoc = new DOMParser().parseFromString(usHtmlText, "text/html");
 
-                    // 고유 ID가 없으므로 card-label의 텍스트를 찾아 데이터를 추출하는 함수
                     const extractUsMacroByText = (keyword, displayLabel) => {
                         const cards = Array.from(usDoc.querySelectorAll('.card'));
                         const targetCard = cards.find(c => {
@@ -3672,7 +3671,6 @@ ${text}`;
                         
                         if (!valEl || !deltaEl) return '';
                         
-                        // "14 \n (extreme fear)" 처럼 줄바꿈이 있는 경우 첫 줄의 숫자만 가져옴
                         const val = valEl.textContent.trim().split('\n')[0]; 
                         const deltaText = deltaEl.textContent.trim();
                         
@@ -3680,7 +3678,6 @@ ${text}`;
                         if (deltaText.includes('▲') || deltaText.includes('+')) colorClass = 'ticker-up';
                         if (deltaText.includes('▼') || deltaText.includes('-')) colorClass = 'ticker-down';
                         
-                        // "▼ 167.27 (0.64%)" 형식에서 "(0.64%)" 안의 숫자만 빼서 기호를 붙여 깔끔하게 포맷팅
                         let rateStr = deltaText;
                         const pctMatch = deltaText.match(/\((.*?)\)/);
                         if (pctMatch) {
@@ -3698,14 +3695,18 @@ ${text}`;
 
                     tickerHtml += `
                         <span class="text-slate-600 px-2">|</span>
-                        <span class="bg-purple-900/50 text-purple-300 font-extrabold text-[10px] px-1.5 py-0.5 rounded border border-purple-500/30">🇺🇸 미국증시</span>
-                        ${extractUsMacroByText('나스닥 100', '나스닥')}
+                        <span class="bg-purple-900/50 text-purple-300 font-extrabold text-[10px] px-1.5 py-0.5 rounded border border-purple-500/30">🇺🇸 글로벌 지수</span>
+                        ${extractUsMacroByText('나스닥', '나스닥')}
                         ${extractUsMacroByText('S&P 500', 'S&P 500')}
                         ${extractUsMacroByText('다우존스', '다우존스')}
                         <span class="text-slate-600 px-2">|</span>
                         ${extractUsMacroByText('반도체', '필라델피아 반도체')}
                         <span class="text-slate-600 px-2">|</span>
-                        ${extractUsMacroByText('빅스', 'VIX 지수')}
+                        ${extractUsMacroByText('니케이', '니케이 225')}
+                        ${extractUsMacroByText('대만 가권', '대만 가권')}
+                        ${extractUsMacroByText('야간', '코스피 야간(EWY)')}
+                        <span class="text-slate-600 px-2">|</span>
+                        ${extractUsMacroByText('VIX', 'VIX 지수')}
                         ${extractUsMacroByText('공포지수', 'Fear & Greed')}
                     `;
                 }
@@ -3713,29 +3714,34 @@ ${text}`;
                 console.error("미국증시 대시보드 스크래핑 실패:", e);
             }
 
-            // 애니메이션이 끊기지 않게 2번 반복
-            document.getElementById('macroTicker').innerHTML = tickerHtml + '<span class="px-8"></span>' + tickerHtml;
+            // 텀(공백) 없이 자연스럽게 이어지도록 동일한 내용을 두 번 붙임
+            document.getElementById('macroTicker').innerHTML = tickerHtml + tickerHtml;
         }
-
+        
         // ==============================================================
-        // 3. 실행 컨트롤 (한 바퀴 다 돌 때마다 전광판 갱신 적용)
+        // 3. 실행 컨트롤 (정확히 2바퀴 회전할 때마다 전광판 갱신)
         // ==============================================================
+        let tickerCycleCount = 0;
         const originalOnload = window.onload;
+        
         window.onload = async () => {
             if (originalOnload) await originalOnload();
             
-            // 페이지 진입 즉시 1회 실행 (빈 화면 방지)
+            // 페이지 진입 즉시 1회 실행
             updateRealtimeSectors();
             updateRealtimeMacro();
 
             // 섹터는 기존대로 30초마다 갱신
             setInterval(updateRealtimeSectors, 30000);
 
-            // 🌟 전광판 애니메이션 1사이클(왼쪽 끝으로 사라짐) 종료 시점마다 데이터 갱신
+            // 전광판 애니메이션이 끝날 때마다 카운트를 올리고, 2번 돌았을 때 갱신
             const tickerEl = document.getElementById('macroTicker');
             if(tickerEl) {
                 tickerEl.addEventListener('animationiteration', () => {
-                    updateRealtimeMacro();
+                    tickerCycleCount++;
+                    if (tickerCycleCount % 2 === 0) {
+                        updateRealtimeMacro();
+                    }
                 });
             }
         };
