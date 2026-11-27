@@ -3415,12 +3415,12 @@ ${text}`;
         }
 
         // ==============================================================
-        // 1. KOSPI & KOSDAQ 섹터 분리 실시간 갱신 (네이버 다이렉트 통신)
+        // 1. KOSPI & KOSDAQ 섹터 분리 실시간 갱신 (섞임 버그 완벽 해결)
         // ==============================================================
         let sectorCompaniesCache = {};
 
         async function updateRealtimeSectors() {
-            // 모든 종목 코드 추출
+            // 코스피/코스닥 원본을 절대 훼손(병합)하지 않고 종목 코드만 따로 추출
             const allCodes = [];
             [KOSPI200_COMPANIES, KOSDAQ150_COMPANIES].forEach(market => {
                 Object.values(market).forEach(comps => {
@@ -3430,7 +3430,7 @@ ${text}`;
                 });
             });
 
-            // 40개씩 묶어서 네이버 폴링 직접 통신 (순식간에 350개 수집)
+            // 40개씩 묶어서 네이버 폴링 직접 통신
             const chunks = [];
             for (let i = 0; i < allCodes.length; i += 40) chunks.push(allCodes.slice(i, i + 40));
 
@@ -3452,14 +3452,14 @@ ${text}`;
                 }
             }));
 
-            // 계산 헬퍼 함수
+            // 계산 헬퍼 함수 (독립된 딕셔너리로 계산)
             const getStats = (marketDict) => {
                 const stats = {};
                 for (const [sector, companies] of Object.entries(marketDict)) {
                     stats[sector] = { total: 0, count: 0, list: [] };
                     for (const [name, code] of Object.entries(companies)) {
                         let cr = liveRates[code];
-                        // 통신 실패시 로컬 데이터 백업
+                        // 실시간 통신 실패 시 로컬 파일 데이터로 백업
                         if (cr === undefined && globalQuantData && globalQuantData[code]) {
                             let cStr = globalQuantData[code].changeRate || '0%';
                             let parsed = parseFloat(cStr.replace(/%/g, '').replace(/\+/g, ''));
@@ -3485,6 +3485,7 @@ ${text}`;
                 return list;
             };
 
+            // 🌟 철저하게 분리된 상태로 코스피, 코스닥 리스트 생성
             const kospiList = getStats(KOSPI200_COMPANIES);
             const kosdaqList = getStats(KOSDAQ150_COMPANIES);
 
@@ -3523,7 +3524,7 @@ ${text}`;
             }
         }
 
-        // 모달창 제어
+        // 섹터 클릭 시 상세 종목 모달창 제어
         function openSectorModal(sector) {
             const companies = sectorCompaniesCache[sector] || [];
             document.getElementById('modalSectorTitle').textContent = `📂 ${sector} 관련주 현황`;
@@ -3542,6 +3543,7 @@ ${text}`;
             modal.classList.remove('hidden');
             setTimeout(() => modal.classList.remove('opacity-0'), 10);
         }
+        
         function closeSectorModal() {
             const modal = document.getElementById('sectorModal');
             modal.classList.add('opacity-0');
@@ -3549,16 +3551,15 @@ ${text}`;
         }
 
         // ==============================================================
-        // 2. 실시간 거시경제 지표 전광판 (보안 프록시 우회)
+        // 2. 실시간 거시경제 지표 전광판 (프록시 제거 + 다이렉트 호출)
         // ==============================================================
         async function updateRealtimeMacro() {
             try {
-                // 🌟 브라우저 CORS 차단을 뚫기 위해 AllOrigins 프록시의 'raw' 옵션을 사용합니다
-                const targetUrl = encodeURIComponent(`https://rmadh6418-ai.github.io/stock-dashboard/index.html?_=${Date.now()}`);
-                const proxyUrl = `https://api.allorigins.win/raw?url=${targetUrl}`;
+                // 🌟 GitHub Pages는 자체적으로 외부 접근(CORS)을 허용합니다! 프록시를 완전히 빼고 직접 긁어옵니다.
+                const targetUrl = `https://rmadh6418-ai.github.io/stock-dashboard/index.html?_=${Date.now()}`;
+                const res = await fetch(targetUrl, { cache: 'no-store' });
                 
-                const res = await fetch(proxyUrl, { cache: 'no-store' });
-                if (!res.ok) throw new Error("전광판 프록시 통신 에러");
+                if (!res.ok) throw new Error("전광판 직접 통신 에러");
                 
                 const htmlText = await res.text();
                 const doc = new DOMParser().parseFromString(htmlText, "text/html");
@@ -3575,7 +3576,6 @@ ${text}`;
                     if (badgeText.includes('▲')) colorClass = 'ticker-up';
                     if (badgeText.includes('▼')) colorClass = 'ticker-down';
                     
-                    // 정밀 파싱
                     const match = badgeText.match(/([▲▼―]\s*[+-]?[\d.]+%)/);
                     const rateStr = match ? match[1] : badgeText.split('(')[0].trim();
 
@@ -3604,32 +3604,32 @@ ${text}`;
                     ${extractMacro('SILVER_DON', '은 1돈')}
                 `;
 
-                // 파싱 실패 시 방어 코드
+                // 데이터가 비정상적일 경우 예외 처리
                 if (!tickerHtml.includes('ticker-val')) throw new Error("ID 요소 파싱 실패");
 
-                // 무한 롤링을 위해 이어붙이기
+                // 무한 스크롤 애니메이션을 위해 2번 이어붙이기
                 document.getElementById('macroTicker').innerHTML = tickerHtml + '<span class="px-8"></span>' + tickerHtml;
 
             } catch (e) {
                 console.error("전광판 데이터 수집 실패:", e);
-                document.getElementById('macroTicker').innerHTML = '<div class="ticker-item text-slate-400">거시경제 데이터를 갱신 중입니다...</div>';
+                document.getElementById('macroTicker').innerHTML = '<div class="ticker-item text-slate-400">거시경제 데이터를 갱신 중입니다... (네트워크 점검 중)</div>';
             }
         }
 
         // ==============================================================
-        // 3. 단일 실행 컨트롤 (대기시간 제로)
+        // 3. 단일 실행 컨트롤 (대기시간 제로 적용)
         // ==============================================================
         const originalOnload = window.onload;
         window.onload = async () => {
             if (originalOnload) await originalOnload();
             
-            // 페이지 진입 즉시 실행
+            // 페이지 켜지자마자 대기 없이 즉시 호출
             updateRealtimeSectors();
             updateRealtimeMacro();
 
             // 주기적 갱신
-            setInterval(updateRealtimeMacro, 60000); // 전광판 1분
-            setInterval(updateRealtimeSectors, 30000); // 섹터 30초
+            setInterval(updateRealtimeMacro, 60000);   // 전광판 1분 주기
+            setInterval(updateRealtimeSectors, 30000); // 섹터 30초 주기
         };
 
     </script>
