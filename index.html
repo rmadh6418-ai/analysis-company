@@ -3239,7 +3239,7 @@ PRED_D5: [예상종가]원
         }
 
         // =========================================================================
-        // 🌟 수정된 챗봇 로직 (에러 수정 및 기존 UI 완벽 연동 완료)
+        // 🌟 수정된 챗봇 로직 (오류 수정 및 사용자 오리지널 프롬프트 복구)
         // =========================================================================
         async function sendChatMessage() {
             const inputEl = document.getElementById('chatInput');
@@ -3261,18 +3261,35 @@ PRED_D5: [예상종가]원
             }
 
             if (chatHistory.length === 0) {
+                // 🌟 사용자 오리지널 데이터 스크래핑 로직 복구
+                const summaryText = document.getElementById('ai-summary-text')?.innerText || "요약 정보 없음";
+                
+                const newsNodes = document.querySelectorAll('.news-item');
+                const newsList = Array.from(newsNodes).map((node, index) => {
+                    const title = node.querySelector('.news-link')?.innerText.replace(/\n/g, ' ') || "";
+                    const content = node.getAttribute('data-content') || "본문 요약 정보 없음";
+                    return `[뉴스 ${index + 1}] 제목: ${title}\n핵심내용(기사 원문): ${content}`;
+                }).join('\n\n');
+                
+                const calNodes = document.querySelectorAll('.cal-item');
+                const calList = Array.from(calNodes).map(node => node.innerText).join('\n- ');
+                
+                let marketDataInfos = "";
+                document.querySelectorAll('.card').forEach(card => {
+                    const label = card.querySelector('.card-label')?.innerText.replace('🔥', '').trim();
+                    const value = card.querySelector('.card-value')?.innerText.replace(/\n/g, ' ').trim();
+                    const delta = card.querySelector('.card-delta')?.innerText.replace(/\n/g, ' ').trim() || "-";
+                    const trend = card.querySelector('.trend-badge')?.innerText.trim() || "추세 데이터 없음";
+                    
+                    if(label && value && !value.includes("조회 불가")) {
+                        marketDataInfos += `- ${label}: 현재가 ${value} | 등락: ${delta} | 기술적 추세: ${trend}\n`;
+                    }
+                });
+
                 const today = new Date();
                 const todayDateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
                 
-                let currentStockInfo = "현재 선택된 개별 종목이 없습니다. 시장 전반에 대해 질문해주세요.";
-                if (lastFetchedData && lastFetchedData.ticker) {
-                    currentStockInfo = `[현재 사용자가 분석 중인 종목 핵심 데이터]
-- 종목명: ${lastFetchedData.corpName} (${lastFetchedData.ticker})
-- 현재가: ${lastFetchedData.price}원 (등락률: ${lastFetchedData.changeRate})
-- PER: ${lastFetchedData.per} / PBR: ${lastFetchedData.pbr}
-- 외국인소진율: ${lastFetchedData.foreignRate}`;
-                }
-                
+                // 🌟 사용자 오리지널 프롬프트 원문 복구
                 const initialPrompt = `당신은 전세계 상위 0.1% 수준의 객관성을 갖춘 거시경제 및 리스크 분석, 심층 퀀트 투자 AI입니다.
 현재 기준 날짜는 [${todayDateStr}]입니다. 대화 시 반드시 이 날짜를 '오늘'로 인지하고 답변하세요.
 
@@ -3299,7 +3316,7 @@ PRED_D5: [예상종가]원
 위 내용을 모두 숙지했다면 즉시 분석 답변을 시작할 준비가 되었다고 짧게 응답하세요.`;
                 
                 chatHistory.push({ "role": "user", "parts": [{ "text": initialPrompt }] });
-                chatHistory.push({ "role": "model", "parts": [{ "text": "네, 실시간 종목 데이터와 심층 투자 분석 가이드라인(리스크 관리, 밸류에이션, 시나리오 분석 등)을 모두 숙지했습니다. 철저한 팩트 기반과 객관적 시각으로 분석을 제공할 준비가 되었습니다. 어떤 내용이 궁금하신가요?" }] });
+                chatHistory.push({ "role": "model", "parts": [{ "text": "네, 제공된 실시간 시장 데이터와 심층 투자 분석 가이드라인(리스크 관리, 밸류에이션, 시나리오 분석 등)을 모두 숙지했습니다. 철저한 팩트 기반과 객관적 시각으로 분석을 제공할 준비가 되었습니다. 어떤 종목이나 시황이 궁금하신가요?" }] });
             }
 
             addMessageToUI('user', message);
