@@ -3415,12 +3415,39 @@ ${text}`;
         }
 
         // ==============================================================
-        // 1. KOSPI & KOSDAQ 섹터 분리 실시간 갱신 (섞임 버그 완벽 해결)
+        // 🌟 하이브리드 실시간 갱신 엔진 (국내 대시보드 로직 100% 이식)
         // ==============================================================
         let sectorCompaniesCache = {};
 
+        // 📌 JSONP 통신 헬퍼 (네이버 실시간 폴링 - CORS 완벽 우회)
+        function fetchNaverDirectJsonp(queryStr) {
+            return new Promise((resolve) => {
+                const cbName = "__nv_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
+                const script = document.createElement("script");
+                const timer = setTimeout(() => { cleanup(); resolve(null); }, 3500);
+
+                function cleanup() {
+                    clearTimeout(timer);
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                    try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+                }
+
+                window[cbName] = function(res) {
+                    cleanup();
+                    if (res && res.result && Array.isArray(res.result.areas)) resolve(res.result.areas);
+                    else resolve(null);
+                };
+                script.onerror = function() { cleanup(); resolve(null); };
+                script.charset = "euc-kr";
+                script.src = `https://polling.finance.naver.com/api/realtime?query=${encodeURIComponent(queryStr)}&_callback=${cbName}&_=${Date.now()}_${Math.random()}`;
+                document.head.appendChild(script);
+            });
+        }
+
+        // ==============================================================
+        // 1. 코스피 & 코스닥 섹터 현황 (1초 단위 실시간 갱신)
+        // ==============================================================
         async function updateRealtimeSectors() {
-            // 코스피/코스닥 원본을 절대 훼손(병합)하지 않고 종목 코드만 따로 추출
             const allCodes = [];
             [KOSPI200_COMPANIES, KOSDAQ150_COMPANIES].forEach(market => {
                 Object.values(market).forEach(comps => {
@@ -3430,7 +3457,6 @@ ${text}`;
                 });
             });
 
-            // 40개씩 묶어서 네이버 폴링 직접 통신
             const chunks = [];
             for (let i = 0; i < allCodes.length; i += 40) chunks.push(allCodes.slice(i, i + 40));
 
@@ -3452,19 +3478,12 @@ ${text}`;
                 }
             }));
 
-            // 계산 헬퍼 함수 (독립된 딕셔너리로 계산)
-            const getStats = (marketDict) => {
+            const getStats = (marketDict, prefix) => {
                 const stats = {};
                 for (const [sector, companies] of Object.entries(marketDict)) {
                     stats[sector] = { total: 0, count: 0, list: [] };
                     for (const [name, code] of Object.entries(companies)) {
                         let cr = liveRates[code];
-                        // 실시간 통신 실패 시 로컬 파일 데이터로 백업
-                        if (cr === undefined && globalQuantData && globalQuantData[code]) {
-                            let cStr = globalQuantData[code].changeRate || '0%';
-                            let parsed = parseFloat(cStr.replace(/%/g, '').replace(/\+/g, ''));
-                            if (!isNaN(parsed)) cr = cStr.includes('-') ? -Math.abs(parsed) : Math.abs(parsed);
-                        }
                         if (cr !== undefined && !isNaN(cr)) {
                             stats[sector].total += cr;
                             stats[sector].count += 1;
@@ -3478,62 +3497,61 @@ ${text}`;
                         const avg = stat.total / stat.count;
                         stat.list.sort((a, b) => b.cr - a.cr);
                         list.push({ sector, avg, companies: stat.list });
-                        sectorCompaniesCache[sector] = stat.list;
+                        // 이름 섞임 방지를 위해 prefix(KOSPI/KOSDAQ) 부착
+                        sectorCompaniesCache[`${prefix}_${sector}`] = stat.list;
                     }
                 }
                 list.sort((a, b) => b.avg - a.avg);
                 return list;
             };
 
-            // 🌟 철저하게 분리된 상태로 코스피, 코스닥 리스트 생성
-            const kospiList = getStats(KOSPI200_COMPANIES);
-            const kosdaqList = getStats(KOSDAQ150_COMPANIES);
+            const kospiList = getStats(KOSPI200_COMPANIES, 'KOSPI');
+            const kosdaqList = getStats(KOSDAQ150_COMPANIES, 'KOSDAQ');
 
-            // HTML 카드 생성 헬퍼
-            const buildHtml = (arr, isTop) => arr.map((s, idx) => {
+            const buildHtml = (arr, isTop, prefix) => arr.map((s, idx) => {
                 const color = s.avg > 0 ? 'text-rose-600' : (s.avg < 0 ? 'text-blue-600' : 'text-slate-600');
                 const sign = s.avg > 0 ? '+' : '';
                 const bg = isTop ? 'hover:bg-rose-50 border-rose-100' : 'hover:bg-blue-50 border-blue-100';
                 return `
-                    <div onclick="openSectorModal('${s.sector}')" class="flex justify-between items-center bg-white p-2.5 rounded-lg border shadow-sm cursor-pointer transition ${bg}">
+                    <div onclick="openSectorModal('${prefix}_${s.sector}', '${s.sector}')" class="flex justify-between items-center bg-white p-2.5 rounded-lg border shadow-sm cursor-pointer transition ${bg}">
                         <span class="text-[13px] font-extrabold text-slate-800"><span class="text-slate-400 mr-2">${idx + 1}</span>${s.sector}</span>
                         <span class="text-[13px] font-black ${color}">${sign}${s.avg.toFixed(2)}%</span>
                     </div>
                 `;
             }).join('');
 
-            // 코스피/코스닥 4등분 그리드 렌더링
             const container = document.getElementById('sectorTrendsContainer');
             if (container) {
                 container.innerHTML = `
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="space-y-2">
                             <h3 class="text-xs font-extrabold text-white bg-indigo-600 p-2 rounded flex justify-between shadow-sm"><span>🟦 KOSPI 200 강세 TOP 4</span></h3>
-                            ${buildHtml(kospiList.slice(0, 4), true)}
+                            ${buildHtml(kospiList.slice(0, 4), true, 'KOSPI')}
                             <h3 class="text-xs font-extrabold text-white bg-indigo-400 p-2 rounded flex justify-between mt-4 shadow-sm"><span>🟦 KOSPI 200 약세 BOTTOM 4</span></h3>
-                            ${buildHtml(kospiList.slice(-4).reverse(), false)}
+                            ${buildHtml(kospiList.slice(-4).reverse(), false, 'KOSPI')}
                         </div>
                         <div class="space-y-2">
                             <h3 class="text-xs font-extrabold text-white bg-emerald-600 p-2 rounded flex justify-between shadow-sm"><span>🟩 KOSDAQ 150 강세 TOP 4</span></h3>
-                            ${buildHtml(kosdaqList.slice(0, 4), true)}
+                            ${buildHtml(kosdaqList.slice(0, 4), true, 'KOSDAQ')}
                             <h3 class="text-xs font-extrabold text-white bg-emerald-400 p-2 rounded flex justify-between mt-4 shadow-sm"><span>🟩 KOSDAQ 150 약세 BOTTOM 4</span></h3>
-                            ${buildHtml(kosdaqList.slice(-4).reverse(), false)}
+                            ${buildHtml(kosdaqList.slice(-4).reverse(), false, 'KOSDAQ')}
                         </div>
                     </div>
                 `;
             }
         }
 
-        // 섹터 클릭 시 상세 종목 모달창 제어
-        function openSectorModal(sector) {
-            const companies = sectorCompaniesCache[sector] || [];
-            document.getElementById('modalSectorTitle').textContent = `📂 ${sector} 관련주 현황`;
+        function openSectorModal(cacheKey, displayName) {
+            const companies = sectorCompaniesCache[cacheKey] || [];
+            document.getElementById('modalSectorTitle').textContent = `📂 ${displayName} 관련주 현황`;
             const html = companies.map(c => {
                 const color = c.cr > 0 ? 'text-rose-600' : (c.cr < 0 ? 'text-blue-600' : 'text-slate-600');
                 const sign = c.cr > 0 ? '+' : '';
                 return `
                     <div class="flex justify-between items-center bg-white p-3 rounded border border-slate-200">
-                        <button onclick="selectCompany('${c.name}', '${c.code}'); closeSectorModal();" class="text-sm font-bold text-slate-800 hover:text-indigo-600 hover:underline transition">${c.name} <span class="text-[10px] text-slate-400 font-normal">(${c.code})</span></button>
+                        <button onclick="selectCompany('${c.name}', '${c.code}'); closeSectorModal();" class="text-sm font-bold text-slate-800 hover:text-indigo-600 hover:underline transition">
+                            ${c.name} <span class="text-[10px] text-slate-400 font-normal">(${c.code})</span>
+                        </button>
                         <span class="text-sm font-extrabold ${color}">${sign}${c.cr.toFixed(2)}%</span>
                     </div>
                 `;
@@ -3551,85 +3569,111 @@ ${text}`;
         }
 
         // ==============================================================
-        // 2. 실시간 거시경제 지표 전광판 (프록시 제거 + 다이렉트 호출)
+        // 2. 실시간 전광판 (지수 실시간 + 글로벌 매크로 연동)
         // ==============================================================
         async function updateRealtimeMacro() {
+            let tickerHtml = '';
+            
+            // 코스피/코스닥 네이버 1초 단위 실시간 데이터
+            const indexAreas = await fetchNaverDirectJsonp("SERVICE_INDEX:KOSPI,KOSDAQ");
+            if (indexAreas) {
+                for (const area of indexAreas) {
+                    for (const d of (area.datas || [])) {
+                        const isUp = ["1", "2"].includes(String(d.rf || "3"));
+                        const isDown = ["4", "5"].includes(String(d.rf || "3"));
+                        const colorClass = isUp ? 'ticker-up' : (isDown ? 'ticker-down' : 'ticker-flat');
+                        const sign = isUp ? '▲ +' : (isDown ? '▼ -' : '');
+                        const price = (d.nv / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        const rate = Math.abs(parseFloat(d.cr || 0)).toFixed(2);
+                        const label = d.cd === 'KOSPI' ? 'KOSPI' : 'KOSDAQ';
+                        
+                        tickerHtml += `
+                            <div class="ticker-item">
+                                <span class="text-slate-400">${label}</span>
+                                <span class="ticker-val ${colorClass}">${price}</span>
+                                <span class="${colorClass} text-[11px] ml-1">${sign}${rate}%</span>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            tickerHtml += `<span class="text-slate-600 px-2">|</span>`;
+
+            // 매크로 지표는 국내 대시보드(HTML) 화면 스크래핑
             try {
-                // 🌟 GitHub Pages는 자체적으로 외부 접근(CORS)을 허용합니다! 프록시를 완전히 빼고 직접 긁어옵니다.
                 const targetUrl = `https://rmadh6418-ai.github.io/stock-dashboard/index.html?_=${Date.now()}`;
                 const res = await fetch(targetUrl, { cache: 'no-store' });
-                
-                if (!res.ok) throw new Error("전광판 직접 통신 에러");
-                
-                const htmlText = await res.text();
-                const doc = new DOMParser().parseFromString(htmlText, "text/html");
+                if (res.ok) {
+                    const htmlText = await res.text();
+                    const doc = new DOMParser().parseFromString(htmlText, "text/html");
 
-                const extractMacro = (key, label) => {
-                    const valEl = doc.getElementById(`val-${key}`);
-                    const badgeEl = doc.getElementById(`badge-${key}`);
-                    if (!valEl || !badgeEl) return '';
-                    
-                    const val = valEl.innerText.trim();
-                    const badgeText = badgeEl.innerText.trim(); 
-                    
-                    let colorClass = 'ticker-flat';
-                    if (badgeText.includes('▲')) colorClass = 'ticker-up';
-                    if (badgeText.includes('▼')) colorClass = 'ticker-down';
-                    
-                    const match = badgeText.match(/([▲▼―]\s*[+-]?[\d.]+%)/);
-                    const rateStr = match ? match[1] : badgeText.split('(')[0].trim();
+                    const extractMacro = (key, label) => {
+                        const valEl = doc.getElementById(`val-${key}`);
+                        const badgeEl = doc.getElementById(`badge-${key}`);
+                        if (!valEl || !badgeEl) return '';
+                        
+                        const val = valEl.innerText.trim();
+                        const badgeText = badgeEl.innerText.trim(); 
+                        
+                        let colorClass = 'ticker-flat';
+                        if (badgeText.includes('▲')) colorClass = 'ticker-up';
+                        if (badgeText.includes('▼')) colorClass = 'ticker-down';
+                        
+                        const match = badgeText.match(/([▲▼―]\s*[+-]?[\d.]+%)/);
+                        const rateStr = match ? match[1] : badgeText.split('(')[0].trim();
 
-                    return `
-                        <div class="ticker-item">
-                            <span class="text-slate-400">${label}</span>
-                            <span class="ticker-val ${colorClass}">${val}</span>
-                            <span class="${colorClass} text-[11px] ml-1">${rateStr}</span>
-                        </div>
+                        return `
+                            <div class="ticker-item">
+                                <span class="text-slate-400">${label}</span>
+                                <span class="ticker-val ${colorClass}">${val}</span>
+                                <span class="${colorClass} text-[11px] ml-1">${rateStr}</span>
+                            </div>
+                        `;
+                    };
+
+                    tickerHtml += `
+                        ${extractMacro('FX_USDKRW', '원/달러')}
+                        ${extractMacro('JPYKRW', '엔/원(100)')}
+                        <span class="text-slate-600 px-2">|</span>
+                        ${extractMacro('US10Y', '미국채 10년')}
+                        ${extractMacro('US30Y', '미국채 30년')}
+                        <span class="text-slate-600 px-2">|</span>
+                        ${extractMacro('OIL', 'WTI 국제유가')}
+                        <span class="text-slate-600 px-2">|</span>
+                        ${extractMacro('GOLD_DON', '순금 1돈')}
+                        ${extractMacro('SILVER_DON', '은 1돈')}
                     `;
-                };
-
-                let tickerHtml = `
-                    ${extractMacro('KOSPI', 'KOSPI')}
-                    ${extractMacro('KOSDAQ', 'KOSDAQ')}
-                    <span class="text-slate-600 px-2">|</span>
-                    ${extractMacro('FX_USDKRW', '원/달러')}
-                    ${extractMacro('JPYKRW', '엔/원(100)')}
-                    <span class="text-slate-600 px-2">|</span>
-                    ${extractMacro('US10Y', '미국채 10년')}
-                    ${extractMacro('US30Y', '미국채 30년')}
-                    <span class="text-slate-600 px-2">|</span>
-                    ${extractMacro('OIL', 'WTI 국제유가')}
-                    <span class="text-slate-600 px-2">|</span>
-                    ${extractMacro('GOLD_DON', '순금 1돈')}
-                    ${extractMacro('SILVER_DON', '은 1돈')}
-                `;
-
-                // 데이터가 비정상적일 경우 예외 처리
-                if (!tickerHtml.includes('ticker-val')) throw new Error("ID 요소 파싱 실패");
-
-                // 무한 스크롤 애니메이션을 위해 2번 이어붙이기
-                document.getElementById('macroTicker').innerHTML = tickerHtml + '<span class="px-8"></span>' + tickerHtml;
-
+                }
             } catch (e) {
-                console.error("전광판 데이터 수집 실패:", e);
-                document.getElementById('macroTicker').innerHTML = '<div class="ticker-item text-slate-400">거시경제 데이터를 갱신 중입니다... (네트워크 점검 중)</div>';
+                console.error("대시보드 스크래핑 실패:", e);
             }
+
+            // 애니메이션이 끊기지 않게 2번 반복
+            document.getElementById('macroTicker').innerHTML = tickerHtml + '<span class="px-8"></span>' + tickerHtml;
         }
 
         // ==============================================================
-        // 3. 단일 실행 컨트롤 (대기시간 제로 적용)
+        // 3. 실행 컨트롤 (한 바퀴 다 돌 때마다 전광판 갱신 적용)
         // ==============================================================
         const originalOnload = window.onload;
         window.onload = async () => {
             if (originalOnload) await originalOnload();
             
-            // 페이지 켜지자마자 대기 없이 즉시 호출
+            // 페이지 진입 즉시 1회 실행 (빈 화면 방지)
             updateRealtimeSectors();
             updateRealtimeMacro();
 
-            // 주기적 갱신
-            setInterval(updateRealtimeMacro, 60000);   // 전광판 1분 주기
-            setInterval(updateRealtimeSectors, 30000); // 섹터 30초 주기
+            // 섹터는 기존대로 30초마다 갱신
+            setInterval(updateRealtimeSectors, 30000);
+
+            // 🌟 전광판 애니메이션 1사이클(왼쪽 끝으로 사라짐) 종료 시점마다 데이터 갱신
+            const tickerEl = document.getElementById('macroTicker');
+            if(tickerEl) {
+                tickerEl.addEventListener('animationiteration', () => {
+                    updateRealtimeMacro();
+                });
+            }
         };
 
     </script>
