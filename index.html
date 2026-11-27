@@ -3426,151 +3426,105 @@ ${text}`;
         }
 
         // ==============================================================
-        // 1 & 2. 국내 대시보드(stock-dashboard) 데이터 초고속 통합 수집
+        // 1 & 2. 강세/약세 섹터 & 거시경제 전광판 완벽 실시간 갱신 (직접 통신)
         // ==============================================================
         let sectorCompaniesCache = {};
 
-        async function syncFromDomesticDashboard() {
-            try {
-                // 🌟 프록시 우회 없이 회원님의 깃허브 대시보드 HTML을 다이렉트로 즉시 로드 (캐시 무력화)
-                const url = `https://rmadh6418-ai.github.io/stock-dashboard/index.html?_=${Date.now()}`;
-                const res = await fetch(url, { cache: 'no-store' });
-                if (!res.ok) throw new Error("대시보드 응답 오류");
-                
-                const htmlText = await res.text();
-                const doc = new DOMParser().parseFromString(htmlText, "text/html");
-
-                // ---------------------------------------------------------
-                // 📌 하단 거시경제 전광판(Ticker) 업데이트
-                // ---------------------------------------------------------
-                const extractMacro = (key, label) => {
-                    const valEl = doc.getElementById(`val-${key}`);
-                    const badgeEl = doc.getElementById(`badge-${key}`);
-                    if (!valEl || !badgeEl) return '';
-                    
-                    const val = valEl.innerText.trim();
-                    const badgeText = badgeEl.innerText.trim();
-                    
-                    let colorClass = 'ticker-flat';
-                    if (badgeText.includes('▲')) colorClass = 'ticker-up';
-                    if (badgeText.includes('▼')) colorClass = 'ticker-down';
-                    
-                    const match = badgeText.match(/([▲▼―]\s*[+-]?[\d.]+%)/);
-                    const rateStr = match ? match[1] : badgeText.split('(')[0].trim();
-
-                    return `
-                        <div class="ticker-item">
-                            <span class="text-slate-400">${label}</span>
-                            <span class="ticker-val ${colorClass}">${val}</span>
-                            <span class="${colorClass} text-[11px] ml-1">${rateStr}</span>
-                        </div>
-                    `;
-                };
-
-                let tickerHtml = `
-                    ${extractMacro('KOSPI', 'KOSPI')}
-                    ${extractMacro('KOSDAQ', 'KOSDAQ')}
-                    <span class="text-slate-600 px-2">|</span>
-                    ${extractMacro('FX_USDKRW', '원/달러')}
-                    ${extractMacro('JPYKRW', '엔/원(100)')}
-                    <span class="text-slate-600 px-2">|</span>
-                    ${extractMacro('US10Y', '미국채 10년')}
-                    ${extractMacro('US30Y', '미국채 30년')}
-                    <span class="text-slate-600 px-2">|</span>
-                    ${extractMacro('OIL', 'WTI 국제유가')}
-                    <span class="text-slate-600 px-2">|</span>
-                    ${extractMacro('GOLD_DON', '순금 1돈')}
-                    ${extractMacro('SILVER_DON', '은 1돈')}
-                `;
-                document.getElementById('macroTicker').innerHTML = tickerHtml + '<span class="px-8"></span>' + tickerHtml;
-
-                // ---------------------------------------------------------
-                // 📌 섹터 랭킹을 위한 종목별 실시간 등락률 싹쓸이 추출
-                // ---------------------------------------------------------
-                const stockPills = doc.querySelectorAll('.stock-pill');
-                const fetchedStocks = {};
-                
-                stockPills.forEach(pill => {
-                    const code = pill.getAttribute('data-stock-code');
-                    const rateEl = pill.querySelector('.stock-rate');
-                    if (code && rateEl) {
-                        // 대시보드에 심어져 있는 data-live-rate 값을 안전하게 추출
-                        let rate = parseFloat(rateEl.getAttribute('data-live-rate') || rateEl.innerText.replace(/[^0-9.-]/g, ''));
-                        if (!isNaN(rate)) fetchedStocks[code] = rate;
-                    }
-                });
-
-                // ---------------------------------------------------------
-                // 📌 섹터 TOP5 / BOTTOM5 계산 및 즉시 렌더링
-                // ---------------------------------------------------------
-                const sectorStats = {};
-                const ALL_SECTORS = { ...KOSPI200_COMPANIES };
-                for (const [sec, comps] of Object.entries(KOSDAQ150_COMPANIES)) {
-                    if (!ALL_SECTORS[sec]) ALL_SECTORS[sec] = {};
-                    Object.assign(ALL_SECTORS[sec], comps);
-                }
-
-                for (const [sector, companies] of Object.entries(ALL_SECTORS)) {
-                    if (!sectorStats[sector]) sectorStats[sector] = { total: 0, count: 0, list: [] };
-                    
-                    for (const [name, code] of Object.entries(companies)) {
-                        let cr = NaN;
-                        
-                        // 1순위: 0.1초 전 긁어온 국내대시보드 데이터
-                        if (fetchedStocks[code] !== undefined) {
-                            cr = fetchedStocks[code];
-                        } 
-                        // 2순위: 로컬 quant_data.json 백업 데이터
-                        else if (globalQuantData && globalQuantData[code] && globalQuantData[code].changeRate) {
-                            let cStr = globalQuantData[code].changeRate;
-                            let parsed = parseFloat(cStr.replace(/%/g, '').replace(/\+/g, ''));
-                            if (!isNaN(parsed)) cr = cStr.includes('-') ? -Math.abs(parsed) : Math.abs(parsed);
-                        }
-
-                        if (!isNaN(cr)) {
-                            sectorStats[sector].total += cr;
-                            sectorStats[sector].count += 1;
-                            sectorStats[sector].list.push({ name, code, cr });
-                        }
-                    }
-                }
-
-                const sectorList = [];
-                for (const [sector, stat] of Object.entries(sectorStats)) {
-                    if (stat.count > 0) { 
-                        const avg = stat.total / stat.count;
-                        stat.list.sort((a, b) => b.cr - a.cr); 
-                        sectorList.push({ sector, avg, companies: stat.list });
-                        sectorCompaniesCache[sector] = stat.list;
-                    }
-                }
-                sectorList.sort((a, b) => b.avg - a.avg);
-
-                const top5 = sectorList.slice(0, 5);
-                const bottom5 = sectorList.slice(-5).reverse();
-
-                const buildHtml = (arr, isTop) => arr.map((s, idx) => {
-                    const color = s.avg > 0 ? 'text-rose-600' : (s.avg < 0 ? 'text-blue-600' : 'text-slate-600');
-                    const sign = s.avg > 0 ? '+' : '';
-                    const bg = isTop ? 'hover:bg-rose-50 border-rose-100' : 'hover:bg-blue-50 border-blue-100';
-                    return `
-                        <div onclick="openSectorModal('${s.sector}')" class="flex justify-between items-center bg-white p-3 rounded-lg border shadow-sm cursor-pointer transition ${bg}">
-                            <span class="text-sm font-extrabold text-slate-800"><span class="text-slate-400 mr-2">${idx + 1}</span>${s.sector}</span>
-                            <span class="text-sm font-black ${color}">${sign}${s.avg.toFixed(2)}%</span>
-                        </div>
-                    `;
-                }).join('');
-
-                if (top5.length > 0) document.getElementById('topSectors').innerHTML = buildHtml(top5, true);
-                if (bottom5.length > 0) document.getElementById('bottomSectors').innerHTML = buildHtml(bottom5, false);
-
-            } catch (e) {
-                console.error("국내 대시보드 연동 실패:", e);
-                document.getElementById('macroTicker').innerHTML = '<div class="ticker-item text-slate-400">내 대시보드 데이터를 갱신 중입니다...</div>';
+        // 🌟 1. 섹터 현황 실시간 갱신 (국내 대시보드의 네이버 JSONP 통신 방식 그대로 적용)
+        async function updateRealtimeSectors() {
+            const ALL_SECTORS = { ...KOSPI200_COMPANIES };
+            for (const [sec, comps] of Object.entries(KOSDAQ150_COMPANIES)) {
+                if (!ALL_SECTORS[sec]) ALL_SECTORS[sec] = {};
+                Object.assign(ALL_SECTORS[sec], comps);
             }
+
+            // 코스피/코스닥 모든 종목 코드 수집
+            const allCodes = [];
+            for (const comps of Object.values(ALL_SECTORS)) {
+                for (const code of Object.values(comps)) {
+                    if (!allCodes.includes(code)) allCodes.push(code);
+                }
+            }
+
+            // 네이버 API 한계(최대 50개)를 고려해 40개씩 쪼개서 요청
+            const chunks = [];
+            for (let i = 0; i < allCodes.length; i += 40) chunks.push(allCodes.slice(i, i + 40));
+
+            const liveRates = {};
+            
+            // 네이버 실시간 주가 서버(polling)로 직접 때려서 350개 종목 순식간에 수집
+            await Promise.all(chunks.map(async (chunk) => {
+                const areas = await fetchNaverDirectJsonp(`SERVICE_ITEM:${chunk.join(',')}`);
+                if (areas) {
+                    for (const area of areas) {
+                        for (const st of (area.datas || [])) {
+                            if (st.cd && st.cr) {
+                                const rf = String(st.rf || "3");
+                                const absRate = Math.abs(parseFloat(st.cr));
+                                if (["4", "5"].includes(rf)) liveRates[st.cd] = -absRate;
+                                else if (["1", "2"].includes(rf)) liveRates[st.cd] = absRate;
+                                else liveRates[st.cd] = 0.0;
+                            }
+                        }
+                    }
+                }
+            }));
+
+            // 수집된 실시간 주가로 섹터 평균 등락률 계산
+            const sectorStats = {};
+            for (const [sector, companies] of Object.entries(ALL_SECTORS)) {
+                if (!sectorStats[sector]) sectorStats[sector] = { total: 0, count: 0, list: [] };
+                
+                for (const [name, code] of Object.entries(companies)) {
+                    let cr = liveRates[code];
+                    
+                    // 만약 통신 누락 시 어제자 데이터로 임시 방어
+                    if (cr === undefined && globalQuantData && globalQuantData[code]) {
+                        let cStr = globalQuantData[code].changeRate || '0%';
+                        let parsed = parseFloat(cStr.replace(/%/g, '').replace(/\+/g, ''));
+                        if (!isNaN(parsed)) cr = cStr.includes('-') ? -Math.abs(parsed) : Math.abs(parsed);
+                    }
+                    
+                    if (cr !== undefined && !isNaN(cr)) {
+                        sectorStats[sector].total += cr;
+                        sectorStats[sector].count += 1;
+                        sectorStats[sector].list.push({ name, code, cr });
+                    }
+                }
+            }
+
+            // 랭킹 정렬 및 렌더링
+            const sectorList = [];
+            for (const [sector, stat] of Object.entries(sectorStats)) {
+                if (stat.count > 0) {
+                    const avg = stat.total / stat.count;
+                    stat.list.sort((a, b) => b.cr - a.cr);
+                    sectorList.push({ sector, avg, companies: stat.list });
+                    sectorCompaniesCache[sector] = stat.list;
+                }
+            }
+            sectorList.sort((a, b) => b.avg - a.avg);
+
+            const top5 = sectorList.slice(0, 5);
+            const bottom5 = sectorList.slice(-5).reverse();
+
+            const buildHtml = (arr, isTop) => arr.map((s, idx) => {
+                const color = s.avg > 0 ? 'text-rose-600' : (s.avg < 0 ? 'text-blue-600' : 'text-slate-600');
+                const sign = s.avg > 0 ? '+' : '';
+                const bg = isTop ? 'hover:bg-rose-50 border-rose-100' : 'hover:bg-blue-50 border-blue-100';
+                return `
+                    <div onclick="openSectorModal('${s.sector}')" class="flex justify-between items-center bg-white p-3 rounded-lg border shadow-sm cursor-pointer transition ${bg}">
+                        <span class="text-sm font-extrabold text-slate-800"><span class="text-slate-400 mr-2">${idx + 1}</span>${s.sector}</span>
+                        <span class="text-sm font-black ${color}">${sign}${s.avg.toFixed(2)}%</span>
+                    </div>
+                `;
+            }).join('');
+
+            if (top5.length > 0) document.getElementById('topSectors').innerHTML = buildHtml(top5, true);
+            if (bottom5.length > 0) document.getElementById('bottomSectors').innerHTML = buildHtml(bottom5, false);
         }
 
-        // 📌 섹터 상세 모달창 제어
+        // 섹터 클릭 모달창 제어
         function openSectorModal(sector) {
             const companies = sectorCompaniesCache[sector] || [];
             document.getElementById('modalSectorTitle').textContent = `📂 ${sector} 관련주 현황`;
@@ -3595,18 +3549,107 @@ ${text}`;
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
-        // ==============================================================
-        // 3. 딜레이 강제 삭제 (단일 함수로 통합 실행)
-        // ==============================================================
+        // 🌟 2. 국내 대시보드의 다중 프록시 함수 100% 이식 (캐시 완벽 회피)
+        async function fetchProxyUncached(targetUrl) {
+            const bustUrl = targetUrl + (targetUrl.includes('?') ? '&' : '?') + `_nocache=${Date.now()}_${Math.random()}`;
+            const encoded = encodeURIComponent(bustUrl);
+            const candidates = [
+                { url: `https://api.allorigins.win/raw?url=${encoded}` },
+                { url: `https://api.codetabs.com/v1/proxy?quest=${encoded}` },
+                { url: `https://corsproxy.io/?${encoded}` }
+            ];
+
+            for (const cand of candidates) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 3500);
+                try {
+                    const res = await fetch(cand.url, { signal: controller.signal, cache: "no-store" });
+                    clearTimeout(timer);
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    if (data) return data;
+                } catch (e) {
+                    clearTimeout(timer);
+                }
+            }
+            return null;
+        }
+
+        // 🌟 3. 전광판 매크로 지표 실시간 갱신
+        async function updateRealtimeMacro() {
+            const endpoints = {
+                "KOSPI": "https://m.stock.naver.com/api/index/KOSPI/basic",
+                "KOSDAQ": "https://m.stock.naver.com/api/index/KOSDAQ/basic",
+                "USD": "https://m.stock.naver.com/api/marketIndex/exchange/FX_USDKRW/basic",
+                "JPY": "https://m.stock.naver.com/api/marketIndex/exchange/FX_JPYKRW/basic",
+                "US10Y": "https://m.stock.naver.com/api/marketIndex/worldIndex/TREASURY_10Y/basic",
+                "US30Y": "https://m.stock.naver.com/api/marketIndex/worldIndex/TREASURY_30Y/basic",
+                "WTI": "https://m.stock.naver.com/api/marketIndex/worldCommodity/OIL_CL/basic",
+                "GOLD": "https://m.stock.naver.com/api/marketIndex/material/CMDT_KOREAGOLD/basic",
+                "SILVER": "https://m.stock.naver.com/api/marketIndex/worldCommodity/CMDT_SI/basic"
+            };
+
+            const macroData = {};
+            await Promise.all(Object.entries(endpoints).map(async ([key, url]) => {
+                const data = await fetchProxyUncached(url);
+                if (data) macroData[key] = data;
+            }));
+
+            if (!macroData.KOSPI) return;
+
+            const usdkrw = parseFloat(macroData.USD.closePrice.replace(/,/g, ''));
+            const goldPerG = parseFloat(macroData.GOLD.closePrice.replace(/,/g, ''));
+            const gold1DonKRW = goldPerG * 3.75;
+            const gold1DonUSD = gold1DonKRW / usdkrw;
+
+            const silverPerOz = parseFloat(macroData.SILVER.closePrice.replace(/,/g, ''));
+            const silver1DonUSD = (silverPerOz / 31.1034768) * 3.75;
+            const silver1DonKRW = silver1DonUSD * usdkrw;
+
+            const buildTickerItem = (label, obj, customVal) => {
+                if(!obj && !customVal) return '';
+                const price = customVal || obj.closePrice;
+                const change = parseFloat(obj.fluctuationsRatio);
+                const sign = change > 0 ? '▲ +' : (change < 0 ? '▼ ' : '');
+                const color = change > 0 ? 'ticker-up' : (change < 0 ? 'ticker-down' : 'ticker-flat');
+                return `
+                    <div class="ticker-item">
+                        <span class="text-slate-400">${label}</span>
+                        <span class="ticker-val ${color}">${price}</span>
+                        <span class="${color} text-[11px] ml-1">${sign}${Math.abs(change).toFixed(2)}%</span>
+                    </div>
+                `;
+            };
+
+            let html = `
+                ${buildTickerItem('KOSPI', macroData.KOSPI)}
+                ${buildTickerItem('KOSDAQ', macroData.KOSDAQ)}
+                <span class="text-slate-600 px-2">|</span>
+                ${buildTickerItem('원/달러', macroData.USD)}
+                ${buildTickerItem('엔/원(100)', macroData.JPY)}
+                <span class="text-slate-600 px-2">|</span>
+                ${buildTickerItem('미국채 10년', macroData.US10Y)}
+                ${buildTickerItem('미국채 30년', macroData.US30Y)}
+                <span class="text-slate-600 px-2">|</span>
+                ${buildTickerItem('WTI 국제유가', macroData.WTI)}
+                <span class="text-slate-600 px-2">|</span>
+                ${buildTickerItem('순금 1돈', macroData.GOLD, `${Math.round(gold1DonKRW).toLocaleString()}원 ($${gold1DonUSD.toFixed(2)})`)}
+                ${buildTickerItem('은 1돈', macroData.SILVER, `${Math.round(silver1DonKRW).toLocaleString()}원 ($${silver1DonUSD.toFixed(2)})`)}
+            `;
+
+            document.getElementById('macroTicker').innerHTML = html + '<span class="px-8"></span>' + html;
+        }
+
+        // 🌟 화면 진입 시 즉시(0초) 실행되도록 원상 복구
         const originalOnload = window.onload;
         window.onload = async () => {
             if (originalOnload) await originalOnload();
             
-            // 대기 시간(setTimeout) 없이 페이지 로딩 직후 즉시 긁어오기
-            syncFromDomesticDashboard();
+            updateRealtimeSectors();
+            updateRealtimeMacro();
 
-            // 30초마다 전광판과 섹터를 단 한 번의 호출로 동시 업데이트
-            setInterval(syncFromDomesticDashboard, 30000);
+            setInterval(updateRealtimeMacro, 60000);
+            setInterval(updateRealtimeSectors, 30000);
         };
 
     </script>
