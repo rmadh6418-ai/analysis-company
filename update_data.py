@@ -452,30 +452,35 @@ def fetch_stock_data(name, ticker):
             print(f"[{ticker}] 역산 실패: {e}")
 
     # =========================================================================
-    # 🌟 [여기서부터 복사해서 추가하세요] 외국인 연속 순매수 일수 (foreignIncDays) 수집
+    # 🌟 [수정된 부분] 외국인 연속 순매수 일수 (foreignIncDays) 수집
     # =========================================================================
     try:
         stock_info["foreignIncDays"] = 0
-        # 최근 15거래일 투자자별 매매동향 API 호출
-        inv_url = f"https://m.stock.naver.com/api/stock/{ticker}/investor/days?page=1&pageSize=15"
+        inv_url = f"https://m.stock.naver.com/api/stock/{ticker}/investor/trend?page=1&pageSize=15"
         inv_res = session.get(inv_url, timeout=5).json()
         
         consecutive_days = 0
-        items = inv_res if isinstance(inv_res, list) else inv_res.get("items", [])
-        
+        items = []
+        if isinstance(inv_res, list):
+            items = inv_res
+        elif isinstance(inv_res, dict):
+            items = inv_res.get("items", []) or inv_res.get("result", [])
+            
         for row in items:
-            # foreignNetBuyVol = 외국인 순매수량
-            f_vol = row.get("foreignNetBuyVol", 0)
+            f_vol_raw = str(row.get("foreignerPureBuyQuant", "0")).replace(",", "").replace("+", "")
+            try:
+                f_vol = int(f_vol_raw)
+            except ValueError:
+                f_vol = 0
+                
             if f_vol > 0:
                 consecutive_days += 1
             else:
-                break # 순매수가 아닌(매도 또는 0) 날이 나오면 카운트 즉시 종료
+                break
                 
         stock_info["foreignIncDays"] = consecutive_days
     except Exception as e:
         print(f"[{ticker}] 외국인 연속 순매수 수집 실패: {e}")
-    # =========================================================================
-    # 🌟 [여기까지 복사]
     # =========================================================================
     
     return ticker, stock_info
