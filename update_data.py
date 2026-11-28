@@ -168,6 +168,149 @@ def fetch_free_float_from_wisereport(session, ticker):
     return None, None, "LABEL_NOT_FOUND", None
 
 
+
+# ================= 외국인 1년 누적 순매수 데이터 ================= #
+FOREIGN_FLOW_DAYS = 300  # 약 1년 거래일(휴장/주말 제외)
+FOREIGN_FLOW_PAGE_SIZE = 300
+
+def _to_int(value):
+    """네이버 응답의 콤마/부호/문자열 숫자를 안전하게 정수로 변환한다."""
+    if value is None:
+        return None
+    text = str(value).strip().replace(",", "").replace("+", "")
+    if text in ("", "-", "N/A", "None"):
+        return None
+    try:
+        return int(float(text))
+    except (TypeError, ValueError):
+        return None
+
+
+def fetch_foreign_cumulative_flow(session, ticker):
+    """
+    네이버 투자자 동향에서 최근 약 1년의 외국인 일별 순매수 수량을 수집한다.
+    순매수 거래대금은 원천 API가 금액 필드를 제공하면 우선 사용하고,
+    그렇지 않으면 '순매수 수량 × 당일 종가'로 추정한다.
+    """
+    result = {
+        "dates": [],
+        "netBuyQty": [],
+        "cumulativeQty": [],
+        "netBuyValue": [],
+        "cumulativeValue": [],
+        "valueBasis": "NET_QTY_X_CLOSE_ESTIMATE",
+        "updatedAt": datetime.now().isoformat(timespec="seconds"),
+        "status": "NO_DATA",
+    }
+
+    url = (
+        f"https://m.stock.naver.com/api/stock/{ticker}/investor/trend"
+        f"?page=1&pageSize={FOREIGN_FLOW_PAGE_SIZE}"
+    )
+    try:
+        response = session.get(url, timeout=15)
+        response.raise_for_status()
+        payload = response.json()
+
+        if isinstance(payload, list):
+            rows = payload
+        elif isinstance(payload, dict):
+            rows = (
+                payload.get("items")
+                or payload.get("result")
+                or payload.get("data")
+                or payload.get("trendList")
+                or []
+            )
+        else:
+            rows = []
+
+        parsed = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+
+            date_value = (
+                row.get("bizdate") or row.get("businessDate") or
+                row.get("tradeDate") or row.get("date") or
+                row.get("localDate")
+            )
+            date_digits = re.sub(r"\D", "", str(date_value or ""))
+            if len(date_digits) < 8:
+                continue
+            date_digits = date_digits[:8]
+
+            qty_raw = (
+                row.get("foreignerPureBuyQuant")
+                if row.get("foreignerPureBuyQuant") is not None
+                else row.get("foreignPureBuyQuant", row.get("frgn_pure_buy_quant"))
+            )
+            net_qty = _to_int(qty_raw)
+            if net_qty is None:
+                continue
+
+            close_raw = (
+                row.get("closePrice") or row.get("closeVal") or
+                row.get("close") or row.get("closingPrice") or
+                row.get("close_val")
+            )
+            close_price = _to_int(close_raw) or 0
+
+            # API 응답 버전에 따라 순매수 금액 필드명이 다를 수 있어 후보를 검사한다.
+            amount_raw = None
+            for key in (
+                "foreignerPureBuyAmount", "foreignPureBuyAmount",
+                "foreignerNetBuyAmount", "foreignerPureBuyValue",
+                "foreignPureBuyValue", "frgn_pure_buy_amount"
+            ):
+                if row.get(key) is not None:
+                    amount_raw = row.get(key)
+                    break
+
+            net_value = _to_int(amount_raw)
+            if net_value is None:
+                net_value = net_qty * close_price
+
+            parsed.append((date_digits, net_qty, net_value, amount_raw is not None))
+
+        # 중복 날짜가 있을 경우 날짜별 마지막 행만 남긴다.
+        by_date = {}
+        for item in parsed:
+            by_date[item[0]] = item
+        parsed = sorted(by_date.values(), key=lambda x: x[0])[-FOREIGN_FLOW_DAYS:]
+
+        if not parsed:
+            return result
+
+        cumulative_qty = 0
+        cumulative_value = 0
+        used_source_amount = all(item[3] for item in parsed)
+
+        for date_text, net_qty, net_value, _ in parsed:
+            cumulative_qty += net_qty
+            cumulative_value += net_value
+            result["dates"].append(
+                f"{date_text[:4]}-{date_text[4:6]}-{date_text[6:8]}"
+            )
+            result["netBuyQty"].append(net_qty)
+            result["cumulativeQty"].append(cumulative_qty)
+            result["netBuyValue"].append(net_value)
+            result["cumulativeValue"].append(cumulative_value)
+
+        result["valueBasis"] = (
+            "SOURCE_NET_BUY_AMOUNT" if used_source_amount
+            else "NET_QTY_X_CLOSE_ESTIMATE"
+        )
+        result["status"] = "OK" if len(parsed) >= 180 else "PARTIAL"
+        result["dataCount"] = len(parsed)
+        return result
+
+    except Exception as exc:
+        result["status"] = f"ERROR:{exc.__class__.__name__}"
+        print(f"[{ticker}] 외국인 1년 누적 수급 수집 실패: {exc}")
+        return result
+
+
 # ================= 개별 종목 정보 수집 메인 함수 ================= #
 def fetch_stock_data(name, ticker):
     # 기술적 지표 저장 공간 확보 (새로 추가된 주식수 필드 포함)
@@ -179,7 +322,8 @@ def fetch_stock_data(name, ticker):
         "freeFloatUpdatedAt": None, "floatingSharesMethod": None, "freeFloatUrl": None,
         "peg": "N/A", "pegDesc": "EPS 부족",
         "tech": {"ma5": "-", "ma20": "-", "ma33": "-", "ma60": "-", "ma120": "-", "rsi": "-", "macd": "-"},
-        "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] }
+        "finance": { "years": [], "revs": [], "ops": [], "opMs": [], "npMs": [], "debts": [], "epss": [] },
+        "foreignFlow": {"dates": [], "netBuyQty": [], "cumulativeQty": [], "netBuyValue": [], "cumulativeValue": [], "valueBasis": "NET_QTY_X_CLOSE_ESTIMATE", "status": "NOT_COLLECTED"}
     }
     
     session = requests.Session()
@@ -483,6 +627,13 @@ def fetch_stock_data(name, ticker):
         print(f"[{ticker}] 외국인 연속 순매수 수집 실패: {e}")
     # =========================================================================
     
+    # 최근 약 1년 외국인 누적 순매수(수량/거래대금) 별도 수집
+    try:
+        stock_info["foreignFlow"] = fetch_foreign_cumulative_flow(session, ticker)
+    except Exception as e:
+        stock_info["foreignFlow"]["status"] = f"ERROR:{e.__class__.__name__}"
+        print(f"[{ticker}] 외국인 누적 수급 처리 실패: {e}")
+
     return ticker, stock_info
 
 # ================= 스크립트 실행 진입점 ================= #
