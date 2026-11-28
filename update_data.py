@@ -186,100 +186,127 @@ def _to_int(value):
         return None
 
 
+def _extract_foreign_trend_rows(payload):
+    """네이버 투자자 동향 응답의 리스트를 버전별 구조에서 추출한다."""
+    if isinstance(payload, list):
+        return payload
+    if not isinstance(payload, dict):
+        return []
+
+    # 현재/구버전 응답에서 사용되는 대표적인 리스트 키
+    for key in ("content", "contents", "items", "result", "trendList", "data", "list"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            return value
+        if isinstance(value, dict):
+            nested = _extract_foreign_trend_rows(value)
+            if nested:
+                return nested
+
+    # 응답이 sections 아래에 감싸진 경우
+    for value in payload.values():
+        if isinstance(value, dict):
+            nested = _extract_foreign_trend_rows(value)
+            if nested:
+                return nested
+    return []
+
+
 def fetch_foreign_cumulative_flow(session, ticker):
     """
-    네이버 투자자 동향에서 최근 약 1년의 외국인 일별 순매수 수량을 수집한다.
-    순매수 거래대금은 원천 API가 금액 필드를 제공하면 우선 사용하고,
-    그렇지 않으면 '순매수 수량 × 당일 종가'로 추정한다.
+    네이버 종목 투자자 동향에서 최근 약 1년의 외국인 일별 순매수 수량을 수집한다.
+    구형 /api/stock/{code}/investor/trend 경로 대신 현재 종목 상세 trend 경로를 사용한다.
+    순매수 거래대금은 원천 금액이 제공되면 사용하고, 없으면 순매수 수량×종가로 추정한다.
     """
     result = {
-        "dates": [],
-        "netBuyQty": [],
-        "cumulativeQty": [],
-        "netBuyValue": [],
-        "cumulativeValue": [],
+        "dates": [], "netBuyQty": [], "cumulativeQty": [],
+        "netBuyValue": [], "cumulativeValue": [],
         "valueBasis": "NET_QTY_X_CLOSE_ESTIMATE",
         "updatedAt": datetime.now().isoformat(timespec="seconds"),
-        "status": "NO_DATA",
+        "status": "NO_DATA", "dataCount": 0,
     }
 
-    url = (
-        f"https://m.stock.naver.com/api/stock/{ticker}/investor/trend"
-        f"?page=1&pageSize={FOREIGN_FLOW_PAGE_SIZE}"
-    )
+    # 현재 네이버 종목 상세 화면에서 사용하는 투자자 동향 endpoint.
+    # startIdx는 0부터 시작하는 페이지 번호이며 pageSize는 페이지당 행 수다.
+    base_url = f"https://m.stock.naver.com/api/domestic/detail/{ticker}/trend"
+    page_size = 20
+    max_pages = (FOREIGN_FLOW_DAYS + page_size - 1) // page_size
+
     try:
-        response = session.get(url, timeout=15)
-        response.raise_for_status()
-        payload = response.json()
+        parsed_by_date = {}
+        for page_idx in range(max_pages):
+            params = {
+                "tradeType": "KRX",
+                "startIdx": page_idx,
+                "pageSize": page_size,
+            }
+            response = session.get(base_url, params=params, timeout=15)
+            response.raise_for_status()
+            payload = response.json()
+            rows = _extract_foreign_trend_rows(payload)
+            if not rows:
+                break
 
-        if isinstance(payload, list):
-            rows = payload
-        elif isinstance(payload, dict):
-            rows = (
-                payload.get("items")
-                or payload.get("result")
-                or payload.get("data")
-                or payload.get("trendList")
-                or []
-            )
-        else:
-            rows = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
 
-        parsed = []
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
+                date_value = (
+                    row.get("bizdate") or row.get("businessDate") or
+                    row.get("tradeDate") or row.get("localTradedAt") or
+                    row.get("date") or row.get("localDate")
+                )
+                date_digits = re.sub(r"\D", "", str(date_value or ""))
+                if len(date_digits) < 8:
+                    continue
+                date_digits = date_digits[:8]
 
-            date_value = (
-                row.get("bizdate") or row.get("businessDate") or
-                row.get("tradeDate") or row.get("date") or
-                row.get("localDate")
-            )
-            date_digits = re.sub(r"\D", "", str(date_value or ""))
-            if len(date_digits) < 8:
-                continue
-            date_digits = date_digits[:8]
+                qty_raw = None
+                for key in (
+                    "foreignerPureBuyQuant", "foreignPureBuyQuant",
+                    "foreignerPureBuy", "foreignPureBuy",
+                    "foreignerNetBuyQty", "foreignNetBuyQty",
+                    "frgn_pure_buy_quant", "frgnPureBuyQuant",
+                ):
+                    if row.get(key) is not None:
+                        qty_raw = row.get(key)
+                        break
+                net_qty = _to_int(qty_raw)
+                if net_qty is None:
+                    continue
 
-            qty_raw = (
-                row.get("foreignerPureBuyQuant")
-                if row.get("foreignerPureBuyQuant") is not None
-                else row.get("foreignPureBuyQuant", row.get("frgn_pure_buy_quant"))
-            )
-            net_qty = _to_int(qty_raw)
-            if net_qty is None:
-                continue
+                close_raw = None
+                for key in ("closePrice", "closeVal", "close", "closingPrice", "close_val"):
+                    if row.get(key) is not None:
+                        close_raw = row.get(key)
+                        break
+                close_price = _to_int(close_raw) or 0
 
-            close_raw = (
-                row.get("closePrice") or row.get("closeVal") or
-                row.get("close") or row.get("closingPrice") or
-                row.get("close_val")
-            )
-            close_price = _to_int(close_raw) or 0
+                amount_raw = None
+                for key in (
+                    "foreignerPureBuyAmount", "foreignPureBuyAmount",
+                    "foreignerNetBuyAmount", "foreignerPureBuyValue",
+                    "foreignPureBuyValue", "frgn_pure_buy_amount",
+                    "foreignerPureBuyAmt", "foreignNetBuyAmount",
+                ):
+                    if row.get(key) is not None:
+                        amount_raw = row.get(key)
+                        break
+                net_value = _to_int(amount_raw)
+                if net_value is None:
+                    net_value = net_qty * close_price
 
-            # API 응답 버전에 따라 순매수 금액 필드명이 다를 수 있어 후보를 검사한다.
-            amount_raw = None
-            for key in (
-                "foreignerPureBuyAmount", "foreignPureBuyAmount",
-                "foreignerNetBuyAmount", "foreignerPureBuyValue",
-                "foreignPureBuyValue", "frgn_pure_buy_amount"
-            ):
-                if row.get(key) is not None:
-                    amount_raw = row.get(key)
-                    break
+                parsed_by_date[date_digits] = (
+                    date_digits, net_qty, net_value, amount_raw is not None
+                )
 
-            net_value = _to_int(amount_raw)
-            if net_value is None:
-                net_value = net_qty * close_price
+            # 마지막 페이지가 pageSize보다 짧으면 더 이상 페이지가 없다.
+            if len(rows) < page_size:
+                break
 
-            parsed.append((date_digits, net_qty, net_value, amount_raw is not None))
-
-        # 중복 날짜가 있을 경우 날짜별 마지막 행만 남긴다.
-        by_date = {}
-        for item in parsed:
-            by_date[item[0]] = item
-        parsed = sorted(by_date.values(), key=lambda x: x[0])[-FOREIGN_FLOW_DAYS:]
-
+        parsed = sorted(parsed_by_date.values(), key=lambda x: x[0])[-FOREIGN_FLOW_DAYS:]
         if not parsed:
+            result["status"] = "NO_ROWS_OR_UNRECOGNIZED_FIELDS"
             return result
 
         cumulative_qty = 0
@@ -289,9 +316,7 @@ def fetch_foreign_cumulative_flow(session, ticker):
         for date_text, net_qty, net_value, _ in parsed:
             cumulative_qty += net_qty
             cumulative_value += net_value
-            result["dates"].append(
-                f"{date_text[:4]}-{date_text[4:6]}-{date_text[6:8]}"
-            )
+            result["dates"].append(f"{date_text[:4]}-{date_text[4:6]}-{date_text[6:8]}")
             result["netBuyQty"].append(net_qty)
             result["cumulativeQty"].append(cumulative_qty)
             result["netBuyValue"].append(net_value)
@@ -301,10 +326,15 @@ def fetch_foreign_cumulative_flow(session, ticker):
             "SOURCE_NET_BUY_AMOUNT" if used_source_amount
             else "NET_QTY_X_CLOSE_ESTIMATE"
         )
-        result["status"] = "OK" if len(parsed) >= 180 else "PARTIAL"
         result["dataCount"] = len(parsed)
+        result["status"] = "OK" if len(parsed) >= 180 else "PARTIAL"
         return result
 
+    except requests.HTTPError as exc:
+        status_code = exc.response.status_code if exc.response is not None else "UNKNOWN"
+        result["status"] = f"ERROR:HTTP_{status_code}"
+        print(f"[{ticker}] 외국인 1년 누적 수급 HTTP 오류: {status_code} / {exc}")
+        return result
     except Exception as exc:
         result["status"] = f"ERROR:{exc.__class__.__name__}"
         print(f"[{ticker}] 외국인 1년 누적 수급 수집 실패: {exc}")
